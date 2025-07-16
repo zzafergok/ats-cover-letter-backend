@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  password          String
+  firstName         String   @map("first_name")
+  lastName          String   @map("last_name")
+  isEmailVerified   Boolean  @default(false) @map("is_email_verified")
+  emailVerifyToken  String?  @map("email_verify_token")
+  emailVerifyExpires DateTime? @map("email_verify_expires")
+  role              UserRole @default(USER)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  refreshTokens  RefreshToken[]
+  cvUploads      CvUpload[]
+  savedCvs       SavedCv[]
+  coverLetters   CoverLetter[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model CvUpload {
+  id             String       @id @default(cuid())
+  userId         String       @map("user_id")
+  fileName       String       @map("file_name")
+  originalName   String       @map("original_name")
+  filePath       String       @map("file_path")
+  markdownContent String?     @map("markdown_content")
+  extractedData  Json?        @map("extracted_data")
+  uploadDate     DateTime     @default(now()) @map("upload_date")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("cv_uploads")
+}
+
+model SavedCv {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  title     String
+  content   String
+  cvType    CvType   @map("cv_type")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("saved_cvs")
+}
+
+model CoverLetter {
+  id              String               @id @default(cuid())
+  userId          String               @map("user_id")
+  title           String
+  content         String
+  category        CoverLetterCategory
+  positionTitle   String               @map("position_title")
+  companyName     String               @map("company_name")
+  contactPerson   String?              @map("contact_person")
+  applicationDate DateTime?            @map("application_date")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("cover_letters")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum CvType {
+  ATS_OPTIMIZED
+  CREATIVE
+  TECHNICAL
+}
+
+enum CoverLetterCategory {
+  SOFTWARE_DEVELOPER
+  MARKETING_SPECIALIST
+  SALES_REPRESENTATIVE
+  PROJECT_MANAGER
+  DATA_ANALYST
+  UI_UX_DESIGNER
+  BUSINESS_ANALYST
+  CUSTOMER_SERVICE
+  HR_SPECIALIST
+  FINANCE_SPECIALIST
+  CONTENT_WRITER
+  DIGITAL_MARKETING
+  PRODUCT_MANAGER
+  QUALITY_ASSURANCE
+  GRAPHIC_DESIGNER
+  ADMINISTRATIVE_ASSISTANT
+  CONSULTANT
+  ENGINEER
+  TEACHER
+  HEALTHCARE
+  LEGAL
+  GENERAL
+}

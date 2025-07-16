@@ -1,0 +1,54 @@
+{
+  "name": "ats-cv-generator-backend",
+  "version": "1.0.0",
+  "description": "ATS uyumlu CV ve Cover Letter oluşturma backend API",
+  "main": "dist/app.js",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "postinstall": "prisma generate",
+    "start": "node dist/app.js",
+    "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules src/app.ts",
+    "vercel-build": "prisma generate && npm run build",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "prisma:studio": "prisma studio",
+    "prisma:migrate": "prisma migrate dev",
+    "db:seed": "ts-node prisma/seed.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.56.0",
+    "@prisma/client": "^6.12.0",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "docx": "^9.5.1",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "jspdf": "^3.0.1",
+    "mammoth": "^1.9.1",
+    "multer": "^2.0.1",
+    "pdf-parse": "^1.1.1",
+    "resend": "^4.6.0",
+    "zod": "^4.0.5"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.0.14",
+    "@types/pdf-parse": "^1.1.5",
+    "prisma": "^6.12.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.8.3"
+  }
+}
