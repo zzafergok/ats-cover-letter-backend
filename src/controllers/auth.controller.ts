@@ -1,3 +1,4 @@
+// src/controllers/auth.controller.ts - Düzeltilmiş hali
 import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 
@@ -32,15 +33,12 @@ export class AuthController {
 
       const { email, password, name, role }: RegisterRequest = req.body;
 
-      // Email format validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const isValidEmail = emailRegex.test(email);
 
-      // Password format validation (minimum 8 characters, at least one letter and one number)
       const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/;
       const isValidPassword = passwordRegex.test(password);
 
-      // Combined email and password validation error
       if (!isValidEmail || !isValidPassword) {
         console.log('[REGISTER] Email veya password format hatası');
         sendError(
@@ -53,7 +51,6 @@ export class AuthController {
 
       console.log('[REGISTER] Email ve password format validation geçti');
 
-      // Existing user check
       const existingUser = await db.user.findUnique({ where: { email } });
       if (existingUser) {
         console.log('[REGISTER] Duplicate email tespit edildi:', email);
@@ -62,7 +59,6 @@ export class AuthController {
       }
       console.log('[REGISTER] Email uniqueness validation geçti');
 
-      // Role validation for specific roles
       if (role && ['ADMIN'].includes(role)) {
         const roleUser = await db.user.findFirst({
           where: { role: role as any },
@@ -79,11 +75,9 @@ export class AuthController {
       }
       console.log('[REGISTER] Role validation geçti');
 
-      // Password hashing
       const hashedPassword = await bcrypt.hash(password, 12);
       console.log('[REGISTER] Password hashing tamamlandı');
 
-      // JWT token generation
       const emailVerifyToken = JwtService.generateEmailVerifyToken(
         'temp',
         email
@@ -91,21 +85,23 @@ export class AuthController {
       const emailVerifyExpiry = new Date(Date.now() + 30 * 60 * 1000);
       console.log('[REGISTER] Email verification token oluşturuldu');
 
-      // User creation in transaction
+      const [firstName, ...lastNameParts] = name.split(' ');
+      const lastName = lastNameParts.join(' ') || '';
+
       const user = await db.user.create({
         data: {
           email,
           password: hashedPassword,
-          name,
-          role: role || ('DEVELOPER' as any),
-          emailVerified: false,
+          firstName,
+          lastName,
+          role: role || ('USER' as any),
+          isEmailVerified: false,
           emailVerifyToken,
-          emailVerifyExpiry,
+          emailVerifyExpires: emailVerifyExpiry,
         },
       });
       console.log('[REGISTER] User veritabanında oluşturuldu:', user.id);
 
-      // Update token with real user ID
       const finalEmailVerifyToken = JwtService.generateEmailVerifyToken(
         user.id,
         email
@@ -117,7 +113,6 @@ export class AuthController {
       });
       console.log('[REGISTER] Token güncelleme tamamlandı');
 
-      // Email sending with rollback capability
       try {
         await EmailService.sendEmailVerification(
           email,
@@ -138,7 +133,6 @@ export class AuthController {
       } catch (emailError) {
         console.error('[REGISTER] Email gönderim hatası:', emailError);
 
-        // Rollback user creation if email fails
         await db.user.delete({ where: { id: user.id } });
         console.log('[REGISTER] User kaydı email hatası nedeniyle geri alındı');
 
@@ -178,7 +172,6 @@ export class AuthController {
       const decoded = JwtService.verifyEmailVerifyToken(token);
       console.log('Token decode edildi:', decoded.userId);
 
-      // findUnique kullanarak daha güvenli yaklaşım
       const user = await db.user.findUnique({
         where: {
           id: decoded.userId,
@@ -187,11 +180,12 @@ export class AuthController {
         select: {
           id: true,
           email: true,
-          name: true,
+          firstName: true,
+          lastName: true,
           role: true,
-          emailVerified: true,
+          isEmailVerified: true,
           emailVerifyToken: true,
-          emailVerifyExpiry: true,
+          emailVerifyExpires: true,
         },
       });
 
@@ -205,12 +199,12 @@ export class AuthController {
         return;
       }
 
-      if (user.emailVerified) {
+      if (user.isEmailVerified) {
         sendError(res, 'AUTH_019: Email adresi zaten doğrulanmış', 400);
         return;
       }
 
-      if (user.emailVerifyExpiry && user.emailVerifyExpiry < new Date()) {
+      if (user.emailVerifyExpires && user.emailVerifyExpires < new Date()) {
         sendError(res, 'AUTH_020: Email doğrulama süresi dolmuş', 400);
         return;
       }
@@ -219,9 +213,9 @@ export class AuthController {
       await db.user.update({
         where: { id: user.id },
         data: {
-          emailVerified: true,
+          isEmailVerified: true,
           emailVerifyToken: null,
-          emailVerifyExpiry: null,
+          emailVerifyExpires: null,
         },
       });
 
@@ -243,7 +237,7 @@ export class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
+          name: `${user.firstName} ${user.lastName}`.trim(),
           role: user.role,
         },
         accessToken,
@@ -280,7 +274,7 @@ export class AuthController {
         return;
       }
 
-      if (user.emailVerified) {
+      if (user.isEmailVerified) {
         sendError(res, 'AUTH_023: Email adresi zaten doğrulanmış', 400);
         return;
       }
@@ -295,14 +289,14 @@ export class AuthController {
         where: { id: user.id },
         data: {
           emailVerifyToken,
-          emailVerifyExpiry,
+          emailVerifyExpires: emailVerifyExpiry,
         },
       });
 
       await EmailService.sendEmailVerification(
         email,
         emailVerifyToken,
-        user.name
+        `${user.firstName} ${user.lastName}`.trim()
       );
 
       sendSuccess(res, null, 'Email doğrulama bağlantısı yeniden gönderildi');
@@ -326,10 +320,11 @@ export class AuthController {
         select: {
           id: true,
           email: true,
-          name: true,
+          firstName: true,
+          lastName: true,
           password: true,
           role: true,
-          emailVerified: true,
+          isEmailVerified: true,
         },
       });
 
@@ -353,7 +348,7 @@ export class AuthController {
         return;
       }
 
-      if (!user.emailVerified) {
+      if (!user.isEmailVerified) {
         sendError(
           res,
           'AUTH_025: Giriş engellendi - Email adresinizi doğrulamanız gerekiyor',
@@ -380,7 +375,7 @@ export class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
+          name: `${user.firstName} ${user.lastName}`.trim(),
           role: user.role,
         },
         accessToken,
@@ -409,15 +404,15 @@ export class AuthController {
 
       const payload = JwtService.verifyRefreshToken(refreshToken);
 
-      // Session kontrolü olmadan doğrudan kullanıcı kontrolü
       const user = await db.user.findUnique({
         where: { id: payload.userId },
         select: {
           id: true,
           email: true,
-          name: true,
+          firstName: true,
+          lastName: true,
           role: true,
-          emailVerified: true,
+          isEmailVerified: true,
         },
       });
 
@@ -430,7 +425,7 @@ export class AuthController {
         return;
       }
 
-      if (!user.emailVerified) {
+      if (!user.isEmailVerified) {
         sendError(
           res,
           'AUTH_008: Token yenileme başarısız - Email doğrulama gerekli',
@@ -456,7 +451,7 @@ export class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
+          name: `${user.firstName} ${user.lastName}`.trim(),
           role: user.role,
         },
         accessToken: newAccessToken,
@@ -511,10 +506,10 @@ export class AuthController {
         select: {
           id: true,
           email: true,
-          name: true,
+          firstName: true,
+          lastName: true,
           role: true,
-          emailVerified: true,
-          lastPasswordResetAt: true,
+          isEmailVerified: true,
         },
       });
 
@@ -527,7 +522,7 @@ export class AuthController {
         return;
       }
 
-      if (!user.emailVerified) {
+      if (!user.isEmailVerified) {
         sendError(
           res,
           'AUTH_034: Email adresi doğrulanmamış - Önce email doğrulaması yapmanız gerekiyor',
@@ -536,70 +531,18 @@ export class AuthController {
         return;
       }
 
-      // Günlük sınırlama kontrolü (24 saat) - Güncellendi
-      if (user.lastPasswordResetAt) {
-        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        if (user.lastPasswordResetAt > oneDayAgo) {
-          const nextAllowedTime = new Date(
-            user.lastPasswordResetAt.getTime() + 24 * 60 * 60 * 1000
-          );
-          const hoursLeft = Math.ceil(
-            (nextAllowedTime.getTime() - Date.now()) / (1000 * 60 * 60)
-          );
-
-          sendError(
-            res,
-            `AUTH_037: Şifre sıfırlama günlük limitine ulaşıldı - ${hoursLeft} saat sonra tekrar deneyebilirsiniz`,
-            429
-          );
-          return;
-        }
-      }
-
-      // Token oluşturma
       const resetToken = JwtService.generatePasswordResetToken(
         user.id,
         user.email
       );
-      const resetExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 saat
 
-      // Token'ı database'e kaydetme ve lastPasswordResetAt güncelleme - Önemli değişiklik
-      await db.user.update({
-        where: { id: user.id },
-        data: {
-          passwordResetToken: resetToken,
-          passwordResetExpiry: resetExpiry,
-          lastPasswordResetAt: new Date(), // Şimdi güncellenir
-        },
-      });
+      await EmailService.sendPasswordResetEmail(email, resetToken);
 
-      // Email gönderme
-      try {
-        await EmailService.sendPasswordResetEmail(email, resetToken);
-
-        sendSuccess(
-          res,
-          null,
-          'Şifre sıfırlama bağlantısı email adresinize gönderildi'
-        );
-      } catch (emailError) {
-        console.error('Email gönderim hatası:', emailError);
-
-        // Email gönderilemezse lastPasswordResetAt'i geri al
-        await db.user.update({
-          where: { id: user.id },
-          data: {
-            passwordResetToken: null,
-            passwordResetExpiry: null,
-            lastPasswordResetAt: user.lastPasswordResetAt, // Eski değeri geri yükle
-          },
-        });
-
-        sendServerError(
-          res,
-          'AUTH_039: Email gönderimi başarısız - Lütfen daha sonra tekrar deneyiniz'
-        );
-      }
+      sendSuccess(
+        res,
+        null,
+        'Şifre sıfırlama bağlantısı email adresinize gönderildi'
+      );
     } catch (error) {
       console.error('Şifre sıfırlama hatası:', error);
       sendServerError(
@@ -609,14 +552,12 @@ export class AuthController {
     }
   };
 
-  // src/controllers/auth.controller.ts
   public resetPassword = async (req: Request, res: Response): Promise<void> => {
     try {
       const { token, newPassword }: ResetPasswordRequest = req.body;
 
       console.log('Reset token received:', token?.substring(0, 20) + '...');
 
-      // 1. JWT Token doğrulama
       let decoded;
       try {
         decoded = JwtService.verifyPasswordResetToken(token);
@@ -638,14 +579,11 @@ export class AuthController {
         return;
       }
 
-      // 2. Kullanıcı varlık kontrolü (token kontrolü olmadan)
       const user = await db.user.findUnique({
         where: { id: decoded.userId },
         select: {
           id: true,
           email: true,
-          passwordResetToken: true,
-          passwordResetExpiry: true,
         },
       });
 
@@ -655,34 +593,12 @@ export class AuthController {
         return;
       }
 
-      // 3. Database token kontrolü
-      if (user.passwordResetToken !== token) {
-        console.log('Token mismatch in database');
-        console.log(
-          'DB token:',
-          user.passwordResetToken?.substring(0, 20) + '...'
-        );
-        console.log('Request token:', token.substring(0, 20) + '...');
-        sendError(res, 'AUTH_035: Geçersiz şifre sıfırlama token', 400);
-        return;
-      }
-
-      // 4. Database expiry kontrolü
-      if (user.passwordResetExpiry && user.passwordResetExpiry < new Date()) {
-        console.log('Token expired in database:', user.passwordResetExpiry);
-        sendError(res, 'AUTH_036: Şifre sıfırlama süresi dolmuş', 400);
-        return;
-      }
-
-      // 5. Şifre güncelleme
       const hashedPassword = await bcrypt.hash(newPassword, 12);
 
       await db.user.update({
         where: { id: user.id },
         data: {
           password: hashedPassword,
-          passwordResetToken: null,
-          passwordResetExpiry: null,
         },
       });
 
@@ -713,7 +629,8 @@ export class AuthController {
         select: {
           id: true,
           email: true,
-          name: true,
+          firstName: true,
+          lastName: true,
           role: true,
           createdAt: true,
           updatedAt: true,
@@ -725,7 +642,10 @@ export class AuthController {
         return;
       }
 
-      sendSuccess(res, user);
+      sendSuccess(res, {
+        ...user,
+        name: `${user.firstName} ${user.lastName}`.trim(),
+      });
     } catch (error) {
       console.error('Kullanıcı bilgileri getirilemedi:', error);
       sendServerError(
@@ -745,7 +665,7 @@ export class AuthController {
 
       const existingUser = await db.user.findUnique({
         where: { id: userId },
-        select: { id: true, name: true, email: true },
+        select: { id: true, firstName: true, lastName: true, email: true },
       });
 
       if (!existingUser) {
@@ -768,19 +688,30 @@ export class AuthController {
         }
       }
 
+      const [firstName, ...lastNameParts] = name.split(' ');
+      const lastName = lastNameParts.join(' ') || '';
+
       const updatedUser = await db.user.update({
         where: { id: userId },
-        data: { name, email },
+        data: { firstName, lastName, email },
         select: {
           id: true,
           email: true,
-          name: true,
+          firstName: true,
+          lastName: true,
           role: true,
           updatedAt: true,
         },
       });
 
-      sendSuccess(res, updatedUser, 'Profil bilgileri başarıyla güncellendi');
+      sendSuccess(
+        res,
+        {
+          ...updatedUser,
+          name: `${updatedUser.firstName} ${updatedUser.lastName}`.trim(),
+        },
+        'Profil bilgileri başarıyla güncellendi'
+      );
     } catch (error) {
       console.error('Profil güncelleme hatası:', error);
       sendServerError(

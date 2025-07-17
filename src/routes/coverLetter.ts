@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import { authenticateToken } from '../middleware/auth';
 
 import { generatePdf, generateDocx } from '../services/documentService.service';
-import { generateCoverLetterWithClaude } from '../services/claudeService';
+import { generateCoverLetterWithClaude } from '../services/claudeService.service';
 
 const router = express.Router();
 const prisma = new PrismaClient();

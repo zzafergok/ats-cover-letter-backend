@@ -7,7 +7,7 @@ import { PrismaClient } from '@prisma/client';
 
 import { authenticateToken } from '../middleware/auth';
 
-import { generateCvWithClaude } from '../services/claudeService';
+import { generateCvWithClaude } from '../services/claudeService.service';
 import { generatePdf, generateDocx } from '../services/documentService.service';
 import {
   extractCvContent,
