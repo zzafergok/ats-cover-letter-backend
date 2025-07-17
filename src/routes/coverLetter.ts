@@ -3,7 +3,6 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 
 import { authenticateToken } from '../middleware/auth';
-
 import { generatePdf, generateDocx } from '../services/documentService.service';
 import { generateCoverLetterWithClaude } from '../services/claudeService.service';
 
