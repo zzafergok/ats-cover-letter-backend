@@ -1,7 +1,6 @@
-// src/app.ts
 import dotenv from 'dotenv';
 import express from 'express';
-import { apiRoutes } from './routes';
+import apiRoutes from './routes';
 import { corsMiddleware } from './middleware/cors';
 import { errorHandler } from './middleware/errorHandler';
 import { DatabaseService } from './services/database.service';
@@ -13,7 +12,6 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.set('trust proxy', true);
-
 app.use(corsMiddleware);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -48,7 +46,6 @@ app.get('/health', async (req, res) => {
 });
 
 app.use('/api', apiRoutes);
-
 app.use(errorHandler);
 
 app.use('*', (req, res) => {
