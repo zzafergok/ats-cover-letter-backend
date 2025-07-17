@@ -8,8 +8,11 @@ import { PrismaClient } from '@prisma/client';
 import { authenticateToken } from '../middleware/auth';
 
 import { generateCvWithClaude } from '../services/claudeService';
-import { generatePdf, generateDocx } from '../services/documentService';
-import { extractCvContent, convertToMarkdown } from '../services/cvService';
+import { generatePdf, generateDocx } from '../services/documentService.service';
+import {
+  extractCvContent,
+  convertToMarkdown,
+} from '../services/cvService.service';
 
 const router = express.Router();
 const prisma = new PrismaClient();

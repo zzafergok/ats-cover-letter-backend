@@ -17,7 +17,17 @@
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
     "prisma:migrate": "prisma migrate dev",
-    "db:seed": "ts-node prisma/seed.ts"
+    "db:seed": "ts-node prisma/seed.ts",
+    "db:reset": "npx prisma migrate reset --force && npm run db:seed",
+    "docs:generate": "swagger-jsdoc -d src/swagger/config.ts -o swagger-output.json src/routes/*.ts",
+    "docs:serve": "swagger-ui-serve swagger-output.json",
+    "docs:validate": "swagger-jsdoc -d src/swagger/config.ts src/routes/*.ts --validate",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "health": "curl -f http://localhost:5000/health || exit 1",
+    "docs:health": "curl -f http://localhost:5000/docs-health || exit 1"
   },
   "keywords": [],
   "author": "",
@@ -36,6 +46,8 @@
     "multer": "^2.0.1",
     "pdf-parse": "^1.1.1",
     "resend": "^4.6.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^4.0.5"
   },
   "devDependencies": {
@@ -46,9 +58,14 @@
     "@types/multer": "^2.0.0",
     "@types/node": "^24.0.14",
     "@types/pdf-parse": "^1.1.5",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@typescript-eslint/eslint-plugin": "^8.37.0",
+    "@typescript-eslint/parser": "^8.37.0",
     "prisma": "^6.12.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"
   }
 }

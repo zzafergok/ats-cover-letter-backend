@@ -1,373 +1,805 @@
-import { z } from 'zod';
-import express from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { Resend } from 'resend';
-import { PrismaClient } from '@prisma/client';
+import { Router } from 'express';
 
+import {
+  validate,
+  loginSchema,
+  registerSchema,
+  verifyEmailSchema,
+  refreshTokenSchema,
+  forgotPasswordSchema,
+  resendEmailVerificationSchema,
+  changePasswordSchema,
+  updateUserProfileSchema,
+  resetPasswordSchema,
+} from '../middleware/validation';
 import { authenticateToken } from '../middleware/auth';
+import { AuthController } from '../controllers/auth.controller';
 
-const router = express.Router();
-const prisma = new PrismaClient();
-const resend = new Resend(process.env.RESEND_API_KEY);
+const router = Router();
+const authController = new AuthController();
 
-const registerSchema = z.object({
-  email: z.string().email('Geçerli bir email adresi giriniz'),
-  password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır'),
-  firstName: z.string().min(1, 'Ad alanı zorunludur'),
-  lastName: z.string().min(1, 'Soyad alanı zorunludur'),
-});
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     LoginRequest:
+ *       type: object
+ *       required:
+ *         - email
+ *         - password
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: john.doe@example.com
+ *         password:
+ *           type: string
+ *           example: SecurePass123!
+ *
+ *     RegisterRequest:
+ *       type: object
+ *       required:
+ *         - email
+ *         - password
+ *         - name
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: john.doe@example.com
+ *         password:
+ *           type: string
+ *           minLength: 8
+ *           pattern: '^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$'
+ *           example: SecurePass123!
+ *           description: Must contain at least one letter and one number
+ *         name:
+ *           type: string
+ *           minLength: 2
+ *           maxLength: 50
+ *           example: John Doe
+ *         role:
+ *           type: string
+ *           enum: ['ADMIN', 'DEVELOPER', 'PRODUCT_OWNER', 'PROJECT_ANALYST']
+ *           example: STANDART
+ *
+ *     AuthResponse:
+ *       type: object
+ *       properties:
+ *         user:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: string
+ *               example: clxxxxx
+ *             email:
+ *               type: string
+ *               example: john.doe@example.com
+ *             name:
+ *               type: string
+ *               example: John Doe
+ *             role:
+ *               type: string
+ *               example: STANDART
+ *             emailVerified:
+ *               type: boolean
+ *               example: true
+ *         accessToken:
+ *           type: string
+ *           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *         refreshToken:
+ *           type: string
+ *           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *         expiresIn:
+ *           type: integer
+ *           example: 3600
+ *           description: Token expiration time in seconds
+ *
+ *     RefreshTokenRequest:
+ *       type: object
+ *       required:
+ *         - refreshToken
+ *       properties:
+ *         refreshToken:
+ *           type: string
+ *           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *
+ *     VerifyEmailRequest:
+ *       type: object
+ *       required:
+ *         - token
+ *       properties:
+ *         token:
+ *           type: string
+ *           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *
+ *     ForgotPasswordRequest:
+ *       type: object
+ *       required:
+ *         - email
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: john.doe@example.com
+ *
+ *     ResetPasswordRequest:
+ *       type: object
+ *       required:
+ *         - token
+ *         - newPassword
+ *         - confirmPassword
+ *       properties:
+ *         token:
+ *           type: string
+ *           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *           description: Password reset token received via email
+ *         newPassword:
+ *           type: string
+ *           minLength: 8
+ *           pattern: '^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$'
+ *           example: NewPass123!
+ *           description: New password (min 8 chars, at least one letter and number)
+ *         confirmPassword:
+ *           type: string
+ *           example: NewPass123!
+ *           description: Password confirmation (must match newPassword)
+ *
+ *     UpdateUserProfileRequest:
+ *       type: object
+ *       required:
+ *         - name
+ *         - email
+ *       properties:
+ *         name:
+ *           type: string
+ *           minLength: 2
+ *           maxLength: 50
+ *           example: John Doe
+ *         email:
+ *           type: string
+ *           format: email
+ *           maxLength: 255
+ *           example: john.doe@example.com
+ *
+ *     ChangePasswordRequest:
+ *       type: object
+ *       required:
+ *         - currentPassword
+ *         - newPassword
+ *         - confirmPassword
+ *       properties:
+ *         currentPassword:
+ *           type: string
+ *           example: OldPass123!
+ *         newPassword:
+ *           type: string
+ *           minLength: 8
+ *           pattern: '^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$'
+ *           example: NewPass123!
+ *         confirmPassword:
+ *           type: string
+ *           example: NewPass123!
+ *
+ *     UserProfile:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           example: clxxxxx
+ *         email:
+ *           type: string
+ *           example: john.doe@example.com
+ *         name:
+ *           type: string
+ *           example: John Doe
+ *         role:
+ *           type: string
+ *           example: STANDART
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: 2025-01-10T10:00:00Z
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           example: 2025-01-10T15:30:00Z
+ */
 
-const loginSchema = z.object({
-  email: z.string().email('Geçerli bir email adresi giriniz'),
-  password: z.string().min(1, 'Şifre alanı zorunludur'),
-});
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: User login
+ *     description: Authenticates a user and returns access and refresh tokens
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/AuthResponse'
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               invalidEmail:
+ *                 summary: Invalid email
+ *                 value:
+ *                   success: false
+ *                   error: "AUTH_001: Kullanıcı girişi başarısız - Email adresi bulunamadı"
+ *               invalidPassword:
+ *                 summary: Invalid password
+ *                 value:
+ *                   success: false
+ *                   error: "AUTH_002: Kullanıcı girişi başarısız - Şifre hatalı"
+ *       403:
+ *         description: Email not verified
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "AUTH_025: Giriş engellendi - Email adresinizi doğrulamanız gerekiyor"
+ */
+router.post('/login', validate(loginSchema), authController.login);
 
-const verifyEmailSchema = z.object({
-  token: z.string().min(1, "Doğrulama token'ı gereklidir"),
-});
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: User registration
+ *     description: Creates a new user account and sends email verification
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *     responses:
+ *       200:
+ *         description: Registration successful, email verification sent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         message:
+ *                           type: string
+ *                           example: Hesap oluşturuldu, email adresinizi doğrulayın
+ *                         email:
+ *                           type: string
+ *                           example: john.doe@example.com
+ *                         emailSent:
+ *                           type: boolean
+ *                           example: true
+ *       400:
+ *         description: Registration failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               duplicateEmail:
+ *                 summary: Email already exists
+ *                 value:
+ *                   success: false
+ *                   error: "AUTH_005: Bu email adresi zaten kullanımda"
+ *               roleConflict:
+ *                 summary: Role already taken
+ *                 value:
+ *                   success: false
+ *                   error: "AUTH_006: ADMIN rolü için kullanıcı zaten mevcut"
+ *               invalidFormat:
+ *                 summary: Invalid email or password format
+ *                 value:
+ *                   success: false
+ *                   error: "AUTH_025: Email adresi ve parolanızı kontrol ediniz"
+ */
+router.post('/register', validate(registerSchema), authController.register);
 
-const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token gereklidir'),
-});
+/**
+ * @swagger
+ * /auth/verify-email:
+ *   post:
+ *     summary: Verify email address
+ *     description: Verifies user email address using verification token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/VerifyEmailRequest'
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Verification failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               invalidToken:
+ *                 summary: Invalid verification token
+ *                 value:
+ *                   success: false
+ *                   error: "AUTH_018: Geçersiz email doğrulama token"
+ *               alreadyVerified:
+ *                 summary: Email already verified
+ *                 value:
+ *                   success: false
+ *                   error: "AUTH_019: Email adresi zaten doğrulanmış"
+ *               tokenExpired:
+ *                 summary: Verification token expired
+ *                 value:
+ *                   success: false
+ *                   error: "AUTH_020: Email doğrulama süresi dolmuş"
+ */
+router.post(
+  '/verify-email',
+  validate(verifyEmailSchema),
+  authController.verifyEmail
+);
 
-router.post('/register', async (req, res) => {
-  try {
-    const { email, password, firstName, lastName } = registerSchema.parse(
-      req.body
-    );
+/**
+ * @swagger
+ * /auth/resend-verification:
+ *   post:
+ *     summary: Resend email verification
+ *     description: Sends a new email verification link to the user
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: john.doe@example.com
+ *     responses:
+ *       200:
+ *         description: Verification email sent (always returns success for security)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *             example:
+ *               success: true
+ *               message: Email doğrulama bağlantısı yeniden gönderildi
+ *       400:
+ *         description: Email already verified
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "AUTH_023: Email adresi zaten doğrulanmış"
+ */
+router.post(
+  '/resend-verification',
+  validate(resendEmailVerificationSchema),
+  authController.resendEmailVerification
+);
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     description: Generates new access and refresh tokens using refresh token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshTokenRequest'
+ *     responses:
+ *       200:
+ *         description: Tokens refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/AuthResponse'
+ *       401:
+ *         description: Invalid or expired refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "AUTH_009: Token yenileme başarısız - Token doğrulama hatası"
+ */
+router.post(
+  '/refresh',
+  validate(refreshTokenSchema),
+  authController.refreshToken
+);
 
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'Bu email adresi zaten kullanılmaktadır',
-      });
-    }
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: User logout
+ *     description: Logs out the current user session
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshTokenRequest'
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *             example:
+ *               success: true
+ *               message: Başarıyla çıkış yapıldı
+ */
+router.post('/logout', validate(refreshTokenSchema), authController.logout);
 
-    const hashedPassword = await bcrypt.hash(password, 12);
-    const emailVerifyToken = jwt.sign(
-      { email, timestamp: Date.now() },
-      process.env.JWT_SECRET!,
-      { expiresIn: '24h' }
-    );
+/**
+ * @swagger
+ * /auth/logout-all:
+ *   post:
+ *     summary: Logout from all devices
+ *     description: Logs out the user from all active sessions
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logged out from all devices successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *             example:
+ *               success: true
+ *               message: Tüm cihazlardan çıkış yapıldı
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/logout-all', authenticateToken, authController.logoutAll);
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        emailVerifyToken,
-        emailVerifyExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        isEmailVerified: true,
-        role: true,
-        createdAt: true,
-      },
-    });
+/**
+ * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Forgot password
+ *     description: Sends password reset email to registered user with validation and daily rate limiting
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ForgotPasswordRequest'
+ *     responses:
+ *       200:
+ *         description: Password reset email sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *             example:
+ *               success: true
+ *               message: Şifre sıfırlama bağlantısı email adresinize gönderildi
+ *       400:
+ *         description: Email not verified
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "AUTH_034: Email adresi doğrulanmamış - Önce email doğrulaması yapmanız gerekiyor"
+ *       404:
+ *         description: Email address not found in system
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "AUTH_033: Email adresi sistemde bulunamadı - Lütfen kayıtlı email adresinizi kontrol edin"
+ *       429:
+ *         description: Daily reset limit reached
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "AUTH_037: Şifre sıfırlama günlük limitine ulaşıldı - 24 saat sonra tekrar deneyiniz"
+ *       500:
+ *         description: Internal server error
+ */
+router.post(
+  '/forgot-password',
+  validate(forgotPasswordSchema),
+  authController.forgotPassword
+);
 
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${emailVerifyToken}`;
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     summary: Reset password with token
+ *     description: Resets user password using the token received via email with daily rate limiting
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ResetPasswordRequest'
+ *     responses:
+ *       200:
+ *         description: Password reset successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *             example:
+ *               success: true
+ *               message: Şifre başarıyla sıfırlandı
+ *       400:
+ *         description: Invalid or expired token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               invalidToken:
+ *                 summary: Invalid reset token
+ *                 value:
+ *                   success: false
+ *                   error: "AUTH_035: Geçersiz şifre sıfırlama token"
+ *               expiredToken:
+ *                 summary: Expired reset token
+ *                 value:
+ *                   success: false
+ *                   error: "AUTH_036: Şifre sıfırlama süresi dolmuş"
+ *       429:
+ *         description: Daily reset limit reached
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "AUTH_037: Şifre sıfırlama günlük limitine ulaşıldı"
+ *       500:
+ *         description: Internal server error
+ */
+router.post(
+  '/reset-password',
+  validate(resetPasswordSchema),
+  authController.resetPassword
+);
 
-    await resend.emails.send({
-      from: 'ATS CV Generator <noreply@example.com>',
-      to: email,
-      subject: 'Email Adresinizi Doğrulayın',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Hoş Geldiniz ${firstName}!</h2>
-          <p>ATS CV Generator platformuna kayıt olduğunuz için teşekkür ederiz.</p>
-          <p>Hesabınızı aktif hale getirmek için aşağıdaki bağlantıya tıklayın:</p>
-          <a href="${verificationUrl}" style="display: inline-block; padding: 12px 24px; background-color: #3B82F6; color: white; text-decoration: none; border-radius: 8px; margin: 16px 0;">
-            Email Adresimi Doğrula
-          </a>
-          <p>Bu bağlantı 24 saat boyunca geçerlidir.</p>
-          <p>Eğer bu hesabı siz oluşturmadıysanız, bu emaili görmezden gelebilirsiniz.</p>
-        </div>
-      `,
-    });
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get current user profile
+ *     description: Retrieves the authenticated user's profile information
+ *     tags: [User Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/UserProfile'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "AUTH_013: Kullanıcı bilgisi bulunamadı"
+ */
+router.get('/me', authenticateToken, authController.getCurrentUser);
 
-    return res.status(201).json({
-      success: true,
-      message:
-        'Hesap başarıyla oluşturuldu. Email adresinize doğrulama bağlantısı gönderildi.',
-      user,
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        message: 'Geçersiz veri',
-        errors: error.issues.map((err) => ({
-          field: err.path.join('.'),
-          message: err.message,
-        })),
-      });
-    }
+/**
+ * @swagger
+ * /auth/profile:
+ *   put:
+ *     summary: Update user profile
+ *     description: Updates the authenticated user's profile information
+ *     tags: [User Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateUserProfileRequest'
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/UserProfile'
+ *       400:
+ *         description: Email already in use
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: "AUTH_028: Bu email adresi başka bir kullanıcı tarafından kullanılmaktadır"
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
+router.put(
+  '/profile',
+  authenticateToken,
+  validate(updateUserProfileSchema),
+  authController.updateUserProfile
+);
 
-    console.error('Kayıt hatası:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Sunucu hatası oluştu',
-    });
-  }
-});
+/**
+ * @swagger
+ * /auth/change-password:
+ *   put:
+ *     summary: Change password
+ *     description: Changes the authenticated user's password
+ *     tags: [User Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ChangePasswordRequest'
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *             example:
+ *               success: true
+ *               message: Şifre başarıyla değiştirildi
+ *       400:
+ *         description: Invalid current password or validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               invalidCurrentPassword:
+ *                 summary: Current password is incorrect
+ *                 value:
+ *                   success: false
+ *                   error: "AUTH_031: Mevcut şifre hatalı"
+ *               passwordMismatch:
+ *                 summary: New passwords don't match
+ *                 value:
+ *                   success: false
+ *                   error: "VALID_001: Giriş doğrulama hatası - Yeni şifre ve şifre tekrarı eşleşmiyor"
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
+router.put(
+  '/change-password',
+  authenticateToken,
+  validate(changePasswordSchema),
+  authController.changePassword
+);
 
-router.post('/verify-email', async (req, res) => {
-  try {
-    const { token } = verifyEmailSchema.parse(req.body);
+/**
+ * @swagger
+ * /auth/sessions:
+ *   get:
+ *     summary: Get user sessions
+ *     description: Retrieves all active sessions for the authenticated user
+ *     tags: [User Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Sessions retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                       example: []
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/sessions', authenticateToken, authController.getSessions);
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-
-    const user = await prisma.user.findFirst({
-      where: {
-        email: decoded.email,
-        emailVerifyToken: token,
-        emailVerifyExpires: {
-          gt: new Date(),
-        },
-      },
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: "Geçersiz veya süresi dolmuş doğrulama token'ı",
-      });
-    }
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        isEmailVerified: true,
-        emailVerifyToken: null,
-        emailVerifyExpires: null,
-      },
-    });
-
-    return res.json({
-      success: true,
-      message: 'Email adresi başarıyla doğrulandı',
-    });
-  } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(400).json({
-        success: false,
-        message: "Geçersiz doğrulama token'ı",
-      });
-    }
-
-    console.error('Email doğrulama hatası:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Sunucu hatası oluştu',
-    });
-  }
-});
-
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = loginSchema.parse(req.body);
-
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Geçersiz email veya şifre',
-      });
-    }
-
-    if (!user.isEmailVerified) {
-      return res.status(401).json({
-        success: false,
-        message:
-          'Email adresi doğrulanmamış. Lütfen önce email adresinizi doğrulayın.',
-      });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Geçersiz email veya şifre',
-      });
-    }
-
-    const accessToken = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET!,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
-    );
-
-    const refreshToken = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_REFRESH_SECRET!,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
-    );
-
-    await prisma.refreshToken.create({
-      data: {
-        token: refreshToken,
-        userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      },
-    });
-
-    const {
-      password: _,
-      emailVerifyToken,
-      emailVerifyExpires,
-      ...userResponse
-    } = user;
-
-    return res.json({
-      success: true,
-      message: 'Giriş başarılı',
-      accessToken,
-      refreshToken,
-      user: userResponse,
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        message: 'Geçersiz veri',
-        errors: error.issues.map((err) => ({
-          field: err.path.join('.'),
-          message: err.message,
-        })),
-      });
-    }
-
-    console.error('Giriş hatası:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Sunucu hatası oluştu',
-    });
-  }
-});
-
-router.post('/refresh', async (req, res) => {
-  try {
-    const { refreshToken } = refreshTokenSchema.parse(req.body);
-
-    const tokenRecord = await prisma.refreshToken.findUnique({
-      where: { token: refreshToken },
-      include: { user: true },
-    });
-
-    if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Geçersiz veya süresi dolmuş refresh token',
-      });
-    }
-
-    let decoded;
-    try {
-      decoded = jwt.verify(
-        refreshToken,
-        process.env.JWT_REFRESH_SECRET!
-      ) as any;
-    } catch (err) {
-      return res.status(401).json({
-        success: false,
-        message: 'Geçersiz refresh token',
-      });
-    }
-
-    const newAccessToken = jwt.sign(
-      {
-        userId: decoded.userId,
-        email: tokenRecord.user.email,
-        role: tokenRecord.user.role,
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
-    );
-
-    return res.json({
-      success: true,
-      accessToken: newAccessToken,
-    });
-  } catch (error) {
-    console.error('Token yenileme hatası:', error);
-    return res.status(401).json({
-      success: false,
-      message: 'Token yenilenemedi',
-    });
-  }
-});
-
-router.post('/logout', authenticateToken, async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.split(' ')[1];
-
-    if (req.body.refreshToken) {
-      await prisma.refreshToken.deleteMany({
-        where: { token: req.body.refreshToken },
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Çıkış başarılı',
-    });
-  } catch (error) {
-    console.error('Çıkış hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Sunucu hatası oluştu',
-    });
-  }
-});
-
-router.get('/me', authenticateToken, async (req, res) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.userId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        isEmailVerified: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'Kullanıcı bulunamadı',
-      });
-    }
-
-    return res.json({
-      success: true,
-      user,
-    });
-  } catch (error) {
-    console.error('Profil getirme hatası:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Sunucu hatası oluştu',
-    });
-  }
-});
-
-export default router;
+export { router as authRoutes };
