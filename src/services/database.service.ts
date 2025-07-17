@@ -168,14 +168,14 @@ export class DatabaseService {
     try {
       const emailResult = await this.prisma.user.updateMany({
         where: {
-          emailVerifyExpiry: {
+          emailVerifyExpires: {
             lt: new Date(),
           },
-          emailVerified: false,
+          isEmailVerified: false,
         },
         data: {
           emailVerifyToken: null,
-          emailVerifyExpiry: null,
+          emailVerifyExpires: null,
         },
       });
 
@@ -198,12 +198,11 @@ export class DatabaseService {
 
   public async deleteUnverifiedUsers(): Promise<number> {
     try {
-      // 24 saatten eski doğrulanmamış kullanıcıları sil
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
       const result = await this.prisma.user.deleteMany({
         where: {
-          emailVerified: false,
+          isEmailVerified: false,
           createdAt: {
             lt: oneDayAgo,
           },
@@ -229,13 +228,13 @@ export class DatabaseService {
     try {
       const result = await this.prisma.user.updateMany({
         where: {
-          passwordResetExpiry: {
+          createdAt: {
             lt: new Date(),
           },
         },
         data: {
-          passwordResetToken: null,
-          passwordResetExpiry: null,
+          emailVerifyToken: null,
+          emailVerifyExpires: null,
         },
       });
 

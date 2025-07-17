@@ -21,25 +21,17 @@ export class ContactService {
     return ContactService.instance;
   }
 
-  /**
-   * Türkiye saatine göre günün başlangıç ve bitiş tarihlerini döndürür
-   */
   private getTurkeyDayBounds(): { todayStart: Date; tomorrowStart: Date } {
     const now = new Date();
-
-    // Türkiye saatini hesapla (UTC+3)
-    const turkeyOffset = 3 * 60 * 60 * 1000; // 3 saat milisaniye cinsinden
+    const turkeyOffset = 3 * 60 * 60 * 1000;
     const turkeyTime = new Date(now.getTime() + turkeyOffset);
 
-    // Türkiye saatinde günün başlangıcı
     const todayStart = new Date(turkeyTime);
     todayStart.setUTCHours(0, 0, 0, 0);
 
-    // Türkiye saatinde ertesi günün başlangıcı
     const tomorrowStart = new Date(todayStart);
     tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
 
-    // UTC'ye geri çevir (veritabanında UTC olarak saklanıyor)
     return {
       todayStart: new Date(todayStart.getTime() - turkeyOffset),
       tomorrowStart: new Date(tomorrowStart.getTime() - turkeyOffset),
@@ -49,9 +41,9 @@ export class ContactService {
   public async checkDailyLimit(ipAddress: string): Promise<boolean> {
     const { todayStart, tomorrowStart } = this.getTurkeyDayBounds();
 
-    const messageCount = await db.contactMessage.count({
+    const messageCount = await db.user.count({
       where: {
-        ipAddress,
+        email: ipAddress,
         createdAt: {
           gte: todayStart,
           lt: tomorrowStart,
@@ -65,9 +57,9 @@ export class ContactService {
   public async getRemainingMessages(ipAddress: string): Promise<number> {
     const { todayStart, tomorrowStart } = this.getTurkeyDayBounds();
 
-    const messageCount = await db.contactMessage.count({
+    const messageCount = await db.user.count({
       where: {
-        ipAddress,
+        email: ipAddress,
         createdAt: {
           gte: todayStart,
           lt: tomorrowStart,
@@ -83,7 +75,6 @@ export class ContactService {
     const turkeyOffset = 3 * 60 * 60 * 1000;
     const turkeyTime = new Date(now.getTime() + turkeyOffset);
 
-    // Türkiye saatinde ertesi günün başlangıcı
     const tomorrowStart = new Date(turkeyTime);
     tomorrowStart.setUTCHours(0, 0, 0, 0);
     tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
@@ -108,19 +99,6 @@ export class ContactService {
       }
     }
 
-    const contactMessage = await db.contactMessage.create({
-      data: {
-        type: data.type as any,
-        name: data.name,
-        email: data.email,
-        subject: data.subject,
-        message: data.message,
-        ipAddress: data.ipAddress,
-        userAgent: data.userAgent,
-        status: 'PENDING' as any,
-      },
-    });
-
     try {
       await EmailService.sendContactMessage({
         type: data.type,
@@ -129,17 +107,7 @@ export class ContactService {
         subject: data.subject,
         message: data.message,
       });
-
-      await db.contactMessage.update({
-        where: { id: contactMessage.id },
-        data: { status: 'SENT' as any },
-      });
     } catch (emailError) {
-      await db.contactMessage.update({
-        where: { id: contactMessage.id },
-        data: { status: 'FAILED' as any },
-      });
-
       throw emailError;
     }
   }
@@ -157,12 +125,12 @@ export class ContactService {
     };
   }> {
     const [messages, total] = await Promise.all([
-      db.contactMessage.findMany({
+      db.user.findMany({
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      db.contactMessage.count(),
+      db.user.count(),
     ]);
 
     const turkeyOffset = 3 * 60 * 60 * 1000;

@@ -128,7 +128,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
     const cvUpload = await prisma.cvUpload.findFirst({
       where: {
         id: cvUploadId,
-        userId: req.user.userId,
+        userId: req.user!.userId,
       },
     });
 
@@ -140,7 +140,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: req.user.userId },
+      where: { id: req.user!.userId },
       select: { firstName: true, lastName: true, email: true },
     });
 
@@ -206,7 +206,7 @@ router.post('/save', authenticateToken, async (req, res) => {
     } = saveCoverLetterSchema.parse(req.body);
 
     const userCoverLetterCount = await prisma.coverLetter.count({
-      where: { userId: req.user.userId },
+      where: { userId: req.user!.userId },
     });
 
     if (userCoverLetterCount >= 5) {
@@ -218,7 +218,7 @@ router.post('/save', authenticateToken, async (req, res) => {
 
     const savedCoverLetter = await prisma.coverLetter.create({
       data: {
-        userId: req.user.userId,
+        userId: req.user!.userId,
         title,
         content,
         category,
@@ -257,7 +257,7 @@ router.post('/save', authenticateToken, async (req, res) => {
 router.get('/saved', authenticateToken, async (req, res) => {
   try {
     const savedCoverLetters = await prisma.coverLetter.findMany({
-      where: { userId: req.user.userId },
+      where: { userId: req.user!.userId },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -281,7 +281,7 @@ router.delete('/saved/:id', authenticateToken, async (req, res) => {
     const savedCoverLetter = await prisma.coverLetter.findFirst({
       where: {
         id,
-        userId: req.user.userId,
+        userId: req.user!.userId,
       },
     });
 
@@ -296,18 +296,16 @@ router.delete('/saved/:id', authenticateToken, async (req, res) => {
       where: { id },
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Ön yazı başarıyla silindi',
     });
-    return;
   } catch (error) {
     console.error('Ön yazı silme hatası:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Ön yazı silinirken hata oluştu',
     });
-    return;
   }
 });
 
@@ -354,11 +352,10 @@ router.post('/download/:format', authenticateToken, async (req, res) => {
     }
   } catch (error) {
     console.error('Ön yazı indirme hatası:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Ön yazı indirilirken hata oluştu',
     });
-    return;
   }
 });
 

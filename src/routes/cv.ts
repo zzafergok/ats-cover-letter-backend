@@ -80,7 +80,7 @@ router.post(
 
       const cvUpload = await prisma.cvUpload.create({
         data: {
-          userId: req.user.userId,
+          userId: req.user!.userId,
           fileName: req.file.filename,
           originalName: req.file.originalname,
           filePath: req.file.path,
@@ -124,7 +124,7 @@ router.post(
 router.get('/uploads', authenticateToken, async (req, res) => {
   try {
     const cvUploads = await prisma.cvUpload.findMany({
-      where: { userId: req.user.userId },
+      where: { userId: req.user!.userId },
       orderBy: { uploadDate: 'desc' },
       select: {
         id: true,
@@ -169,7 +169,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
     const cvUpload = await prisma.cvUpload.findFirst({
       where: {
         id: cvUploadId,
-        userId: req.user.userId,
+        userId: req.user!.userId,
       },
     });
 
@@ -225,7 +225,7 @@ router.post('/save', authenticateToken, async (req, res) => {
     const { title, content, cvType } = saveCvSchema.parse(req.body);
 
     const userCvCount = await prisma.savedCv.count({
-      where: { userId: req.user.userId },
+      where: { userId: req.user!.userId },
     });
 
     if (userCvCount >= 5) {
@@ -237,7 +237,7 @@ router.post('/save', authenticateToken, async (req, res) => {
 
     const savedCv = await prisma.savedCv.create({
       data: {
-        userId: req.user.userId,
+        userId: req.user!.userId,
         title,
         content,
         cvType,
@@ -272,7 +272,7 @@ router.post('/save', authenticateToken, async (req, res) => {
 router.get('/saved', authenticateToken, async (req, res) => {
   try {
     const savedCvs = await prisma.savedCv.findMany({
-      where: { userId: req.user.userId },
+      where: { userId: req.user!.userId },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -296,7 +296,7 @@ router.delete('/saved/:id', authenticateToken, async (req, res) => {
     const savedCv = await prisma.savedCv.findFirst({
       where: {
         id,
-        userId: req.user.userId,
+        userId: req.user!.userId,
       },
     });
 
