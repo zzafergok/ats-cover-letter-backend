@@ -5,7 +5,7 @@ const anthropic = new Anthropic({
 });
 
 interface CvGenerationParams {
-  originalCvContent: string;
+  parsedCvData: any;
   positionTitle: string;
   companyName: string;
   cvType: 'ATS_OPTIMIZED' | 'CREATIVE' | 'TECHNICAL';
@@ -30,7 +30,7 @@ export async function generateCvWithClaude(
   params: CvGenerationParams
 ): Promise<string> {
   const {
-    originalCvContent,
+    parsedCvData,
     positionTitle,
     companyName,
     cvType,
@@ -47,7 +47,6 @@ export async function generateCvWithClaude(
       - Standart bölüm başlıkları kullan (Deneyim, Eğitim, Beceriler)
       - Ölçülebilir başarıları vurgula
       - Tablolar, grafikler kullanma
-      - .docx formatında okunabilir olsun
     `,
     CREATIVE: `
       Yaratıcı ve göze çarpan CV oluştur. Özellikler:
@@ -65,13 +64,57 @@ export async function generateCvWithClaude(
     `,
   };
 
+  const structuredCvData = `
+    Kişisel Bilgiler:
+    - Ad Soyad: ${parsedCvData.personalInfo.fullName || 'Belirtilmemiş'}
+    - Email: ${parsedCvData.personalInfo.email || 'Belirtilmemiş'}
+    - Telefon: ${parsedCvData.personalInfo.phone || 'Belirtilmemiş'}
+    - LinkedIn: ${parsedCvData.personalInfo.linkedin || 'Belirtilmemiş'}
+    - GitHub: ${parsedCvData.personalInfo.github || 'Belirtilmemiş'}
+
+    Profesyonel Özet:
+    ${parsedCvData.summary || 'Belirtilmemiş'}
+
+    Deneyimler:
+    ${parsedCvData.experience
+      .map(
+        (exp: any) => `
+    - Pozisyon: ${exp.title || 'Belirtilmemiş'}
+    - Şirket: ${exp.company || 'Belirtilmemiş'}
+    - Süre: ${exp.duration || 'Belirtilmemiş'}
+    - Açıklama: ${exp.description || 'Belirtilmemiş'}
+    `
+      )
+      .join('\n')}
+
+    Eğitim:
+    ${parsedCvData.education
+      .map(
+        (edu: any) => `
+    - Derece: ${edu.degree || 'Belirtilmemiş'}
+    - Kurum: ${edu.institution || 'Belirtilmemiş'}
+    - Yıl: ${edu.year || 'Belirtilmemiş'}
+    `
+      )
+      .join('\n')}
+
+    Beceriler:
+    ${parsedCvData.skills.join(', ')}
+
+    Diller:
+    ${parsedCvData.languages.map((lang: any) => `${lang.language} (${lang.level || 'Seviye belirtilmemiş'})`).join(', ')}
+
+    Sertifikalar:
+    ${parsedCvData.certifications.join(', ')}
+  `;
+
   const prompt = `
     Sen profesyonel bir CV yazma uzmanısın. Aşağıdaki bilgileri kullanarak ${positionTitle} pozisyonu için ${companyName} şirketine başvuru yapacak bir kişi için ${cvType} tipinde CV oluştur.
 
     ${cvTypeInstructions[cvType]}
 
-    Mevcut CV İçeriği:
-    ${originalCvContent}
+    Mevcut CV Verisi:
+    ${structuredCvData}
 
     Pozisyon: ${positionTitle}
     Şirket: ${companyName}
@@ -80,7 +123,7 @@ export async function generateCvWithClaude(
     ${targetKeywords?.length ? `Hedef Anahtar Kelimeler: ${targetKeywords.join(', ')}` : ''}
 
     Lütfen aşağıdaki kurallara uy:
-    1. Mevcut CV'deki bilgileri analiz et ve pozisyona uygun şekilde düzenle
+    1. Verilen CV datasındaki bilgileri analiz et ve pozisyona uygun şekilde düzenle
     2. İş tanımındaki anahtar kelimeleri doğal bir şekilde yerleştir
     3. Türkçe bir CV oluştur
     4. Deneyimleri ölçülebilir başarılarla destekle
@@ -94,7 +137,7 @@ export async function generateCvWithClaude(
     ## Deneyim
     ## Eğitim
     ## Beceriler
-    ## Projeler
+    ## Diller
     ## Sertifikalar (varsa)
   `;
 

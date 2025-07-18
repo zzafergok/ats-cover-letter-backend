@@ -8,7 +8,9 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 
 import { authenticateToken } from '../middleware/auth';
+import { CVParserService } from '../services/cvParser.service';
 import { generateCvWithClaude } from '../services/claudeService.service';
+import { FileCompressionService } from '../services/fileCompression.service';
 import { generatePdf, generateDocx } from '../services/documentService.service';
 import {
   extractCvContent,
@@ -36,14 +38,16 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 1,
+  },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /\.(pdf|doc|docx)$/i;
-    if (allowedTypes.test(file.originalname)) {
+    if (file.mimetype === 'application/pdf') {
       cb(null, true);
     } else {
-      cb(new Error('Sadece PDF, DOC ve DOCX dosyaları kabul edilir'));
+      cb(new Error('Sadece PDF dosyaları kabul edilir'));
     }
   },
 });
@@ -53,7 +57,7 @@ router.post(
   authenticateToken,
   upload.single('cvFile'),
   async (req, res) => {
-    let uploadedFilePath: string | null = null;
+    let tempFilePath: string | null = null;
 
     try {
       if (!req.file) {
@@ -63,47 +67,89 @@ router.post(
         });
       }
 
-      uploadedFilePath = req.file.path;
-      const extractedText = await extractCvContent(uploadedFilePath);
-      const markdownContent = await convertToMarkdown(extractedText);
+      const userCvCount = await prisma.cvUpload.count({
+        where: { userId: req.user!.userId },
+      });
+
+      if (userCvCount >= 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'Maksimum 5 PDF yükleyebilirsiniz',
+        });
+      }
+
+      // Geçici dosya oluştur
+      tempFilePath = path.join(
+        'uploads',
+        'temp',
+        `${Date.now()}-${req.file.originalname}`
+      );
+      const tempDir = path.dirname(tempFilePath);
+
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      fs.writeFileSync(tempFilePath, req.file.buffer);
+
+      const cvParser = CVParserService.getInstance();
+      const compressionService = FileCompressionService.getInstance();
+
+      const parsedData = await cvParser.parsePDF(tempFilePath);
+
+      const fileBuffer = req.file.buffer;
+      const originalSize = fileBuffer.length;
+
+      const compressedBuffer =
+        await compressionService.compressFile(fileBuffer);
+      const compressedSize = compressedBuffer.length;
+      const compressionRatio = compressionService.calculateCompressionRatio(
+        originalSize,
+        compressedSize
+      );
 
       const cvUpload = await prisma.cvUpload.create({
         data: {
           userId: req.user!.userId,
-          fileName: req.file.filename,
+          fileName: req.file.originalname,
           originalName: req.file.originalname,
-          filePath: 'processed',
-          markdownContent,
-          extractedData: {
-            fileType: path.extname(req.file.originalname).toLowerCase(),
-            fileSize: req.file.size,
-            processedAt: new Date().toISOString(),
-          },
+          fileData: compressedBuffer,
+          originalSize,
+          compressedSize,
+          compressionRatio,
+          extractedData: parsedData as any, // Prisma JsonValue tip uyumu için
         },
       });
 
-      if (uploadedFilePath && fs.existsSync(uploadedFilePath)) {
-        fs.unlinkSync(uploadedFilePath);
+      // Geçici dosyayı temizle
+      if (tempFilePath && fs.existsSync(tempFilePath)) {
+        fs.unlinkSync(tempFilePath);
       }
 
       return res.json({
         success: true,
-        message: 'CV başarıyla yüklendi ve işlendi',
+        message: 'CV başarıyla yüklendi ve analiz edildi',
         data: {
           id: cvUpload.id,
           originalName: cvUpload.originalName,
-          markdownContent: cvUpload.markdownContent,
+          parsedData,
           uploadDate: cvUpload.uploadDate,
+          compressionInfo: {
+            originalSize: `${(originalSize / 1024).toFixed(2)} KB`,
+            compressedSize: `${(compressedSize / 1024).toFixed(2)} KB`,
+            compressionRatio: `${compressionRatio.toFixed(2)}%`,
+          },
         },
       });
     } catch (error) {
       console.error('CV yükleme hatası:', error);
 
-      if (uploadedFilePath && fs.existsSync(uploadedFilePath)) {
+      // Geçici dosyayı temizle
+      if (tempFilePath && fs.existsSync(tempFilePath)) {
         try {
-          fs.unlinkSync(uploadedFilePath);
+          fs.unlinkSync(tempFilePath);
         } catch (unlinkError) {
-          console.error('Dosya silme hatası:', unlinkError);
+          console.error('Geçici dosya silme hatası:', unlinkError);
         }
       }
 
@@ -124,13 +170,39 @@ router.get('/uploads', authenticateToken, async (req, res) => {
         id: true,
         originalName: true,
         uploadDate: true,
-        markdownContent: true,
+        extractedData: true,
+        originalSize: true,
+        compressedSize: true,
+        compressionRatio: true,
       },
     });
 
+    const uploadsWithInfo = cvUploads.map((upload) => ({
+      id: upload.id,
+      originalName: upload.originalName,
+      uploadDate: upload.uploadDate,
+      parsedData: upload.extractedData,
+      sizeInfo: {
+        originalSize: upload.originalSize
+          ? `${(upload.originalSize / 1024).toFixed(2)} KB`
+          : null,
+        compressedSize: upload.compressedSize
+          ? `${(upload.compressedSize / 1024).toFixed(2)} KB`
+          : null,
+        compressionRatio: upload.compressionRatio
+          ? `${upload.compressionRatio.toFixed(2)}%`
+          : null,
+      },
+    }));
+
     res.json({
       success: true,
-      data: cvUploads,
+      data: uploadsWithInfo,
+      uploadLimit: {
+        current: cvUploads.length,
+        maximum: 5,
+        remaining: 5 - cvUploads.length,
+      },
     });
   } catch (error) {
     console.error('CV listesi getirme hatası:', error);
@@ -155,7 +227,7 @@ router.delete('/uploads/:id', authenticateToken, async (req, res) => {
     if (!cvUpload) {
       return res.status(404).json({
         success: false,
-        message: 'CV yüklemesi bulunamadı',
+        message: 'CV bulunamadı',
       });
     }
 
@@ -165,13 +237,13 @@ router.delete('/uploads/:id', authenticateToken, async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'CV yüklemesi başarıyla silindi',
+      message: 'CV başarıyla silindi',
     });
   } catch (error) {
-    console.error('CV yükleme silme hatası:', error);
+    console.error('CV silme hatası:', error);
     return res.status(500).json({
       success: false,
-      message: 'CV yüklemesi silinirken hata oluştu',
+      message: 'CV silinirken hata oluştu',
     });
   }
 });
@@ -215,9 +287,12 @@ router.post('/generate', authenticateToken, async (req, res) => {
         id: cvUploadId,
         userId: req.user!.userId,
       },
+      select: {
+        extractedData: true,
+      },
     });
 
-    if (!cvUpload) {
+    if (!cvUpload || !cvUpload.extractedData) {
       return res.status(404).json({
         success: false,
         message: 'CV verisi bulunamadı',
@@ -225,7 +300,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
     }
 
     const generatedCv = await generateCvWithClaude({
-      originalCvContent: cvUpload.markdownContent!,
+      parsedCvData: cvUpload.extractedData,
       positionTitle,
       companyName,
       cvType,
@@ -368,45 +443,42 @@ router.delete('/saved/:id', authenticateToken, async (req, res) => {
   }
 });
 
-router.post('/download/:format', authenticateToken, async (req, res) => {
+router.get('/download/:id', authenticateToken, async (req, res) => {
   try {
-    const { format } = req.params;
-    const { content, fileName } = req.body;
+    const { id } = req.params;
 
-    if (!content) {
-      return res.status(400).json({
+    const cvUpload = await prisma.cvUpload.findFirst({
+      where: {
+        id,
+        userId: req.user!.userId,
+      },
+    });
+
+    if (!cvUpload) {
+      return res.status(404).json({
         success: false,
-        message: 'CV içeriği gereklidir',
+        message: 'CV bulunamadı',
       });
     }
 
-    const safeFileName = fileName || 'cv';
-
-    if (format === 'pdf') {
-      const pdfBuffer = await generatePdf(content);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${safeFileName}.pdf"`
-      );
-      return res.send(pdfBuffer);
-    } else if (format === 'docx') {
-      const docxBuffer = await generateDocx(content);
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      );
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${safeFileName}.docx"`
-      );
-      return res.send(docxBuffer);
-    } else {
-      return res.status(400).json({
+    if (!cvUpload.fileData) {
+      return res.status(404).json({
         success: false,
-        message: 'Desteklenen formatlar: pdf, docx',
+        message: 'PDF dosyası veritabanında bulunamadı',
       });
     }
+
+    const compressionService = FileCompressionService.getInstance();
+    const decompressedBuffer = await compressionService.decompressFile(
+      Buffer.from(cvUpload.fileData)
+    );
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${cvUpload.originalName}"`
+    );
+    return res.send(decompressedBuffer);
   } catch (error) {
     console.error('CV indirme hatası:', error);
     return res.status(500).json({
