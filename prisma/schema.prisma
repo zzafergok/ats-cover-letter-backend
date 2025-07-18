@@ -41,14 +41,18 @@ model RefreshToken {
 }
 
 model CvUpload {
-  id             String       @id @default(cuid())
-  userId         String       @map("user_id")
-  fileName       String       @map("file_name")
-  originalName   String       @map("original_name")
-  filePath       String       @map("file_path")
-  markdownContent String?     @map("markdown_content")
-  extractedData  Json?        @map("extracted_data")
-  uploadDate     DateTime     @default(now()) @map("upload_date")
+  id               String       @id @default(cuid())
+  userId           String       @map("user_id")
+  fileName         String       @map("file_name")
+  originalName     String       @map("original_name")
+  filePath         String?      @map("file_path")  // Optional yap
+  markdownContent  String?      @map("markdown_content")
+  extractedData    Json?        @map("extracted_data")
+  fileData         Bytes?       @map("file_data")
+  originalSize     Int?         @map("original_size")
+  compressedSize   Int?         @map("compressed_size")
+  compressionRatio Float?       @map("compression_ratio")
+  uploadDate       DateTime     @default(now()) @map("upload_date")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

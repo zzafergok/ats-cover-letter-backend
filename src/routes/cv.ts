@@ -63,35 +63,14 @@ router.post(
   upload.single('cvFile'),
   async (req, res) => {
     try {
-      console.log('Request headers:', req.headers);
-      console.log('Request file:', req.file);
-      console.log('Request body:', req.body);
-      console.log('Files uploaded:', req.files);
-
       if (!req.file) {
-        console.log('No file received in request');
         return res.status(400).json({
           success: false,
           message: 'CV dosyası yüklenmedi',
-          debug: {
-            headers: req.headers,
-            hasFile: !!req.file,
-            fileSize: req.file?.size || 0,
-          },
         });
       }
 
-      console.log('File details:', {
-        originalName: req.file.originalname,
-        filename: req.file.filename,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
-        path: req.file.path,
-      });
-
-      // Dosya boyutu kontrolü
       if (req.file.size === 0) {
-        console.log('File size is zero');
         fs.unlinkSync(req.file.path);
         return res.status(400).json({
           success: false,
@@ -99,7 +78,6 @@ router.post(
         });
       }
 
-      // Dosya tipi kontrolü
       const allowedMimeTypes = [
         'application/pdf',
         'application/msword',
@@ -117,7 +95,6 @@ router.post(
 
       const extractedText = await extractCvContent(req.file.path);
 
-      // Metin içeriği kontrolü
       if (!extractedText || extractedText.trim().length < 10) {
         fs.unlinkSync(req.file.path);
         return res.status(400).json({
@@ -133,6 +110,15 @@ router.post(
       const sections = extractSections(cleanedText);
       const keywords = extractKeywords(cleanedText);
       const metadata = generateDocumentMetadata(req.file.path, cleanedText);
+
+      const fileBuffer = fs.readFileSync(req.file.path);
+      const compressionService = FileCompressionService.getInstance();
+      const compressedBuffer =
+        await compressionService.compressFile(fileBuffer);
+      const compressionRatio = compressionService.calculateCompressionRatio(
+        fileBuffer.length,
+        compressedBuffer.length
+      );
 
       const cvUpload = await prisma.cvUpload.create({
         data: {
@@ -150,24 +136,76 @@ router.post(
             metadata,
             uploadTime: new Date().toISOString(),
           },
+          fileData: compressedBuffer,
+          originalSize: fileBuffer.length,
+          compressedSize: compressedBuffer.length,
+          compressionRatio,
         },
       });
+
+      fs.unlinkSync(req.file.path);
+
+      const responseData = {
+        id: cvUpload.id,
+        fileInfo: {
+          originalName: cvUpload.originalName,
+          fileType: metadata.fileType,
+          uploadDate: cvUpload.uploadDate,
+          sizeInfo: {
+            original: `${(cvUpload.originalSize / 1024).toFixed(2)} KB`,
+            compressed: `${(cvUpload.compressedSize / 1024).toFixed(2)} KB`,
+            compressionRatio: `${compressionRatio.toFixed(2)}%`,
+          },
+        },
+        personalInfo: {
+          name: contactInfo.name || 'Belirtilmemiş',
+          email: contactInfo.email || 'Belirtilmemiş',
+          phone: contactInfo.phone || 'Belirtilmemiş',
+          linkedin: contactInfo.linkedin || null,
+          website: contactInfo.website || null,
+          address: contactInfo.address || null,
+        },
+        contentAnalysis: {
+          wordCount: metadata.wordCount,
+          characterCount: metadata.characterCount,
+          estimatedPages: metadata.pageEstimate,
+          sectionsFound: sections.map((section) => ({
+            title: section.title,
+            contentLength: section.content.length,
+          })),
+        },
+        skillsAndKeywords: {
+          technicalSkills: keywords.technical,
+          softSkills: keywords.soft,
+          languageDetected: {
+            turkish: keywords.turkish.length > 0,
+            english: keywords.english.length > 0,
+          },
+          topKeywords: [...keywords.technical, ...keywords.soft].slice(0, 10),
+        },
+        processedContent: {
+          markdownVersion: markdownContent,
+          sections: sections.map((section) => ({
+            title: section.title,
+            preview: section.content.slice(0, 2).join(' '),
+          })),
+        },
+        status: {
+          success: true,
+          message: 'CV başarıyla yüklendi ve analiz edildi',
+          processingTime: new Date().toISOString(),
+        },
+      };
 
       return res.json({
         success: true,
         message: 'CV başarıyla yüklendi ve işlendi',
-        data: {
-          id: cvUpload.id,
-          originalName: cvUpload.originalName,
-          markdownContent: cvUpload.markdownContent,
-          extractedData: cvUpload.extractedData,
-          uploadDate: cvUpload.uploadDate,
-        },
+        data: responseData,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('CV yükleme hatası:', error);
 
-      if (req.file) {
+      if (req.file && fs.existsSync(req.file.path)) {
         try {
           fs.unlinkSync(req.file.path);
         } catch (unlinkError) {
@@ -178,6 +216,8 @@ router.post(
       return res.status(500).json({
         success: false,
         message: 'CV işlenirken hata oluştu',
+        error:
+          process.env.NODE_ENV === 'development' ? error.message : undefined,
       });
     }
   }
@@ -223,7 +263,7 @@ router.get('/uploads', authenticateToken, async (req, res) => {
       uploadLimit: {
         current: cvUploads.length,
         maximum: 5,
-        remaining: 5 - cvUploads.length,
+        remaining: Math.max(0, 5 - cvUploads.length),
       },
     });
   } catch (error) {
@@ -486,7 +526,7 @@ router.get('/download/:id', authenticateToken, async (req, res) => {
     if (!cvUpload.fileData) {
       return res.status(404).json({
         success: false,
-        message: 'PDF dosyası veritabanında bulunamadı',
+        message: 'CV dosyası veritabanında bulunamadı',
       });
     }
 
@@ -495,7 +535,19 @@ router.get('/download/:id', authenticateToken, async (req, res) => {
       Buffer.from(cvUpload.fileData)
     );
 
-    res.setHeader('Content-Type', 'application/pdf');
+    const fileExtension = path.extname(cvUpload.originalName).toLowerCase();
+    let contentType = 'application/octet-stream';
+
+    if (fileExtension === '.pdf') {
+      contentType = 'application/pdf';
+    } else if (fileExtension === '.docx') {
+      contentType =
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    } else if (fileExtension === '.doc') {
+      contentType = 'application/msword';
+    }
+
+    res.setHeader('Content-Type', contentType);
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="${cvUpload.originalName}"`
