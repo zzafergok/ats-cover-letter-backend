@@ -1,3 +1,5 @@
+// src/services/cvService.service.ts
+
 import fs from 'fs';
 import path from 'path';
 import mammoth from 'mammoth';
@@ -10,7 +12,8 @@ export async function extractCvContent(filePath: string): Promise<string> {
     if (fileExtension === '.pdf') {
       const pdfBuffer = fs.readFileSync(filePath);
       const pdfData = await pdfParse(pdfBuffer);
-      return pdfData.text;
+
+      return cleanPdfText(pdfData.text);
     } else if (fileExtension === '.docx' || fileExtension === '.doc') {
       const docBuffer = fs.readFileSync(filePath);
       const result = await mammoth.extractRawText({ buffer: docBuffer });
@@ -24,6 +27,17 @@ export async function extractCvContent(filePath: string): Promise<string> {
   }
 }
 
+function cleanPdfText(text: string): string {
+  return text
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/^\s+/gm, '')
+    .replace(/\s+$/gm, '')
+    .trim();
+}
+
 export async function convertToMarkdown(text: string): Promise<string> {
   const lines = text
     .split('\n')
@@ -32,110 +46,132 @@ export async function convertToMarkdown(text: string): Promise<string> {
 
   let markdown = '';
   let currentSection = '';
+  let previousLineWasHeader = false;
+  let inBulletList = false;
 
-  const sectionKeywords = {
-    turkish: [
-      'kişisel bilgiler',
-      'iletişim',
-      'özet',
-      'profil',
-      'hakkımda',
-      'deneyim',
-      'iş deneyimi',
-      'çalışma deneyimi',
-      'profesyonel deneyim',
-      'eğitim',
-      'öğrenim',
-      'akademik',
-      'üniversite',
-      'okul',
-      'beceriler',
-      'yetenekler',
-      'yetkinlikler',
-      'teknolojiler',
-      'projeler',
-      'proje deneyimi',
-      'kişisel projeler',
-      'sertifikalar',
-      'sertifika',
-      'belgeler',
-      'diller',
-      'yabancı dil',
-      'dil yetkinliği',
-      'hobi',
-      'ilgi alanları',
-      'kişisel ilgiler',
-      'referanslar',
-      'referans',
-      'tavsiye',
-    ],
-    english: [
-      'personal information',
-      'contact',
-      'summary',
-      'profile',
-      'about me',
-      'about',
-      'experience',
-      'work experience',
-      'professional experience',
-      'employment',
-      'education',
-      'academic',
-      'university',
-      'school',
-      'degree',
-      'skills',
-      'technical skills',
-      'competencies',
-      'technologies',
-      'projects',
-      'project experience',
-      'personal projects',
-      'certifications',
-      'certificates',
-      'credentials',
-      'languages',
-      'language skills',
-      'language proficiency',
-      'hobbies',
-      'interests',
-      'personal interests',
-      'references',
-      'recommendation',
-    ],
+  const sectionPatterns = {
+    personalInfo:
+      /^(kişisel bilgiler|personal information|iletişim bilgileri|contact info)/i,
+    summary:
+      /^(özet|profil özeti|kariyer özeti|profesyonel özet|summary|profile|objective|hakkımda|about)/i,
+    experience:
+      /^(deneyim|iş deneyimi|çalışma deneyimi|profesyonel deneyim|experience|work experience|employment)/i,
+    education:
+      /^(eğitim|öğrenim|akademik|üniversite|education|academic|university|degree)/i,
+    skills:
+      /^(beceriler|yetenekler|yetkinlikler|teknik beceriler|skills|technical skills|competencies)/i,
+    projects: /^(projeler|proje deneyimi|projects|project experience)/i,
+    certifications:
+      /^(sertifikalar|sertifika|belgeler|certifications|certificates)/i,
+    languages:
+      /^(diller|yabancı dil|dil yetkinliği|languages|language skills)/i,
+    hobbies: /^(hobiler|ilgi alanları|hobbies|interests)/i,
+    references: /^(referanslar|referans|references)/i,
   };
 
-  const allKeywords = [...sectionKeywords.turkish, ...sectionKeywords.english];
+  const datePatterns = {
+    dateRange:
+      /^(ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december)?\s*\d{4}\s*[-–—]\s*(ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december)?\s*\d{4}$/i,
+    currentDate:
+      /^(ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december)?\s*\d{4}\s*[-–—]\s*(günümüz|halen|devam ediyor|present|current|ongoing|today)/i,
+    singleDate:
+      /^(ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|january|february|march|april|may|june|july|august|september|october|november|december)?\s*\d{4}$/i,
+  };
 
-  for (const line of lines) {
+  const bulletPatterns = [
+    /^[•·▪▫◦‣⁃]\s*/,
+    /^[-*]\s+/,
+    /^\d+\.\s+/,
+    /^[a-zA-Z]\)\s+/,
+  ];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const nextLine = i < lines.length - 1 ? lines[i + 1] : '';
     const lowerLine = line.toLowerCase();
 
-    const isSection = allKeywords.some(
-      (keyword) => lowerLine.includes(keyword) && line.length < 50
+    const isSection = Object.values(sectionPatterns).some(
+      (pattern) => pattern.test(lowerLine) && line.length < 50
     );
 
+    const isDate = Object.values(datePatterns).some((pattern) =>
+      pattern.test(line)
+    );
+
+    const isBullet = bulletPatterns.some((pattern) => pattern.test(line));
+
+    const isEmail = line.includes('@') && line.includes('.');
+    const isPhone =
+      /^[\+\(\)\d\s\-\.]+$/.test(line) &&
+      line.length >= 10 &&
+      line.length <= 20;
+    const isWebsite = /^(www\.|https?:\/\/)/.test(lowerLine);
+    const isLinkedIn = lowerLine.includes('linkedin.com');
+    const isGitHub = lowerLine.includes('github.com');
+
     if (isSection) {
+      if (inBulletList) {
+        markdown += '\n';
+        inBulletList = false;
+      }
       currentSection = line;
       markdown += `\n## ${line}\n\n`;
-    } else if (line.includes('@') && line.includes('.')) {
-      markdown += `**Email:** ${line}\n\n`;
-    } else if (line.match(/^\+?[\d\s\-\(\)]+$/)) {
-      markdown += `**Telefon:** ${line}\n\n`;
-    } else if (line.match(/^\d{4}\s*-\s*\d{4}$/)) {
-      markdown += `**Tarih:** ${line}\n\n`;
-    } else if (line.match(/^\d{4}\s*-\s*(günümüz|present|halen)$/i)) {
-      markdown += `**Tarih:** ${line}\n\n`;
-    } else {
-      if (currentSection) {
-        markdown += `- ${line}\n`;
-      } else {
-        markdown += `${line}\n\n`;
+      previousLineWasHeader = true;
+    } else if (isEmail) {
+      markdown += `**Email:** ${line}\n`;
+    } else if (isPhone) {
+      markdown += `**Telefon:** ${line}\n`;
+    } else if (isLinkedIn) {
+      markdown += `**LinkedIn:** ${line}\n`;
+    } else if (isGitHub) {
+      markdown += `**GitHub:** ${line}\n`;
+    } else if (isWebsite) {
+      markdown += `**Web:** ${line}\n`;
+    } else if (isDate && currentSection && nextLine && !isBullet) {
+      markdown += `\n### ${nextLine} | ${line}\n`;
+      i++;
+      previousLineWasHeader = true;
+    } else if (isBullet) {
+      const cleanedLine = line
+        .replace(/^[•·▪▫◦‣⁃\-\*]\s*/, '')
+        .replace(/^\d+\.\s*/, '')
+        .replace(/^[a-zA-Z]\)\s*/, '');
+      markdown += `- ${cleanedLine}\n`;
+      inBulletList = true;
+      previousLineWasHeader = false;
+    } else if (previousLineWasHeader && line.length > 0) {
+      if (inBulletList) {
+        markdown += '\n';
+        inBulletList = false;
       }
+      markdown += `${line}\n\n`;
+      previousLineWasHeader = false;
+    } else {
+      if (inBulletList) {
+        markdown += '\n';
+        inBulletList = false;
+      }
+
+      if (line.length > 0) {
+        if (
+          currentSection.match(/deneyim|experience/i) &&
+          !isDate &&
+          !isBullet &&
+          i > 0
+        ) {
+          markdown += `- ${line}\n`;
+        } else {
+          markdown += `${line}\n\n`;
+        }
+      }
+      previousLineWasHeader = false;
     }
   }
 
-  return markdown.trim();
+  return markdown
+    .trim()
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/\n\s*\n\s*\n/g, '\n\n');
 }
 
 export function extractKeywords(text: string): {
@@ -145,68 +181,198 @@ export function extractKeywords(text: string): {
   const turkishKeywords: string[] = [];
   const englishKeywords: string[] = [];
 
-  const commonTurkishWords = [
-    'deneyim',
-    'proje',
-    'geliştirme',
-    'yönetim',
-    'analiz',
-    'tasarım',
-    'yazılım',
-    'veritabanı',
-    'web',
-    'mobil',
-    'sistem',
-    'network',
-    'satış',
-    'pazarlama',
-    'müşteri',
-    'hizmet',
-    'kalite',
-    'süreç',
-  ];
+  const technicalKeywords = {
+    programming: [
+      'javascript',
+      'typescript',
+      'python',
+      'java',
+      'c#',
+      'c++',
+      'php',
+      'ruby',
+      'go',
+      'swift',
+      'kotlin',
+      'react',
+      'angular',
+      'vue',
+      'node.js',
+      'express',
+      'django',
+      'flask',
+      'spring',
+      '.net',
+      'laravel',
+    ],
+    database: [
+      'sql',
+      'mysql',
+      'postgresql',
+      'mongodb',
+      'redis',
+      'oracle',
+      'elasticsearch',
+      'cassandra',
+      'dynamodb',
+    ],
+    cloud: [
+      'aws',
+      'azure',
+      'gcp',
+      'docker',
+      'kubernetes',
+      'jenkins',
+      'ci/cd',
+      'devops',
+    ],
+    tools: [
+      'git',
+      'github',
+      'gitlab',
+      'jira',
+      'confluence',
+      'slack',
+      'agile',
+      'scrum',
+      'kanban',
+    ],
+  };
 
-  const commonEnglishWords = [
-    'experience',
-    'project',
-    'development',
-    'management',
-    'analysis',
-    'design',
-    'software',
-    'database',
-    'web',
-    'mobile',
-    'system',
-    'network',
-    'sales',
-    'marketing',
-    'customer',
-    'service',
-    'quality',
-    'process',
-  ];
+  const commonTurkishKeywords = {
+    skills: [
+      'deneyim',
+      'proje',
+      'geliştirme',
+      'yönetim',
+      'analiz',
+      'tasarım',
+      'yazılım',
+      'veritabanı',
+      'web',
+      'mobil',
+      'sistem',
+      'network',
+      'güvenlik',
+      'test',
+      'kalite',
+    ],
+    roles: [
+      'uzman',
+      'müdür',
+      'yönetici',
+      'geliştirici',
+      'analist',
+      'danışman',
+      'koordinatör',
+      'sorumlu',
+      'asistan',
+      'stajyer',
+    ],
+    business: [
+      'satış',
+      'pazarlama',
+      'müşteri',
+      'hizmet',
+      'operasyon',
+      'strateji',
+      'planlama',
+      'bütçe',
+      'rapor',
+      'sunum',
+    ],
+  };
 
-  const words = text.toLowerCase().split(/\s+/);
+  const commonEnglishKeywords = {
+    skills: [
+      'experience',
+      'project',
+      'development',
+      'management',
+      'analysis',
+      'design',
+      'software',
+      'database',
+      'web',
+      'mobile',
+      'system',
+      'network',
+      'security',
+      'testing',
+      'quality',
+    ],
+    roles: [
+      'specialist',
+      'manager',
+      'developer',
+      'analyst',
+      'consultant',
+      'coordinator',
+      'assistant',
+      'intern',
+      'engineer',
+      'architect',
+    ],
+    business: [
+      'sales',
+      'marketing',
+      'customer',
+      'service',
+      'operations',
+      'strategy',
+      'planning',
+      'budget',
+      'report',
+      'presentation',
+    ],
+  };
+
+  const words = text.toLowerCase().split(/[\s,;.\-\(\)\/\[\]]+/);
+  const wordFrequency = new Map<string, number>();
 
   for (const word of words) {
-    const cleanWord = word.replace(/[^\w]/g, '');
-    if (cleanWord.length > 3) {
-      if (commonTurkishWords.some((tw) => cleanWord.includes(tw))) {
-        if (!turkishKeywords.includes(cleanWord)) {
-          turkishKeywords.push(cleanWord);
-        }
-      }
-      if (commonEnglishWords.some((ew) => cleanWord.includes(ew))) {
-        if (!englishKeywords.includes(cleanWord)) {
-          englishKeywords.push(cleanWord);
-        }
-      }
+    const cleanWord = word.trim();
+    if (cleanWord.length > 2) {
+      wordFrequency.set(cleanWord, (wordFrequency.get(cleanWord) || 0) + 1);
     }
   }
 
+  wordFrequency.forEach((count, word) => {
+    if (count >= 2 || Object.values(technicalKeywords).flat().includes(word)) {
+      Object.values(technicalKeywords)
+        .flat()
+        .forEach((keyword) => {
+          if (word.includes(keyword) || keyword.includes(word)) {
+            if (!englishKeywords.includes(keyword)) {
+              englishKeywords.push(keyword);
+            }
+          }
+        });
+
+      Object.values(commonTurkishKeywords)
+        .flat()
+        .forEach((keyword) => {
+          if (word.includes(keyword) || keyword.includes(word)) {
+            if (!turkishKeywords.includes(word)) {
+              turkishKeywords.push(word);
+            }
+          }
+        });
+
+      Object.values(commonEnglishKeywords)
+        .flat()
+        .forEach((keyword) => {
+          if (word.includes(keyword) || keyword.includes(word)) {
+            if (!englishKeywords.includes(word)) {
+              englishKeywords.push(word);
+            }
+          }
+        });
+    }
+  });
+
   return {
-    turkish: turkishKeywords.slice(0, 20),
-    english: englishKeywords.slice(0, 20),
+    turkish: turkishKeywords.slice(0, 30),
+    english: englishKeywords.slice(0, 30),
   };
 }

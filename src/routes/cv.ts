@@ -1,3 +1,5 @@
+// src/routes/cv.ts
+
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
@@ -18,7 +20,7 @@ const prisma = new PrismaClient();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = 'uploads/cv';
+    const uploadDir = 'uploads/temp';
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -46,26 +48,13 @@ const upload = multer({
   },
 });
 
-const createCvSchema = z.object({
-  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
-  companyName: z.string().min(1, 'Şirket adı gereklidir'),
-  cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']),
-  jobDescription: z.string().optional(),
-  additionalRequirements: z.string().optional(),
-  targetKeywords: z.array(z.string()).optional(),
-});
-
-const saveCvSchema = z.object({
-  title: z.string().min(1, 'CV başlığı gereklidir'),
-  content: z.string().min(1, 'CV içeriği gereklidir'),
-  cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']),
-});
-
 router.post(
   '/upload',
   authenticateToken,
   upload.single('cvFile'),
   async (req, res) => {
+    let uploadedFilePath: string | null = null;
+
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -74,7 +63,8 @@ router.post(
         });
       }
 
-      const extractedText = await extractCvContent(req.file.path);
+      uploadedFilePath = req.file.path;
+      const extractedText = await extractCvContent(uploadedFilePath);
       const markdownContent = await convertToMarkdown(extractedText);
 
       const cvUpload = await prisma.cvUpload.create({
@@ -82,14 +72,19 @@ router.post(
           userId: req.user!.userId,
           fileName: req.file.filename,
           originalName: req.file.originalname,
-          filePath: req.file.path,
+          filePath: 'processed',
           markdownContent,
           extractedData: {
-            originalText: extractedText,
-            uploadTime: new Date().toISOString(),
+            fileType: path.extname(req.file.originalname).toLowerCase(),
+            fileSize: req.file.size,
+            processedAt: new Date().toISOString(),
           },
         },
       });
+
+      if (uploadedFilePath && fs.existsSync(uploadedFilePath)) {
+        fs.unlinkSync(uploadedFilePath);
+      }
 
       return res.json({
         success: true,
@@ -104,9 +99,9 @@ router.post(
     } catch (error) {
       console.error('CV yükleme hatası:', error);
 
-      if (req.file) {
+      if (uploadedFilePath && fs.existsSync(uploadedFilePath)) {
         try {
-          fs.unlinkSync(req.file.path);
+          fs.unlinkSync(uploadedFilePath);
         } catch (unlinkError) {
           console.error('Dosya silme hatası:', unlinkError);
         }
@@ -144,6 +139,56 @@ router.get('/uploads', authenticateToken, async (req, res) => {
       message: 'CV listesi alınırken hata oluştu',
     });
   }
+});
+
+router.delete('/uploads/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const cvUpload = await prisma.cvUpload.findFirst({
+      where: {
+        id,
+        userId: req.user!.userId,
+      },
+    });
+
+    if (!cvUpload) {
+      return res.status(404).json({
+        success: false,
+        message: 'CV yüklemesi bulunamadı',
+      });
+    }
+
+    await prisma.cvUpload.delete({
+      where: { id },
+    });
+
+    return res.json({
+      success: true,
+      message: 'CV yüklemesi başarıyla silindi',
+    });
+  } catch (error) {
+    console.error('CV yükleme silme hatası:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'CV yüklemesi silinirken hata oluştu',
+    });
+  }
+});
+
+const createCvSchema = z.object({
+  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
+  companyName: z.string().min(1, 'Şirket adı gereklidir'),
+  cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']),
+  jobDescription: z.string().optional(),
+  additionalRequirements: z.string().optional(),
+  targetKeywords: z.array(z.string()).optional(),
+});
+
+const saveCvSchema = z.object({
+  title: z.string().min(1, 'CV başlığı gereklidir'),
+  content: z.string().min(1, 'CV içeriği gereklidir'),
+  cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']),
 });
 
 router.post('/generate', authenticateToken, async (req, res) => {
