@@ -91,6 +91,19 @@ model CoverLetter {
   @@map("cover_letters")
 }
 
+model CoverLetterTemplate {
+  id           String   @id @default(cuid())
+  category     String
+  title        String
+  content      String   @db.Text
+  placeholders Json
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("cover_letter_templates")
+}
+
 enum UserRole {
   USER
   ADMIN

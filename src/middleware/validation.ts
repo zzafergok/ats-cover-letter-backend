@@ -158,3 +158,77 @@ export const contactMessageSchema = z.object({
     .max(2000, 'Mesaj en fazla 2000 karakter olabilir')
     .trim(),
 });
+
+export const generateCoverLetterFromTemplateSchema = z.object({
+  templateId: z.string().min(1, 'Template ID gereklidir'),
+  companyName: z
+    .string()
+    .min(1, 'Şirket adı gereklidir')
+    .max(100, 'Şirket adı en fazla 100 karakter olabilir'),
+  positionTitle: z
+    .string()
+    .min(1, 'Pozisyon başlığı gereklidir')
+    .max(100, 'Pozisyon başlığı en fazla 100 karakter olabilir'),
+  applicantName: z
+    .string()
+    .min(1, 'Başvuran adı gereklidir')
+    .max(100, 'Başvuran adı en fazla 100 karakter olabilir'),
+  applicantEmail: z
+    .string()
+    .email('Geçerli email adresi gereklidir')
+    .max(255, 'Email adresi en fazla 255 karakter olabilir'),
+  contactPerson: z
+    .string()
+    .max(100, 'İletişim kişisi adı en fazla 100 karakter olabilir')
+    .optional(),
+  specificSkills: z
+    .array(z.string())
+    .max(10, 'En fazla 10 beceri ekleyebilirsiniz')
+    .optional(),
+  additionalInfo: z
+    .string()
+    .max(500, 'Ek bilgi en fazla 500 karakter olabilir')
+    .optional(),
+});
+
+export const createCoverLetterTemplateSchema = z.object({
+  category: z
+    .string()
+    .min(1, 'Kategori gereklidir')
+    .max(50, 'Kategori en fazla 50 karakter olabilir'),
+  title: z
+    .string()
+    .min(3, 'Başlık en az 3 karakter olmalıdır')
+    .max(200, 'Başlık en fazla 200 karakter olabilir'),
+  content: z
+    .string()
+    .min(100, 'İçerik en az 100 karakter olmalıdır')
+    .max(10000, 'İçerik en fazla 10000 karakter olabilir'),
+  placeholders: z
+    .array(z.string())
+    .min(1, 'En az bir placeholder gereklidir')
+    .max(20, 'En fazla 20 placeholder olabilir'),
+});
+
+export const updateCoverLetterTemplateSchema = z.object({
+  category: z
+    .string()
+    .max(50, 'Kategori en fazla 50 karakter olabilir')
+    .optional(),
+  title: z
+    .string()
+    .min(3, 'Başlık en az 3 karakter olmalıdır')
+    .max(200, 'Başlık en fazla 200 karakter olabilir')
+    .optional(),
+  content: z
+    .string()
+    .min(100, 'İçerik en az 100 karakter olmalıdır')
+    .max(10000, 'İçerik en fazla 10000 karakter olabilir')
+    .optional(),
+  placeholders: z
+    .array(z.string())
+    .min(1, 'En az bir placeholder gereklidir')
+    .max(20, 'En fazla 20 placeholder olabilir')
+    .optional(),
+  isActive: z.boolean().optional(),
+});
