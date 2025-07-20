@@ -17,7 +17,6 @@ async function main() {
       firstName: 'Admin',
       lastName: 'User',
       role: 'ADMIN',
-      isActive: true,
     },
   });
 
@@ -25,7 +24,7 @@ async function main() {
 
   // Test kullanıcıları
   const testPassword = await bcrypt.hash('test123456', 10);
-  
+
   const users = await Promise.all([
     prisma.user.upsert({
       where: { email: 'ahmet.yilmaz@test.com' },
@@ -36,7 +35,6 @@ async function main() {
         firstName: 'Ahmet',
         lastName: 'Yılmaz',
         role: 'USER',
-        isActive: true,
       },
     }),
     prisma.user.upsert({
@@ -48,7 +46,6 @@ async function main() {
         firstName: 'Ayşe',
         lastName: 'Kaya',
         role: 'USER',
-        isActive: true,
       },
     }),
     prisma.user.upsert({
@@ -60,7 +57,6 @@ async function main() {
         firstName: 'Mehmet',
         lastName: 'Demir',
         role: 'USER',
-        isActive: true,
       },
     }),
   ]);
@@ -68,22 +64,25 @@ async function main() {
   console.log('✅ Test kullanıcıları oluşturuldu');
 
   // CV Yüklemeleri
-  const cvUpload1 = await prisma.cvUpload.create({
-    data: {
-      userId: users[0].id,
-      fileName: 'ahmet_yilmaz_cv.pdf',
-      fileUrl: '/uploads/ahmet_yilmaz_cv.pdf',
-      extractedText: 'Ahmet Yılmaz - Senior Software Developer...',
-    },
-  });
-
-  const cvUpload2 = await prisma.cvUpload.create({
-    data: {
-      userId: users[1].id,
-      fileName: 'ayse_kaya_cv.pdf',
-      fileUrl: '/uploads/ayse_kaya_cv.pdf',
-      extractedText: 'Ayşe Kaya - Marketing Manager...',
-    },
+  await prisma.cvUpload.createMany({
+    data: [
+      {
+        userId: users[0].id,
+        fileName: 'ahmet_yilmaz_cv.pdf',
+        originalName: 'ahmet_yilmaz_cv.pdf',
+        fileUrl: '/uploads/ahmet_yilmaz_cv.pdf',
+        extractedText: 'Ahmet Yılmaz - Senior Software Developer...',
+        processingStatus: 'COMPLETED',
+      },
+      {
+        userId: users[1].id,
+        fileName: 'ayse_kaya_cv.pdf',
+        originalName: 'ayse_kaya_cv.pdf',
+        fileUrl: '/uploads/ayse_kaya_cv.pdf',
+        extractedText: 'Ayşe Kaya - Marketing Manager...',
+        processingStatus: 'COMPLETED',
+      },
+    ],
   });
 
   console.log('✅ CV yüklemeleri oluşturuldu');
@@ -108,7 +107,7 @@ async function main() {
             },
           ],
         }),
-        templateId: 'modern',
+        cvType: 'TECHNICAL',
       },
       {
         userId: users[1].id,
@@ -127,22 +126,61 @@ async function main() {
             },
           ],
         }),
-        templateId: 'professional',
+        cvType: 'CREATIVE',
       },
     ],
   });
 
-  console.log('✅ Kayıtlı CV\'ler oluşturuldu');
+  console.log("✅ Kayıtlı CV'ler oluşturuldu");
 
-  // İstatistik özeti
+  // Cover Letter örnekleri (enum'a göre güncellenmiş)
+  await prisma.coverLetter.createMany({
+    data: [
+      {
+        userId: users[0].id,
+        title: 'Başvuru - Software Developer',
+        content: 'Sayın Yetkili, yazılım geliştirme alanındaki tecrübemle...',
+        coverLetterType: 'TECHNICAL',
+        positionTitle: 'Senior Software Developer',
+        companyName: 'Tech Corp',
+        category: 'SOFTWARE_DEVELOPER',
+      },
+      {
+        userId: users[1].id,
+        title: 'Başvuru - Marketing Specialist',
+        content:
+          'Pazarlama stratejilerindeki başarılarımı sizinle paylaşmak isterim...',
+        coverLetterType: 'PROFESSIONAL',
+        positionTitle: 'Marketing Manager',
+        companyName: 'Global Marketing Inc',
+        category: 'MARKETING_SPECIALIST',
+      },
+      {
+        userId: users[2].id,
+        title: 'Başvuru - Junior Tester',
+        content:
+          'Yazılım test alanında kariyerime sizinle başlamak istiyorum...',
+        coverLetterType: 'ENTRY_LEVEL',
+        positionTitle: 'Junior QA Tester',
+        companyName: 'StartUp QA',
+        category: 'QUALITY_ASSURANCE',
+      },
+    ],
+  });
+
+  console.log('✅ Cover Letter kayıtları oluşturuldu');
+
+  // Özet Bilgi
   const userCount = await prisma.user.count();
   const cvUploadCount = await prisma.cvUpload.count();
   const savedCvCount = await prisma.savedCv.count();
+  const coverLetterCount = await prisma.coverLetter.count();
 
   console.log('\n📊 Seed işlemi tamamlandı! Oluşturulan veriler:');
-  console.log(\`👥 Kullanıcılar: \${userCount}\`);
-  console.log(\`📄 CV Yüklemeleri: \${cvUploadCount}\`);
-  console.log(\`💾 Kayıtlı CV\'ler: \${savedCvCount}\`);
+  console.log(`👥 Kullanıcılar: ${userCount}`);
+  console.log(`📄 CV Yüklemeleri: ${cvUploadCount}`);
+  console.log(`💾 Kayıtlı CV'ler: ${savedCvCount}`);
+  console.log(`✉️ Cover Letters: ${coverLetterCount}`);
 
   console.log('\n🔑 Test kullanıcı bilgileri:');
   console.log('Admin: admin@atscv.com / test123456');

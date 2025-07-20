@@ -158,3 +158,87 @@ export const contactMessageSchema = z.object({
     .max(2000, 'Mesaj en fazla 2000 karakter olabilir')
     .trim(),
 });
+
+export const generateCoverLetterSchema = z.object({
+  personalInfo: z.object({
+    fullName: z.string().min(1, 'Ad soyad gereklidir'),
+    email: z.string().email('Geçerli email gereklidir'),
+    phone: z.string().min(1, 'Telefon gereklidir'),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    linkedin: z.string().optional(),
+  }),
+  jobInfo: z.object({
+    positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
+    companyName: z.string().min(1, 'Şirket adı gereklidir'),
+    department: z.string().optional(),
+    hiringManagerName: z.string().optional(),
+    jobDescription: z.string().optional(),
+    requirements: z.array(z.string()).optional(),
+  }),
+  experience: z.object({
+    currentPosition: z.string().optional(),
+    yearsOfExperience: z.number().min(0, 'Deneyim yılı 0 veya üzeri olmalı'),
+    relevantSkills: z.array(z.string()).min(1, 'En az bir beceri gereklidir'),
+    achievements: z.array(z.string()).min(1, 'En az bir başarı gereklidir'),
+    previousCompanies: z.array(z.string()).optional(),
+  }),
+  coverLetterType: z.enum([
+    'PROFESSIONAL',
+    'CREATIVE',
+    'TECHNICAL',
+    'ENTRY_LEVEL',
+  ]),
+  tone: z.enum(['FORMAL', 'FRIENDLY', 'CONFIDENT', 'ENTHUSIASTIC']),
+  additionalInfo: z
+    .object({
+      reasonForApplying: z.string().optional(),
+      companyKnowledge: z.string().optional(),
+      careerGoals: z.string().optional(),
+    })
+    .optional(),
+});
+
+export const saveCoverLetterSchema = z.object({
+  title: z.string().min(1, 'Başlık gereklidir'),
+  content: z.string().min(1, 'İçerik gereklidir'),
+  coverLetterType: z.enum([
+    'PROFESSIONAL',
+    'CREATIVE',
+    'TECHNICAL',
+    'ENTRY_LEVEL',
+  ]),
+  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
+  companyName: z.string().min(1, 'Şirket adı gereklidir'),
+  category: z
+    .enum([
+      'SOFTWARE_DEVELOPER',
+      'MARKETING_SPECIALIST',
+      'SALES_REPRESENTATIVE',
+      'PROJECT_MANAGER',
+      'DATA_ANALYST',
+      'UI_UX_DESIGNER',
+      'BUSINESS_ANALYST',
+      'CUSTOMER_SERVICE',
+      'HR_SPECIALIST',
+      'FINANCE_SPECIALIST',
+      'CONTENT_WRITER',
+      'DIGITAL_MARKETING',
+      'PRODUCT_MANAGER',
+      'QUALITY_ASSURANCE',
+      'GRAPHIC_DESIGNER',
+      'ADMINISTRATIVE_ASSISTANT',
+      'CONSULTANT',
+      'ENGINEER',
+      'TEACHER',
+      'HEALTHCARE',
+      'LEGAL',
+      'GENERAL',
+    ])
+    .optional()
+    .default('GENERAL'),
+});
+
+export const analyzeCoverLetterSchema = z.object({
+  content: z.string().min(1, 'Cover letter içeriği gereklidir'),
+});
