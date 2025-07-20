@@ -9,8 +9,6 @@ import { errorHandler } from './middleware/errorHandler';
 import { DatabaseService } from './services/database.service';
 import { SchedulerService } from './services/scheduler.service';
 
-import { CoverLetterTemplateService } from './services/coverLetterTemplate.service';
-
 dotenv.config();
 
 const app = express();
@@ -82,11 +80,6 @@ process.on('SIGTERM', gracefulShutdown);
 const startServer = async () => {
   try {
     await DatabaseService.getInstance().connect();
-
-    // Cover Letter Template Service'i initialize et
-    const templateService = CoverLetterTemplateService.getInstance();
-    await templateService.initializeTemplates();
-    console.log('✅ Cover Letter Templates initialized');
 
     SchedulerService.startEmailTokenCleanup();
 

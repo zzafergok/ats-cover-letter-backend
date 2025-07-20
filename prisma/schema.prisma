@@ -23,7 +23,6 @@ model User {
   refreshTokens  RefreshToken[]
   cvUploads      CvUpload[]
   savedCvs       SavedCv[]
-  coverLetters   CoverLetter[]
 
   @@map("users")
 }
@@ -71,37 +70,6 @@ model SavedCv {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("saved_cvs")
-}
-
-model CoverLetter {
-  id              String               @id @default(cuid())
-  userId          String               @map("user_id")
-  title           String
-  content         String
-  category        CoverLetterCategory
-  positionTitle   String               @map("position_title")
-  companyName     String               @map("company_name")
-  contactPerson   String?              @map("contact_person")
-  applicationDate DateTime?            @map("application_date")
-  createdAt       DateTime             @default(now()) @map("created_at")
-  updatedAt       DateTime             @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("cover_letters")
-}
-
-model CoverLetterTemplate {
-  id           String   @id @default(cuid())
-  category     String
-  title        String
-  content      String   @db.Text
-  placeholders Json
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  @@map("cover_letter_templates")
 }
 
 enum UserRole {
