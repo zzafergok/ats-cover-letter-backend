@@ -1,10 +1,9 @@
-// src/services/cache.service.ts
-import redisClient from '../config/redis';
+// src/services/cache.service.ts - Remove Redis dependency
+import { cacheService } from '../config/cache';
 import logger from '../config/logger';
 
 export class CacheService {
   private static instance: CacheService;
-  private defaultTTL = 3600;
 
   public static getInstance(): CacheService {
     if (!CacheService.instance) {
@@ -15,8 +14,7 @@ export class CacheService {
 
   async get(key: string): Promise<any> {
     try {
-      const data = await redisClient.get(key);
-      return data ? JSON.parse(data) : null;
+      return await cacheService.get(key);
     } catch (error) {
       logger.error('Cache get hatası:', error);
       return null;
@@ -25,12 +23,7 @@ export class CacheService {
 
   async set(key: string, value: any, ttl?: number): Promise<void> {
     try {
-      const serialized = JSON.stringify(value);
-      if (ttl) {
-        await redisClient.setex(key, ttl, serialized);
-      } else {
-        await redisClient.setex(key, this.defaultTTL, serialized);
-      }
+      await cacheService.set(key, value, ttl);
     } catch (error) {
       logger.error('Cache set hatası:', error);
     }
@@ -38,7 +31,7 @@ export class CacheService {
 
   async del(key: string): Promise<void> {
     try {
-      await redisClient.del(key);
+      await cacheService.del(key);
     } catch (error) {
       logger.error('Cache delete hatası:', error);
     }
@@ -46,7 +39,7 @@ export class CacheService {
 
   async flush(): Promise<void> {
     try {
-      await redisClient.flushdb();
+      await cacheService.flush();
     } catch (error) {
       logger.error('Cache flush hatası:', error);
     }
@@ -54,8 +47,7 @@ export class CacheService {
 
   async exists(key: string): Promise<boolean> {
     try {
-      const exists = await redisClient.exists(key);
-      return exists === 1;
+      return await cacheService.exists(key);
     } catch (error) {
       logger.error('Cache exists hatası:', error);
       return false;

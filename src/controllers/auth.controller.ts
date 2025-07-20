@@ -810,10 +810,10 @@ export class AuthController {
       }
 
       const sessionsKey = `user:${userId}:sessions`;
-      const sessionIds = await redisClient.smembers(sessionsKey);
+      const sessionIds = (await this.cacheService.get(sessionsKey)) || [];
 
       const sessions = await Promise.all(
-        sessionIds.map(async (sessionId) => {
+        sessionIds.map(async (sessionId: string) => {
           const sessionData = await this.sessionService.getSession(sessionId);
           return sessionData
             ? {
