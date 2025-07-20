@@ -1,20 +1,9 @@
+// src/middleware/auth.ts güncellenmiş hali
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
-
-const prisma = new PrismaClient();
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        userId: string;
-        email: string;
-        role: string;
-      };
-    }
-  }
-}
+import { db } from '../services/database.service';
+import { SessionService } from '../services/session.service';
+import logger from '../config/logger';
 
 export const authenticateToken = async (
   req: Request,
@@ -35,42 +24,31 @@ export const authenticateToken = async (
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        isEmailVerified: true,
-      },
-    });
+    const sessionService = SessionService.getInstance();
+    const sessionData = await sessionService.getSession(decoded.sessionId);
 
-    if (!user) {
+    if (!sessionData) {
       res.status(401).json({
         success: false,
-        message: 'Geçersiz token',
+        message: 'Oturum süresi dolmuş',
       });
       return;
     }
 
-    if (!user.isEmailVerified) {
-      res.status(401).json({
-        success: false,
-        message: 'Email adresi doğrulanmamış',
-      });
-      return;
-    }
+    await sessionService.extendSession(decoded.sessionId);
 
     req.user = {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+      sessionId: decoded.sessionId,
     };
 
     next();
     return;
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
+      logger.warn('Invalid token attempt', { error: error.message });
       res.status(401).json({
         success: false,
         message: 'Geçersiz token',
@@ -78,26 +56,11 @@ export const authenticateToken = async (
       return;
     }
 
-    console.error('Auth middleware hatası:', error);
+    logger.error('Auth middleware hatası:', error);
     res.status(500).json({
       success: false,
       message: 'Sunucu hatası',
     });
     return;
   }
-};
-
-export const requireAdmin = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  if (req.user?.role !== 'ADMIN') {
-    return res.status(403).json({
-      success: false,
-      message: 'Bu işlem için admin yetkisi gereklidir',
-    });
-  }
-  next();
-  return;
 };

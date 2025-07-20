@@ -46,6 +46,7 @@ model CvUpload {
   originalName     String       @map("original_name")
   filePath         String?      @map("file_path")  // Optional yap
   markdownContent  String?      @map("markdown_content")
+  processingStatus ProcessingStatus @default(PENDING) @map("processing_status")
   extractedData    Json?        @map("extracted_data")
   fileData         Bytes?       @map("file_data")
   originalSize     Int?         @map("original_size")
@@ -81,6 +82,13 @@ enum CvType {
   ATS_OPTIMIZED
   CREATIVE
   TECHNICAL
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 enum CoverLetterCategory {

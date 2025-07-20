@@ -5,17 +5,20 @@ import { Request, Response } from 'express';
 import { db } from '../services/database.service';
 import { JwtService } from '../services/jwt.service';
 import { EmailService } from '../services/email.service';
+import { CacheService } from '../services/cache.service';
+import { SessionService } from '../services/session.service';
 
 import {
   AuthResponse,
   LoginRequest,
   RegisterRequest,
   RefreshTokenRequest,
+  ResetPasswordRequest,
   ChangePasswordRequest,
   ForgotPasswordRequest,
   UpdateUserProfileRequest,
-  ResetPasswordRequest,
 } from '../types';
+
 import {
   sendError,
   sendSuccess,
@@ -23,7 +26,12 @@ import {
   sendServerError,
 } from '../utils/response';
 
+import logger from '../config/logger';
+
 export class AuthController {
+  private sessionService = SessionService.getInstance();
+  private cacheService = CacheService.getInstance();
+
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
       console.log('[REGISTER] İşlem başlatıldı:', {
@@ -311,24 +319,33 @@ export class AuthController {
 
   public login = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log('Login işlemi başlatıldı');
+      logger.info('Login işlemi başlatıldı', { email: req.body.email });
       const { email, password }: LoginRequest = req.body;
 
-      console.log('Kullanıcı sorgusu yapılıyor:', email);
-      const user = await db.user.findUnique({
-        where: { email },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          password: true,
-          role: true,
-          isEmailVerified: true,
-        },
-      });
+      const cacheKey = `user:${email}`;
+      let user = await this.cacheService.get(cacheKey);
 
       if (!user) {
+        user = await db.user.findUnique({
+          where: { email },
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            password: true,
+            role: true,
+            isEmailVerified: true,
+          },
+        });
+
+        if (user) {
+          await this.cacheService.set(cacheKey, user, 300);
+        }
+      }
+
+      if (!user) {
+        logger.warn('Login başarısız - kullanıcı bulunamadı', { email });
         sendError(
           res,
           'AUTH_001: Kullanıcı girişi başarısız - Email adresi bulunamadı',
@@ -337,9 +354,9 @@ export class AuthController {
         return;
       }
 
-      console.log('Şifre kontrolü yapılıyor');
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
+        logger.warn('Login başarısız - hatalı şifre', { email });
         sendError(
           res,
           'AUTH_002: Kullanıcı girişi başarısız - Şifre hatalı',
@@ -349,6 +366,7 @@ export class AuthController {
       }
 
       if (!user.isEmailVerified) {
+        logger.warn('Login başarısız - email doğrulanmamış', { email });
         sendError(
           res,
           'AUTH_025: Giriş engellendi - Email adresinizi doğrulamanız gerekiyor',
@@ -357,18 +375,22 @@ export class AuthController {
         return;
       }
 
-      console.log('Token oluşturma işlemi başlatılıyor');
+      const sessionId = await this.sessionService.createSession(user.id, {
+        email: user.email,
+        role: user.role,
+      });
+
       const accessToken = JwtService.generateAccessToken(
         user.id,
         user.email,
         user.role,
-        'no-session'
+        sessionId
       );
       const refreshToken = JwtService.generateRefreshToken(
         user.id,
         user.email,
         user.role,
-        'no-session'
+        sessionId
       );
 
       const response: AuthResponse = {
@@ -383,14 +405,10 @@ export class AuthController {
         expiresIn: JwtService.getExpiresInSeconds(),
       };
 
-      console.log('Login işlemi başarıyla tamamlandı');
+      logger.info('Login başarılı', { userId: user.id, email });
       sendSuccess(res, response, 'Başarıyla giriş yapıldı');
     } catch (error) {
-      console.error('Login hatası detayı:', {
-        message: error instanceof Error ? error.message : 'Bilinmeyen hata',
-        stack: error instanceof Error ? error.stack : undefined,
-        dbStatus: typeof db,
-      });
+      logger.error('Login hatası:', error);
       sendServerError(
         res,
         'AUTH_004: Sistem hatası - Giriş işlemi tamamlanamadı'
@@ -472,9 +490,16 @@ export class AuthController {
 
   public logout = async (req: Request, res: Response): Promise<void> => {
     try {
+      const sessionId = req.user?.sessionId;
+
+      if (sessionId) {
+        await this.sessionService.destroySession(sessionId);
+      }
+
+      logger.info('Logout başarılı', { userId: req.user?.userId });
       sendSuccess(res, null, 'Başarıyla çıkış yapıldı');
     } catch (error) {
-      console.error('Logout hatası:', error);
+      logger.error('Logout hatası:', error);
       sendServerError(
         res,
         'AUTH_010: Sistem hatası - Çıkış işlemi tamamlanamadı'
@@ -484,9 +509,17 @@ export class AuthController {
 
   public logoutAll = async (req: Request, res: Response): Promise<void> => {
     try {
+      const userId = req.user?.userId;
+
+      if (userId) {
+        await this.sessionService.destroyAllUserSessions(userId);
+        await this.cacheService.del(`user:sessions:${userId}`);
+      }
+
+      logger.info('Tüm oturumlardan çıkış yapıldı', { userId });
       sendSuccess(res, null, 'Tüm cihazlardan çıkış yapıldı');
     } catch (error) {
-      console.error('Logout all hatası:', error);
+      logger.error('Logout all hatası:', error);
       sendServerError(
         res,
         'AUTH_011: Sistem hatası - Toplu çıkış işlemi başarısız'
@@ -767,9 +800,35 @@ export class AuthController {
 
   public getSessions = async (req: Request, res: Response): Promise<void> => {
     try {
-      sendSuccess(res, []);
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        sendError(res, 'Kullanıcı bulunamadı', 401);
+        return;
+      }
+
+      const sessionsKey = `user:${userId}:sessions`;
+      const sessionIds = await redisClient.smembers(sessionsKey);
+
+      const sessions = await Promise.all(
+        sessionIds.map(async (sessionId) => {
+          const sessionData = await this.sessionService.getSession(sessionId);
+          return sessionData
+            ? {
+                sessionId,
+                ...sessionData,
+                current: sessionId === req.user?.sessionId,
+              }
+            : null;
+        })
+      );
+
+      sendSuccess(
+        res,
+        sessions.filter((s) => s !== null)
+      );
     } catch (error) {
-      console.error('Oturumlar getirilemedi:', error);
+      logger.error('Oturumlar getirilemedi:', error);
       sendServerError(
         res,
         'AUTH_015: Sistem hatası - Oturum bilgileri alınamadı'

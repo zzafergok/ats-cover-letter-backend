@@ -2,12 +2,26 @@ import { Request, Response, NextFunction } from 'express';
 
 import { sendServerError } from '../utils/response';
 
+import logger from '../config/logger';
+
 export const errorHandler = (
   err: any,
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
+  logger.error('Error occurred:', {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    body: req.body,
+    params: req.params,
+    userId: req.user?.userId,
+    ip: req.ip,
+    timestamp: new Date().toISOString(),
+  });
+
   console.error('Error occurred:', {
     message: err.message,
     stack: err.stack,

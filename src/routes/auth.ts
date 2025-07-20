@@ -1,3 +1,4 @@
+// src/routes/auth.ts güncellenmiş hali
 import { Router } from 'express';
 import {
   validate,
@@ -12,13 +13,19 @@ import {
   resetPasswordSchema,
 } from '../middleware/validation';
 import { authenticateToken } from '../middleware/auth';
+import { authLimiter } from '../middleware/rateLimiter';
 import { AuthController } from '../controllers/auth.controller';
 
 const router = Router();
 const authController = new AuthController();
 
-router.post('/login', validate(loginSchema), authController.login);
-router.post('/register', validate(registerSchema), authController.register);
+router.post('/login', authLimiter, validate(loginSchema), authController.login);
+router.post(
+  '/register',
+  authLimiter,
+  validate(registerSchema),
+  authController.register
+);
 router.post(
   '/verify-email',
   validate(verifyEmailSchema),
@@ -26,6 +33,7 @@ router.post(
 );
 router.post(
   '/resend-verification',
+  authLimiter,
   validate(resendEmailVerificationSchema),
   authController.resendEmailVerification
 );
@@ -34,15 +42,17 @@ router.post(
   validate(refreshTokenSchema),
   authController.refreshToken
 );
-router.post('/logout', validate(refreshTokenSchema), authController.logout);
+router.post('/logout', authenticateToken, authController.logout);
 router.post('/logout-all', authenticateToken, authController.logoutAll);
 router.post(
   '/forgot-password',
+  authLimiter,
   validate(forgotPasswordSchema),
   authController.forgotPassword
 );
 router.post(
   '/reset-password',
+  authLimiter,
   validate(resetPasswordSchema),
   authController.resetPassword
 );

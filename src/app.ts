@@ -1,27 +1,32 @@
+// src/app.ts - Vercel için güncellenmiş
 import dotenv from 'dotenv';
 import express from 'express';
-
 import apiRoutes from './routes';
+import logger from './config/logger';
 
 import { corsMiddleware } from './middleware/cors';
 import { errorHandler } from './middleware/errorHandler';
+import { helmetConfig, securityHeaders } from './middleware/security';
+import { generalLimiter, apiLimiter } from './middleware/rateLimiter';
 
 import { DatabaseService } from './services/database.service';
-import { SchedulerService } from './services/scheduler.service';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 app.set('trust proxy', true);
+app.use(helmetConfig);
+app.use(securityHeaders);
 app.use(corsMiddleware);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+app.use(generalLimiter);
+
 if (process.env.NODE_ENV === 'development') {
   app.use((req, res, next) => {
-    console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
+    logger.info(`${req.method} ${req.path} - ${req.ip}`);
     next();
   });
 }
@@ -29,17 +34,21 @@ if (process.env.NODE_ENV === 'development') {
 app.get('/health', async (req, res) => {
   try {
     const dbHealth = await DatabaseService.getInstance().healthCheck();
+
     res.json({
       success: true,
       message: 'API is running',
       timestamp: new Date().toISOString(),
       version: '1.0.0',
       environment: process.env.NODE_ENV,
-      database: dbHealth.connected ? 'connected' : 'disconnected',
-      uptime: process.uptime(),
+      services: {
+        database: dbHealth.connected ? 'connected' : 'disconnected',
+      },
+      platform: 'Vercel',
+      region: process.env.VERCEL_REGION || 'unknown',
     });
   } catch (error) {
-    console.error('Health check failed:', error);
+    logger.error('Health check failed:', error);
     res.status(503).json({
       success: false,
       error: 'Health check failed',
@@ -48,7 +57,8 @@ app.get('/health', async (req, res) => {
   }
 });
 
-app.use('/api', apiRoutes);
+app.use('/api/v1', apiLimiter, apiRoutes);
+app.use('/api', apiLimiter, apiRoutes);
 app.use(errorHandler);
 
 app.use('*', (req, res) => {
@@ -61,37 +71,24 @@ app.use('*', (req, res) => {
   });
 });
 
-const gracefulShutdown = async () => {
-  console.log('Shutting down server...');
-  try {
-    SchedulerService.stopAllCleanup();
-    await DatabaseService.getInstance().disconnect();
-    console.log('Graceful shutdown completed');
-    process.exit(0);
-  } catch (error) {
-    console.error('Shutdown error:', error);
-    process.exit(1);
-  }
-};
+// Vercel için serverless handler
+export default app;
 
-process.on('SIGINT', gracefulShutdown);
-process.on('SIGTERM', gracefulShutdown);
+// Development için local server
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
 
-const startServer = async () => {
-  try {
-    await DatabaseService.getInstance().connect();
-
-    SchedulerService.startEmailTokenCleanup();
-
-    app.listen(PORT, () => {
-      console.log(`🚀 API running on port ${PORT}`);
-      console.log(`📊 Health: http://localhost:${PORT}/health`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+  DatabaseService.getInstance()
+    .connect()
+    .then(() => {
+      app.listen(PORT, () => {
+        logger.info(`🚀 API running on port ${PORT}`);
+        logger.info(`📊 Health: http://localhost:${PORT}/health`);
+        logger.info(`🌍 Environment: ${process.env.NODE_ENV}`);
+      });
+    })
+    .catch((error) => {
+      logger.error('Server startup failed:', error);
+      process.exit(1);
     });
-  } catch (error) {
-    console.error('Server startup failed:', error);
-    process.exit(1);
-  }
-};
-
-startServer();
+}
