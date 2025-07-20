@@ -8,6 +8,8 @@ import { EmailService } from '../services/email.service';
 import { CacheService } from '../services/cache.service';
 import { SessionService } from '../services/session.service';
 
+import redisClient from '../config/redis';
+
 import {
   AuthResponse,
   LoginRequest,

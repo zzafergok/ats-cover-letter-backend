@@ -116,4 +116,76 @@ export class EmailService {
       throw new Error('EMAIL_009: İletişim mesajı kuyruğa eklenemedi');
     }
   }
+
+  public static async sendPasswordResetEmailDirect(
+    email: string,
+    resetToken: string
+  ): Promise<void> {
+    try {
+      if (!process.env.RESEND_API_KEY) {
+        throw new Error(
+          'EMAIL_001: Resend konfigürasyon hatası - API key eksik'
+        );
+      }
+
+      const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+      await this.resend.emails.send({
+        from: 'ATS CV System <noreply@atscv.com>',
+        to: [email],
+        subject: 'Şifre Sıfırlama Talebi',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>Şifre Sıfırlama</h2>
+            <p>Şifrenizi sıfırlamak için aşağıdaki bağlantıya tıklayın:</p>
+            <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Şifremi Sıfırla</a>
+            <p>Bu bağlantı 1 saat geçerlidir.</p>
+            <p>Eğer bu talebi siz yapmadıysanız, bu emaili görmezden gelebilirsiniz.</p>
+          </div>
+        `,
+      });
+
+      logger.info('Şifre sıfırlama emaili gönderildi:', email);
+    } catch (error) {
+      logger.error('Şifre sıfırlama email hatası:', error);
+      throw new Error('EMAIL_006: Şifre sıfırlama emaili gönderilemedi');
+    }
+  }
+
+  public static async sendContactMessageDirect(data: {
+    type: 'CONTACT' | 'SUPPORT';
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+  }): Promise<void> {
+    try {
+      if (!process.env.RESEND_API_KEY) {
+        throw new Error(
+          'EMAIL_001: Resend konfigürasyon hatası - API key eksik'
+        );
+      }
+
+      await this.resend.emails.send({
+        from: 'ATS CV System <noreply@atscv.com>',
+        to: [process.env.ADMIN_EMAIL || 'admin@atscv.com'],
+        replyTo: data.email,
+        subject: `[${data.type}] ${data.subject}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>${data.type === 'CONTACT' ? 'İletişim Formu' : 'Destek Talebi'}</h2>
+            <p><strong>Gönderen:</strong> ${data.name} (${data.email})</p>
+            <p><strong>Konu:</strong> ${data.subject}</p>
+            <hr />
+            <p>${data.message.replace(/\n/g, '<br>')}</p>
+          </div>
+        `,
+      });
+
+      logger.info('İletişim mesajı gönderildi:', data.email);
+    } catch (error) {
+      logger.error('İletişim mesajı gönderim hatası:', error);
+      throw new Error('EMAIL_009: İletişim mesajı gönderilemedi');
+    }
+  }
 }

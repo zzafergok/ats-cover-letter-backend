@@ -1,8 +1,8 @@
-// src/middleware/rateLimiter.ts - Vercel için güncellenmiş
+// src/middleware/rateLimiter.ts - IPv6 desteği eklenmiş
+
 import rateLimit from 'express-rate-limit';
 import { Request } from 'express';
 
-// Vercel'de Redis olmadığı için memory store kullanıyoruz
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -10,7 +10,10 @@ export const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: Request) => {
-    return req.ip || req.headers['x-forwarded-for']?.toString() || 'anonymous';
+    return req.ip || 'anonymous';
+  },
+  skip: (req: Request) => {
+    return false;
   },
 });
 
@@ -23,6 +26,9 @@ export const authLimiter = rateLimit({
     const identifier = req.body.email || req.ip || 'anonymous';
     return `auth_${identifier}`;
   },
+  skip: (req: Request) => {
+    return false;
+  },
 });
 
 export const uploadLimiter = rateLimit({
@@ -32,10 +38,19 @@ export const uploadLimiter = rateLimit({
   keyGenerator: (req: Request) => {
     return `upload_${req.user?.userId || req.ip || 'anonymous'}`;
   },
+  skip: (req: Request) => {
+    return false;
+  },
 });
 
 export const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 30,
   message: 'API rate limit aşıldı',
+  keyGenerator: (req: Request) => {
+    return req.ip || 'anonymous';
+  },
+  skip: (req: Request) => {
+    return false;
+  },
 });

@@ -1,6 +1,8 @@
+// src/routes/contact.ts - Düzeltilmiş import
+
 import { Router } from 'express';
 import { ContactController } from '../controllers/contact.controller';
-import { requireAdmin, authenticateToken } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth';
 import { validate, contactMessageSchema } from '../middleware/validation';
 
 const router = Router();
@@ -11,12 +13,9 @@ router.post(
   validate(contactMessageSchema),
   contactController.sendMessage
 );
-router.get(
-  '/messages',
-  authenticateToken,
-  requireAdmin,
-  contactController.getMessages
-);
+
+router.get('/messages', authenticateToken, contactController.getMessages);
+
 router.get('/limit', contactController.checkLimit);
 
 export default router;

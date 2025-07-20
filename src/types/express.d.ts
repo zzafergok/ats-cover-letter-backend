@@ -11,6 +11,7 @@ declare global {
         emailVerified: boolean;
         deviceLimit: number;
         isMultiDevice: boolean;
+        sessionId: string;
       };
     }
   }

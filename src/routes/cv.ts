@@ -19,7 +19,9 @@ import {
   extractKeywords,
   generateDocumentMetadata,
 } from '../services/cvService.service';
-import { uploadLimiter } from '@/middleware/rateLimiter';
+import { uploadLimiter } from '../middleware/rateLimiter';
+import { cvProcessingQueue } from '../config/queue';
+import logger from '../config/logger';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -164,7 +166,7 @@ router.get('/uploads', authenticateToken, async (req, res) => {
       },
     }));
 
-    res.json({
+    return res.json({
       success: true,
       data: uploadsWithInfo,
       uploadLimit: {
@@ -175,7 +177,7 @@ router.get('/uploads', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('CV listesi getirme hatası:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'CV listesi alınırken hata oluştu',
     });
@@ -206,7 +208,7 @@ router.get('/upload/status/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         id: cvUpload.id,
@@ -217,7 +219,7 @@ router.get('/upload/status/:id', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('CV durumu kontrol hatası:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Durum kontrolünde hata oluştu',
     });
