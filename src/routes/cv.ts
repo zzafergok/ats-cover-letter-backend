@@ -20,11 +20,74 @@ import {
   generateDocumentMetadata,
 } from '../services/cvService.service';
 import { uploadLimiter } from '../middleware/rateLimiter';
-import { cvProcessingQueue } from '../config/queue';
+// import { cvProcessingQueue } from '../config/queue';
 import logger from '../config/logger';
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// CV processing function (previously handled by queue)
+async function processCvFile(filePath: string, cvUploadId: string) {
+  try {
+    // Extract content from CV
+    const extractedText = await extractCvContent(filePath);
+    const markdownContent = await convertToMarkdown(extractedText);
+    const cleanedText = cleanAndNormalizeText(extractedText);
+
+    // Extract structured information
+    const contactInfo = extractContactInformation(cleanedText);
+    const sections = extractSections(cleanedText);
+    const keywords = extractKeywords(cleanedText);
+    const metadata = generateDocumentMetadata(filePath, cleanedText);
+
+    // Prepare extracted data
+    const extractedData = {
+      contactInformation: contactInfo,
+      sections,
+      keywords,
+      metadata,
+      rawText: extractedText,
+    };
+
+    // Get file compression service
+    const compressionService = FileCompressionService.getInstance();
+    const fileBuffer = fs.readFileSync(filePath);
+    const compressedBuffer = await compressionService.compressFile(fileBuffer);
+
+    // Update CV upload record
+    await prisma.cvUpload.update({
+      where: { id: cvUploadId },
+      data: {
+        processingStatus: 'COMPLETED',
+        extractedData,
+        markdownContent,
+        fileData: compressedBuffer,
+        originalSize: fileBuffer.length,
+        compressedSize: compressedBuffer.length,
+        compressionRatio:
+          ((fileBuffer.length - compressedBuffer.length) / fileBuffer.length) *
+          100,
+      },
+    });
+
+    // Clean up temp file
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    logger.info('CV processing completed successfully', { cvUploadId });
+  } catch (error) {
+    logger.error('CV processing failed:', error);
+
+    // Update status to failed
+    await prisma.cvUpload.update({
+      where: { id: cvUploadId },
+      data: { processingStatus: 'FAILED' },
+    });
+
+    throw error;
+  }
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -50,12 +113,33 @@ const upload = multer({
     files: 1,
   },
   fileFilter: (req, file, cb) => {
-    console.log('File filter:', file);
-    const allowedTypes = /\.(pdf|doc|docx)$/i;
-    if (allowedTypes.test(file.originalname)) {
+    console.log(
+      'File filter - Name:',
+      file.originalname,
+      'MIME:',
+      file.mimetype,
+      'Size:',
+      file.size
+    );
+
+    const allowedExtensions = /\.(pdf|doc|docx)$/i;
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+
+    const hasValidExtension = allowedExtensions.test(file.originalname);
+    const hasValidMimeType = allowedMimeTypes.includes(file.mimetype);
+
+    if (hasValidExtension && hasValidMimeType) {
       cb(null, true);
     } else {
-      cb(new Error('Sadece PDF, DOC ve DOCX dosyaları kabul edilir'));
+      const error = new Error(
+        `Geçersiz dosya formatı. Dosya: ${file.originalname}, MIME: ${file.mimetype}`
+      );
+      console.error('File rejected:', error.message);
+      cb(error);
     }
   },
 });
@@ -68,11 +152,20 @@ router.post(
   async (req, res) => {
     try {
       if (!req.file) {
+        logger.warn('No file uploaded', { userId: req.user?.userId });
         return res.status(400).json({
           success: false,
           message: 'CV dosyası yüklenmedi',
         });
       }
+
+      logger.info('File upload attempt', {
+        userId: req.user!.userId,
+        filename: req.file.filename,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+      });
 
       const cvUpload = await prisma.cvUpload.create({
         data: {
@@ -84,25 +177,21 @@ router.post(
         },
       });
 
-      await cvProcessingQueue.add(
-        'process-cv',
-        {
-          filePath: req.file.path,
+      // Process CV synchronously instead of using Redis queue
+      try {
+        await processCvFile(req.file.path, cvUpload.id);
+        logger.info('CV işleme tamamlandı', {
           cvUploadId: cvUpload.id,
-        },
-        {
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 5000,
-          },
-        }
-      );
-
-      logger.info('CV işleme kuyruğa eklendi', {
-        cvUploadId: cvUpload.id,
-        userId: req.user!.userId,
-      });
+          userId: req.user!.userId,
+        });
+      } catch (processingError) {
+        logger.error('CV işleme hatası:', processingError);
+        // Update status to failed
+        await prisma.cvUpload.update({
+          where: { id: cvUpload.id },
+          data: { processingStatus: 'FAILED' },
+        });
+      }
 
       return res.json({
         success: true,
@@ -114,7 +203,18 @@ router.post(
         },
       });
     } catch (error: any) {
-      logger.error('CV yükleme hatası:', error);
+      logger.error('CV yükleme hatası:', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+        file: req.file
+          ? {
+              name: req.file.originalname,
+              size: req.file.size,
+              mimetype: req.file.mimetype,
+            }
+          : null,
+      });
 
       if (req.file && fs.existsSync(req.file.path)) {
         try {
@@ -124,9 +224,16 @@ router.post(
         }
       }
 
+      let errorMessage = 'CV yüklenirken hata oluştu';
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        errorMessage = 'Dosya boyutu çok büyük (maksimum 10MB)';
+      } else if (error.message.includes('Geçersiz dosya formatı')) {
+        errorMessage = error.message;
+      }
+
       return res.status(500).json({
         success: false,
-        message: 'CV yüklenirken hata oluştu',
+        message: errorMessage,
       });
     }
   }
