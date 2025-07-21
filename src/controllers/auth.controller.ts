@@ -35,7 +35,7 @@ export class AuthController {
 
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log('[REGISTER] İşlem başlatıldı:', {
+      logger.info('[REGISTER] İşlem başlatıldı:', {
         email: req.body.email,
         timestamp: new Date().toISOString(),
       });
@@ -49,7 +49,7 @@ export class AuthController {
       const isValidPassword = passwordRegex.test(password);
 
       if (!isValidEmail || !isValidPassword) {
-        console.log('[REGISTER] Email veya password format hatası');
+        logger.info('[REGISTER] Email veya password format hatası');
         sendError(
           res,
           'AUTH_025: Email adresi ve parolanızı kontrol ediniz',
@@ -58,22 +58,22 @@ export class AuthController {
         return;
       }
 
-      console.log('[REGISTER] Email ve password format validation geçti');
+      logger.info('[REGISTER] Email ve password format validation geçti');
 
       const existingUser = await db.user.findUnique({ where: { email } });
       if (existingUser) {
-        console.log('[REGISTER] Duplicate email tespit edildi:', email);
+        logger.info('[REGISTER] Duplicate email tespit edildi:', email);
         sendError(res, 'AUTH_005: Bu email adresi zaten kullanımda', 400);
         return;
       }
-      console.log('[REGISTER] Email uniqueness validation geçti');
+      logger.info('[REGISTER] Email uniqueness validation geçti');
 
       if (role && ['ADMIN'].includes(role)) {
         const roleUser = await db.user.findFirst({
           where: { role: role as any },
         });
         if (roleUser) {
-          console.log('[REGISTER] Rol çakışması tespit edildi:', role);
+          logger.info('[REGISTER] Rol çakışması tespit edildi:', role);
           sendError(
             res,
             `AUTH_006: ${role} rolü için kullanıcı zaten mevcut`,
@@ -82,17 +82,17 @@ export class AuthController {
           return;
         }
       }
-      console.log('[REGISTER] Role validation geçti');
+      logger.info('[REGISTER] Role validation geçti');
 
       const hashedPassword = await bcrypt.hash(password, 12);
-      console.log('[REGISTER] Password hashing tamamlandı');
+      logger.info('[REGISTER] Password hashing tamamlandı');
 
       const emailVerifyToken = JwtService.generateEmailVerifyToken(
         'temp',
         email
       );
       const emailVerifyExpiry = new Date(Date.now() + 30 * 60 * 1000);
-      console.log('[REGISTER] Email verification token oluşturuldu');
+      logger.info('[REGISTER] Email verification token oluşturuldu');
 
       // firstName and lastName already extracted from request body
 
@@ -108,7 +108,7 @@ export class AuthController {
           emailVerifyExpires: emailVerifyExpiry,
         },
       });
-      console.log('[REGISTER] User veritabanında oluşturuldu:', user.id);
+      logger.info('[REGISTER] User veritabanında oluşturuldu:', user.id);
 
       const finalEmailVerifyToken = JwtService.generateEmailVerifyToken(
         user.id,
@@ -119,7 +119,7 @@ export class AuthController {
         where: { id: user.id },
         data: { emailVerifyToken: finalEmailVerifyToken },
       });
-      console.log('[REGISTER] Token güncelleme tamamlandı');
+      logger.info('[REGISTER] Token güncelleme tamamlandı');
 
       try {
         await EmailService.sendEmailVerification(
@@ -127,7 +127,7 @@ export class AuthController {
           finalEmailVerifyToken,
           `${firstName} ${lastName}`
         );
-        console.log('[REGISTER] Email doğrulama başarıyla gönderildi');
+        logger.info('[REGISTER] Email doğrulama başarıyla gönderildi');
 
         sendSuccess(
           res,
@@ -139,10 +139,10 @@ export class AuthController {
           'Kayıt başarılı - Email doğrulama gönderildi'
         );
       } catch (emailError) {
-        console.error('[REGISTER] Email gönderim hatası:', emailError);
+        logger.error('[REGISTER] Email gönderim hatası:', emailError);
 
         await db.user.delete({ where: { id: user.id } });
-        console.log('[REGISTER] User kaydı email hatası nedeniyle geri alındı');
+        logger.info('[REGISTER] User kaydı email hatası nedeniyle geri alındı');
 
         sendError(
           res,
@@ -152,7 +152,7 @@ export class AuthController {
         return;
       }
     } catch (error) {
-      console.error('[REGISTER] Kritik hata:', {
+      logger.error('[REGISTER] Kritik hata:', {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         code:
@@ -176,9 +176,9 @@ export class AuthController {
         return;
       }
 
-      console.log('Token doğrulama başlatıldı');
+      logger.info('Token doğrulama başlatıldı');
       const decoded = JwtService.verifyEmailVerifyToken(token);
-      console.log('Token decode edildi:', decoded.userId);
+      logger.info('Token decode edildi:', decoded.userId);
 
       const user = await db.user.findUnique({
         where: {
@@ -197,7 +197,7 @@ export class AuthController {
         },
       });
 
-      console.log(
+      logger.info(
         'Kullanıcı sorgusu tamamlandı:',
         user ? 'bulundu' : 'bulunamadı'
       );
@@ -217,7 +217,7 @@ export class AuthController {
         return;
       }
 
-      console.log('Email doğrulama işlemi başlatılıyor');
+      logger.info('Email doğrulama işlemi başlatılıyor');
       await db.user.update({
         where: { id: user.id },
         data: {
@@ -227,7 +227,7 @@ export class AuthController {
         },
       });
 
-      console.log('Token generation başlatılıyor');
+      logger.info('Token generation başlatılıyor');
       const accessToken = JwtService.generateAccessToken(
         user.id,
         user.email,
@@ -254,10 +254,10 @@ export class AuthController {
         expiresIn: JwtService.getExpiresInSeconds(),
       };
 
-      console.log('Email doğrulama başarıyla tamamlandı');
+      logger.info('Email doğrulama başarıyla tamamlandı');
       sendSuccess(res, response, 'Email doğrulandı ve giriş yapabilirsiniz');
     } catch (error) {
-      console.error('Email doğrulama hatası detayı:', {
+      logger.error('Email doğrulama hatası detayı:', {
         message: error instanceof Error ? error.message : 'Bilinmeyen hata',
         stack: error instanceof Error ? error.stack : undefined,
       });
@@ -310,7 +310,7 @@ export class AuthController {
 
       sendSuccess(res, null, 'Email doğrulama bağlantısı yeniden gönderildi');
     } catch (error) {
-      console.error('Email doğrulama yeniden gönderme hatası:', error);
+      logger.error('Email doğrulama yeniden gönderme hatası:', error);
       sendServerError(
         res,
         'AUTH_024: Email doğrulama yeniden gönderme başarısız'
@@ -482,7 +482,7 @@ export class AuthController {
 
       sendSuccess(res, response);
     } catch (error) {
-      console.error('Token yenileme hatası:', error);
+      logger.error('Token yenileme hatası:', error);
       sendError(
         res,
         'AUTH_009: Token yenileme başarısız - Token doğrulama hatası',
@@ -580,7 +580,7 @@ export class AuthController {
         'Şifre sıfırlama bağlantısı email adresinize gönderildi'
       );
     } catch (error) {
-      console.error('Şifre sıfırlama hatası:', error);
+      logger.error('Şifre sıfırlama hatası:', error);
       sendServerError(
         res,
         'AUTH_012: Sistem hatası - Şifre sıfırlama talebi işlenemedi'
@@ -592,15 +592,15 @@ export class AuthController {
     try {
       const { token, newPassword }: ResetPasswordRequest = req.body;
 
-      console.log('Reset token received:', token?.substring(0, 20) + '...');
+      logger.info('Reset token received:', token?.substring(0, 20) + '...');
 
       let decoded;
       try {
         decoded = JwtService.verifyPasswordResetToken(token);
-        console.log('JWT verification successful for user:', decoded.userId);
+        logger.info('JWT verification successful for user:', decoded.userId);
       } catch (jwtError) {
         if (jwtError instanceof Error) {
-          console.log('JWT verification failed:', jwtError.message);
+          logger.info('JWT verification failed:', jwtError.message);
           if (
             jwtError.message.includes('süresi dolmuş') ||
             jwtError.message.includes('expired')
@@ -609,7 +609,7 @@ export class AuthController {
             return;
           }
         } else {
-          console.log('JWT verification failed:', jwtError);
+          logger.info('JWT verification failed:', jwtError);
         }
         sendError(res, 'AUTH_035: Geçersiz şifre sıfırlama token', 400);
         return;
@@ -624,7 +624,7 @@ export class AuthController {
       });
 
       if (!user) {
-        console.log('User not found for ID:', decoded.userId);
+        logger.info('User not found for ID:', decoded.userId);
         sendError(res, 'AUTH_035: Geçersiz şifre sıfırlama token', 400);
         return;
       }
@@ -638,10 +638,10 @@ export class AuthController {
         },
       });
 
-      console.log('Password reset successful for user:', user.email);
+      logger.info('Password reset successful for user:', user.email);
       sendSuccess(res, null, 'Şifre başarıyla sıfırlandı');
     } catch (error) {
-      console.error('Şifre sıfırlama hatası:', error);
+      logger.error('Şifre sıfırlama hatası:', error);
       if (error instanceof Error && error.message.startsWith('JWT_S')) {
         sendError(res, error.message, 400);
       } else {
@@ -684,7 +684,7 @@ export class AuthController {
         lastName: user.lastName,
       });
     } catch (error) {
-      console.error('Kullanıcı bilgileri getirilemedi:', error);
+      logger.error('Kullanıcı bilgileri getirilemedi:', error);
       sendServerError(
         res,
         'AUTH_014: Sistem hatası - Kullanıcı bilgileri alınamadı'
@@ -736,7 +736,7 @@ export class AuthController {
         'Profil bilgileri başarıyla güncellendi'
       );
     } catch (error) {
-      console.error('Profil güncelleme hatası:', error);
+      logger.error('Profil güncelleme hatası:', error);
       sendServerError(
         res,
         'AUTH_029: Sistem hatası - Profil güncelleme işlemi başarısız'
@@ -780,7 +780,7 @@ export class AuthController {
 
       sendSuccess(res, null, 'Şifre başarıyla değiştirildi');
     } catch (error) {
-      console.error('Şifre değiştirme hatası:', error);
+      logger.error('Şifre değiştirme hatası:', error);
       sendServerError(
         res,
         'AUTH_032: Sistem hatası - Şifre değiştirme işlemi başarısız'

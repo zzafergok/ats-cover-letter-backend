@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 
 import { ContactData, ContactService } from '../services/contact.service';
+import logger from '../config/logger';
 
 import { sendError, sendSuccess, sendServerError } from '../utils/response';
 
@@ -31,7 +32,7 @@ export class ContactController {
         `${messageType} başarıyla gönderildi. En kısa sürede size dönüş yapacağız.`
       );
     } catch (error) {
-      console.error('Contact message gönderim hatası:', error);
+      logger.error('Contact message gönderim hatası:', error);
 
       if (error instanceof Error && error.message.startsWith('CONTACT_001')) {
         sendError(res, error.message, 429);
@@ -73,7 +74,7 @@ export class ContactController {
         }),
       });
     } catch (error) {
-      console.error('Limit kontrolü hatası:', error);
+      logger.error('Limit kontrolü hatası:', error);
       sendServerError(res, 'CONTACT_005: Limit bilgisi alınamadı');
     }
   };
@@ -86,7 +87,7 @@ export class ContactController {
       const result = await this.contactService.getContactMessages(page, limit);
       sendSuccess(res, result);
     } catch (error) {
-      console.error('Contact messages getirilemedi:', error);
+      logger.error('Contact messages getirilemedi:', error);
       sendServerError(res, 'CONTACT_004: Sistem hatası - Mesajlar yüklenemedi');
     }
   };

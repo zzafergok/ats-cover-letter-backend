@@ -1,14 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import logger from '../src/config/logger';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seed işlemi başlatılıyor...');
+  logger.info('🌱 Seed işlemi başlatılıyor...');
 
   // Admin kullanıcı
-  const adminPassword = await bcrypt.hash('test123456', 10);
-  const admin = await prisma.user.upsert({
+  const adminPassword = await bcrypt.hash('test123456', 12);
+  await prisma.user.upsert({
     where: { email: 'admin@atscv.com' },
     update: {},
     create: {
@@ -17,13 +18,14 @@ async function main() {
       firstName: 'Admin',
       lastName: 'User',
       role: 'ADMIN',
+      isEmailVerified: true,
     },
   });
 
-  console.log('✅ Admin kullanıcı oluşturuldu');
+  logger.info('✅ Admin kullanıcı oluşturuldu');
 
   // Test kullanıcıları
-  const testPassword = await bcrypt.hash('test123456', 10);
+  const testPassword = await bcrypt.hash('test123456', 12);
 
   const users = await Promise.all([
     prisma.user.upsert({
@@ -35,6 +37,7 @@ async function main() {
         firstName: 'Ahmet',
         lastName: 'Yılmaz',
         role: 'USER',
+        isEmailVerified: true,
       },
     }),
     prisma.user.upsert({
@@ -46,6 +49,7 @@ async function main() {
         firstName: 'Ayşe',
         lastName: 'Kaya',
         role: 'USER',
+        isEmailVerified: true,
       },
     }),
     prisma.user.upsert({
@@ -57,11 +61,12 @@ async function main() {
         firstName: 'Mehmet',
         lastName: 'Demir',
         role: 'USER',
+        isEmailVerified: true,
       },
     }),
   ]);
 
-  console.log('✅ Test kullanıcıları oluşturuldu');
+  logger.info('✅ Test kullanıcıları oluşturuldu');
 
   // CV Yüklemeleri
   await prisma.cvUpload.createMany({
@@ -85,7 +90,7 @@ async function main() {
     ],
   });
 
-  console.log('✅ CV yüklemeleri oluşturuldu');
+  logger.info('✅ CV yüklemeleri oluşturuldu');
 
   // Kayıtlı CV'ler
   await prisma.savedCv.createMany({
@@ -131,7 +136,7 @@ async function main() {
     ],
   });
 
-  console.log("✅ Kayıtlı CV'ler oluşturuldu");
+  logger.info("✅ Kayıtlı CV'ler oluşturuldu");
 
   // Cover Letter örnekleri (enum'a göre güncellenmiş)
   await prisma.coverLetter.createMany({
@@ -168,30 +173,64 @@ async function main() {
     ],
   });
 
-  console.log('✅ Cover Letter kayıtları oluşturuldu');
+  logger.info('✅ Cover Letter kayıtları oluşturuldu');
+
+  // Staged Cover Letter örnekleri
+  await prisma.stagedCoverLetter.createMany({
+    data: [
+      {
+        userId: users[0].id,
+        sessionId: 'demo-session-1',
+        positionTitle: 'Full Stack Developer',
+        companyName: 'Innovation Tech',
+        experienceLevel: 'SENIOR',
+        keySkills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL'],
+        companyResearch: 'Innovation Tech şirketinin teknoloji odaklı çözümlerinden etkilendim.',
+        achievements: ['5+ yıllık tecrübe', 'Team Lead deneyimi', '10+ proje tamamladım'],
+        careerGoals: 'Senior pozisyonlarda teknik liderlik yapmak',
+        motivation: 'Yenilikçi projeler geliştirme tutkusu',
+        stage: 'ENHANCEMENT',
+        isCompleted: false,
+      },
+      {
+        userId: users[1].id,
+        sessionId: 'demo-session-2',
+        positionTitle: 'Marketing Coordinator',
+        companyName: 'Creative Agency',
+        experienceLevel: 'MID_LEVEL',
+        keySkills: ['Digital Marketing', 'Content Strategy', 'Analytics', 'Social Media'],
+        stage: 'BASIC_INFO',
+        isCompleted: false,
+      },
+    ],
+  });
+
+  logger.info('✅ Staged Cover Letter örnekleri oluşturuldu');
 
   // Özet Bilgi
   const userCount = await prisma.user.count();
   const cvUploadCount = await prisma.cvUpload.count();
   const savedCvCount = await prisma.savedCv.count();
   const coverLetterCount = await prisma.coverLetter.count();
+  const stagedCoverLetterCount = await prisma.stagedCoverLetter.count();
 
-  console.log('\n📊 Seed işlemi tamamlandı! Oluşturulan veriler:');
-  console.log(`👥 Kullanıcılar: ${userCount}`);
-  console.log(`📄 CV Yüklemeleri: ${cvUploadCount}`);
-  console.log(`💾 Kayıtlı CV'ler: ${savedCvCount}`);
-  console.log(`✉️ Cover Letters: ${coverLetterCount}`);
+  logger.info('\n📊 Seed işlemi tamamlandı! Oluşturulan veriler:');
+  logger.info(`👥 Kullanıcılar: ${userCount}`);
+  logger.info(`📄 CV Yüklemeleri: ${cvUploadCount}`);
+  logger.info(`💾 Kayıtlı CV'ler: ${savedCvCount}`);
+  logger.info(`✉️ Cover Letters: ${coverLetterCount}`);
+  logger.info(`🎯 Staged Cover Letters: ${stagedCoverLetterCount}`);
 
-  console.log('\n🔑 Test kullanıcı bilgileri:');
-  console.log('Admin: admin@atscv.com / test123456');
-  console.log('Kullanıcı 1: ahmet.yilmaz@test.com / test123456');
-  console.log('Kullanıcı 2: ayse.kaya@test.com / test123456');
-  console.log('Kullanıcı 3: mehmet.demir@test.com / test123456');
+  logger.info('\n🔑 Test kullanıcı bilgileri:');
+  logger.info('Admin: admin@atscv.com / test123456');
+  logger.info('Kullanıcı 1: ahmet.yilmaz@test.com / test123456');
+  logger.info('Kullanıcı 2: ayse.kaya@test.com / test123456');
+  logger.info('Kullanıcı 3: mehmet.demir@test.com / test123456');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed işlemi başarısız:', e);
+    logger.error('❌ Seed işlemi başarısız:', e);
     process.exit(1);
   })
   .finally(async () => {
