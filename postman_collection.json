@@ -1,0 +1,999 @@
+{
+	"info": {
+		"_postman_id": "ats-cover-letter-backend-api",
+		"name": "ATS Cover Letter Backend API",
+		"description": "Complete API collection for ATS Cover Letter Backend services",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "ats-cover-letter"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!@#\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.accessToken) {",
+									"        pm.collectionVariables.set('access_token', response.data.accessToken);",
+									"    }",
+									"    if (response.data && response.data.refreshToken) {",
+									"        pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!@#\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Verify Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"verification_token_here\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/verify-email",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "verify-email"]
+						}
+					}
+				},
+				{
+					"name": "Resend Email Verification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/resend-verification",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "resend-verification"]
+						}
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.accessToken) {",
+									"        pm.collectionVariables.set('access_token', response.data.accessToken);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/refresh",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "refresh"]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "logout"]
+						}
+					}
+				},
+				{
+					"name": "Logout All Sessions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/logout-all",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "logout-all"]
+						}
+					}
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/forgot-password",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "forgot-password"]
+						}
+					}
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"reset_token_here\",\n  \"newPassword\": \"NewPassword123!@#\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/reset-password",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "reset-password"]
+						}
+					}
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/me",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "me"]
+						}
+					}
+				},
+				{
+					"name": "Update User Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Test Updated\",\n  \"lastName\": \"User Updated\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/profile",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "profile"]
+						}
+					}
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"Test123!@#\",\n  \"newPassword\": \"NewPassword123!@#\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/change-password",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "change-password"]
+						}
+					}
+				},
+				{
+					"name": "Get User Sessions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/sessions",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "sessions"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "CV Management",
+			"item": [
+				{
+					"name": "Upload CV File",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "cvFile",
+									"type": "file",
+									"src": [],
+									"description": "PDF, DOC, or DOCX file (max 10MB)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/cv/upload",
+							"host": ["{{base_url}}"],
+							"path": ["cv", "upload"]
+						}
+					}
+				},
+				{
+					"name": "Get All CV Uploads",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cv/uploads",
+							"host": ["{{base_url}}"],
+							"path": ["cv", "uploads"]
+						}
+					}
+				},
+				{
+					"name": "Check CV Processing Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cv/upload/status/{{cv_upload_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["cv", "upload", "status", "{{cv_upload_id}}"],
+							"variable": [
+								{
+									"key": "cv_upload_id",
+									"value": "your_cv_upload_id_here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete CV Upload",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cv/uploads/{{cv_upload_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["cv", "uploads", "{{cv_upload_id}}"],
+							"variable": [
+								{
+									"key": "cv_upload_id",
+									"value": "your_cv_upload_id_here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Generate Customized CV",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"positionTitle\": \"Software Engineer\",\n  \"companyName\": \"Google\",\n  \"cvType\": \"ATS_OPTIMIZED\",\n  \"cvUploadId\": \"your_cv_upload_id_here\",\n  \"jobDescription\": \"We are looking for a skilled software engineer...\",\n  \"additionalRequirements\": \"Experience with cloud technologies\",\n  \"targetKeywords\": [\"React\", \"Node.js\", \"TypeScript\", \"AWS\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/cv/generate",
+							"host": ["{{base_url}}"],
+							"path": ["cv", "generate"]
+						}
+					}
+				},
+				{
+					"name": "Save Generated CV",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Software Engineer CV - Google\",\n  \"content\": \"Your generated CV content here...\",\n  \"cvType\": \"ATS_OPTIMIZED\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/cv/save",
+							"host": ["{{base_url}}"],
+							"path": ["cv", "save"]
+						}
+					}
+				},
+				{
+					"name": "Get Saved CVs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cv/saved",
+							"host": ["{{base_url}}"],
+							"path": ["cv", "saved"]
+						}
+					}
+				},
+				{
+					"name": "Delete Saved CV",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cv/saved/{{saved_cv_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["cv", "saved", "{{saved_cv_id}}"],
+							"variable": [
+								{
+									"key": "saved_cv_id",
+									"value": "your_saved_cv_id_here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Download Original CV File",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cv/download/{{cv_upload_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["cv", "download", "{{cv_upload_id}}"],
+							"variable": [
+								{
+									"key": "cv_upload_id",
+									"value": "your_cv_upload_id_here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Cover Letter",
+			"item": [
+				{
+					"name": "Generate Full Cover Letter",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"positionTitle\": \"Frontend Developer\",\n  \"companyName\": \"Microsoft\",\n  \"jobDescription\": \"We are seeking a talented Frontend Developer to join our team...\",\n  \"cvUploadId\": \"your_cv_upload_id_here\",\n  \"additionalInfo\": \"I am particularly interested in this role because...\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/cover-letter/generate",
+							"host": ["{{base_url}}"],
+							"path": ["cover-letter", "generate"]
+						}
+					}
+				},
+				{
+					"name": "Generate Minimal Cover Letter",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"positionTitle\": \"Backend Developer\",\n  \"companyName\": \"Amazon\",\n  \"keySkills\": [\"Python\", \"Django\"],\n  \"experienceLevel\": \"MID_LEVEL\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/cover-letter/generate-minimal",
+							"host": ["{{base_url}}"],
+							"path": ["cover-letter", "generate-minimal"]
+						}
+					}
+				},
+				{
+					"name": "Get Template by Category",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/cover-letter/template/TECHNOLOGY",
+							"host": ["{{base_url}}"],
+							"path": ["cover-letter", "template", "TECHNOLOGY"],
+							"variable": [
+								{
+									"key": "category",
+									"value": "TECHNOLOGY",
+									"description": "Categories: TECHNOLOGY, MARKETING, FINANCE, HEALTHCARE, EDUCATION"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Save Cover Letter",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Cover Letter - Frontend Developer at Microsoft\",\n  \"content\": \"Dear Hiring Manager,\\n\\nI am writing to express my interest...\",\n  \"positionTitle\": \"Frontend Developer\",\n  \"companyName\": \"Microsoft\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/cover-letter/save",
+							"host": ["{{base_url}}"],
+							"path": ["cover-letter", "save"]
+						}
+					}
+				},
+				{
+					"name": "Get All Saved Cover Letters",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cover-letter/saved",
+							"host": ["{{base_url}}"],
+							"path": ["cover-letter", "saved"]
+						}
+					}
+				},
+				{
+					"name": "Get Cover Letter by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cover-letter/saved/{{cover_letter_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["cover-letter", "saved", "{{cover_letter_id}}"],
+							"variable": [
+								{
+									"key": "cover_letter_id",
+									"value": "your_cover_letter_id_here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Cover Letter",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cover-letter/saved/{{cover_letter_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["cover-letter", "saved", "{{cover_letter_id}}"],
+							"variable": [
+								{
+									"key": "cover_letter_id",
+									"value": "your_cover_letter_id_here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Download Cover Letter",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cover-letter/download/{{cover_letter_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["cover-letter", "download", "{{cover_letter_id}}"],
+							"variable": [
+								{
+									"key": "cover_letter_id",
+									"value": "your_cover_letter_id_here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Analyze Cover Letter",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Dear Hiring Manager,\\n\\nI am writing to express my interest in the Software Engineer position...\",\n  \"jobDescription\": \"We are looking for a skilled software engineer with experience in React and Node.js...\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/cover-letter/analyze",
+							"host": ["{{base_url}}"],
+							"path": ["cover-letter", "analyze"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Staged Cover Letter (2-Step Process)",
+			"item": [
+				{
+					"name": "Step 1: Create Basic Cover Letter",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"positionTitle\": \"Data Scientist\",\n  \"companyName\": \"Netflix\",\n  \"experienceLevel\": \"SENIOR\",\n  \"keySkills\": [\"Python\", \"Machine Learning\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/staged-cover-letter/basic",
+							"host": ["{{base_url}}"],
+							"path": ["staged-cover-letter", "basic"]
+						}
+					}
+				},
+				{
+					"name": "Step 2: Enhance Cover Letter",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"companyResearch\": \"Netflix is known for its data-driven approach to content creation and user experience...\",\n  \"achievements\": [\n    \"Led a team of 5 data scientists in developing recommendation algorithms\",\n    \"Improved model accuracy by 25% through feature engineering\"\n  ],\n  \"careerGoals\": \"I aim to leverage my expertise in machine learning to contribute to Netflix's personalization efforts\",\n  \"motivation\": \"I am excited about the opportunity to work with Netflix's vast dataset and contribute to enhancing user experience\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/staged-cover-letter/{{staged_cover_letter_id}}/enhance",
+							"host": ["{{base_url}}"],
+							"path": ["staged-cover-letter", "{{staged_cover_letter_id}}", "enhance"],
+							"variable": [
+								{
+									"key": "staged_cover_letter_id",
+									"value": "your_staged_cover_letter_id_here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Staged Cover Letter by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/staged-cover-letter/{{staged_cover_letter_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["staged-cover-letter", "{{staged_cover_letter_id}}"],
+							"variable": [
+								{
+									"key": "staged_cover_letter_id",
+									"value": "your_staged_cover_letter_id_here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All User's Staged Cover Letters",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/staged-cover-letter",
+							"host": ["{{base_url}}"],
+							"path": ["staged-cover-letter"]
+						}
+					}
+				},
+				{
+					"name": "Complete Staged Process (Create Final Cover Letter)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/staged-cover-letter/{{staged_cover_letter_id}}/complete",
+							"host": ["{{base_url}}"],
+							"path": ["staged-cover-letter", "{{staged_cover_letter_id}}", "complete"],
+							"variable": [
+								{
+									"key": "staged_cover_letter_id",
+									"value": "your_staged_cover_letter_id_here"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Staged Cover Letter",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/staged-cover-letter/{{staged_cover_letter_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["staged-cover-letter", "{{staged_cover_letter_id}}"],
+							"variable": [
+								{
+									"key": "staged_cover_letter_id",
+									"value": "your_staged_cover_letter_id_here"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Contact & Support",
+			"item": [
+				{
+					"name": "Send Contact Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"subject\": \"Question about CV generation\",\n  \"message\": \"I have a question about how the CV generation process works. Could you please provide more information?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/contact/send",
+							"host": ["{{base_url}}"],
+							"path": ["contact", "send"]
+						}
+					}
+				},
+				{
+					"name": "Get Contact Messages (Admin Only)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/contact/messages",
+							"host": ["{{base_url}}"],
+							"path": ["contact", "messages"]
+						}
+					}
+				},
+				{
+					"name": "Check Contact Rate Limit",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/contact/limit",
+							"host": ["{{base_url}}"],
+							"path": ["contact", "limit"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "System Metrics (Admin Only)",
+			"item": [
+				{
+					"name": "Get System Metrics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/metrics/metrics",
+							"host": ["{{base_url}}"],
+							"path": ["metrics", "metrics"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-refresh token if expired",
+					"const token = pm.collectionVariables.get('access_token');",
+					"if (!token) {",
+					"    console.log('No access token found. Please login first.');",
+					"}"
+				]
+			}
+		}
+	]
+}

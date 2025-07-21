@@ -20,10 +20,11 @@ model User {
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
-  refreshTokens  RefreshToken[]
-  cvUploads      CvUpload[]
-  coverLetters   CoverLetter[]
-  savedCvs       SavedCv[]
+  refreshTokens        RefreshToken[]
+  cvUploads            CvUpload[]
+  coverLetters         CoverLetter[]
+  savedCvs             SavedCv[]
+  stagedCoverLetters   StagedCoverLetter[]
 
   @@map("users")
 }
@@ -94,6 +95,39 @@ model SavedCv {
   @@map("saved_cvs")
 }
 
+model StagedCoverLetter {
+  id               String                    @id @default(cuid())
+  userId           String                    @map("user_id")
+  sessionId        String                    @map("session_id")
+  
+  // Stage 1: Basic Info (Required)
+  positionTitle    String                    @map("position_title")
+  companyName      String                    @map("company_name")
+  experienceLevel  ExperienceLevel           @map("experience_level")
+  keySkills        String[]                  @map("key_skills")
+  
+  // Stage 2: Optional Enhancement
+  companyResearch  String?                   @map("company_research")
+  achievements     String[]                  @default([])
+  careerGoals      String?                   @map("career_goals")
+  motivation       String?
+  
+  // Generated Content
+  basicContent     String?                   @map("basic_content")
+  enhancedContent  String?                   @map("enhanced_content")
+  
+  // Status
+  stage            CoverLetterStage          @default(BASIC_INFO)
+  isCompleted      Boolean                   @default(false) @map("is_completed")
+  
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  updatedAt        DateTime                  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("staged_cover_letters")
+}
+
 enum CoverLetterType {
   PROFESSIONAL 
   CREATIVE 
@@ -142,4 +176,17 @@ enum CoverLetterCategory {
   HEALTHCARE
   LEGAL
   GENERAL
+}
+
+enum ExperienceLevel {
+  NEW_GRADUATE
+  JUNIOR
+  MID_LEVEL
+  SENIOR
+}
+
+enum CoverLetterStage {
+  BASIC_INFO
+  ENHANCEMENT
+  COMPLETED
 }
