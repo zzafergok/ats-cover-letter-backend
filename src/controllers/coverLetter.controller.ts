@@ -1,11 +1,15 @@
-// src/controllers/coverLetter.controller.ts
-import { Request, Response } from 'express';
 import { z } from 'zod';
+import { Request, Response } from 'express';
+
+import { db } from '../services/database.service';
 import { CoverLetterService } from '../services/coverLetterService.service';
 import { generatePdf, generateDocx } from '../services/documentService.service';
+
+import logger from '../config/logger';
+
+import { MinimalCoverLetterRequest } from '../types/coverLetter.types';
+
 import { sendSuccess, sendError, sendServerError } from '../utils/response';
-import { db } from '../services/database.service';
-import { MinimalCoverLetterRequest } from '@/types/coverLetter.types';
 
 const generateCoverLetterSchema = z.object({
   personalInfo: z.object({
@@ -101,7 +105,7 @@ export class CoverLetterController {
         'Cover letter CV bilgileri kullanılarak başarıyla oluşturuldu'
       );
     } catch (error) {
-      console.error('Minimal cover letter oluşturma hatası:', error);
+      logger.error('Minimal cover letter oluşturma hatası:', error);
       sendServerError(res, 'Cover letter oluşturulurken hata oluştu');
     }
   };
@@ -146,7 +150,7 @@ export class CoverLetterController {
         return;
       }
 
-      console.error('Cover letter oluşturma hatası:', error);
+      logger.error('Cover letter oluşturma hatası:', error);
       sendServerError(res, 'Cover letter oluşturulurken hata oluştu');
     }
   };
@@ -178,7 +182,7 @@ export class CoverLetterController {
         'Şablon başarıyla getirildi'
       );
     } catch (error) {
-      console.error('Şablon getirme hatası:', error);
+      logger.error('Şablon getirme hatası:', error);
       sendServerError(res, 'Şablon getirilirken hata oluştu');
     }
   };
@@ -227,7 +231,7 @@ export class CoverLetterController {
         return;
       }
 
-      console.error('Cover letter kaydetme hatası:', error);
+      logger.error('Cover letter kaydetme hatası:', error);
       sendServerError(res, 'Cover letter kaydedilirken hata oluştu');
     }
   };
@@ -263,7 +267,7 @@ export class CoverLetterController {
         "Kayıtlı cover letter'lar başarıyla getirildi"
       );
     } catch (error) {
-      console.error('Cover letter listesi getirme hatası:', error);
+      logger.error('Cover letter listesi getirme hatası:', error);
       sendServerError(res, 'Cover letter listesi getirilirken hata oluştu');
     }
   };
@@ -290,7 +294,7 @@ export class CoverLetterController {
 
       sendSuccess(res, coverLetter, 'Cover letter başarıyla getirildi');
     } catch (error) {
-      console.error('Cover letter getirme hatası:', error);
+      logger.error('Cover letter getirme hatası:', error);
       sendServerError(res, 'Cover letter getirilirken hata oluştu');
     }
   };
@@ -321,7 +325,7 @@ export class CoverLetterController {
 
       sendSuccess(res, null, 'Cover letter başarıyla silindi');
     } catch (error) {
-      console.error('Cover letter silme hatası:', error);
+      logger.error('Cover letter silme hatası:', error);
       sendServerError(res, 'Cover letter silinirken hata oluştu');
     }
   };
@@ -372,7 +376,7 @@ export class CoverLetterController {
       );
       res.send(buffer);
     } catch (error) {
-      console.error('Cover letter indirme hatası:', error);
+      logger.error('Cover letter indirme hatası:', error);
       sendServerError(res, 'Cover letter indirilirken hata oluştu');
     }
   };
@@ -426,7 +430,7 @@ export class CoverLetterController {
         'Cover letter analizi tamamlandı'
       );
     } catch (error) {
-      console.error('Cover letter analiz hatası:', error);
+      logger.error('Cover letter analiz hatası:', error);
       sendServerError(res, 'Cover letter analiz edilirken hata oluştu');
     }
   };

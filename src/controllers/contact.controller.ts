@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 
 import { ContactData, ContactService } from '../services/contact.service';
-import logger from '../config/logger';
 
 import { sendError, sendSuccess, sendServerError } from '../utils/response';
+
+import logger from '../config/logger';
 
 export class ContactController {
   private contactService = ContactService.getInstance();

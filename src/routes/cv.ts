@@ -1,5 +1,3 @@
-// src/routes/cv.ts
-
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
@@ -8,19 +6,20 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 
 import { authenticateToken } from '../middleware/auth';
-import { generateCvWithClaude } from '../services/claudeService.service';
-import { FileCompressionService } from '../services/fileCompression.service';
+import { uploadLimiter } from '../middleware/rateLimiter';
+
 import {
+  extractSections,
+  extractKeywords,
   extractCvContent,
   convertToMarkdown,
   cleanAndNormalizeText,
-  extractContactInformation,
-  extractSections,
-  extractKeywords,
   generateDocumentMetadata,
+  extractContactInformation,
 } from '../services/cvService.service';
-import { uploadLimiter } from '../middleware/rateLimiter';
-// import { cvProcessingQueue } from '../config/queue';
+import { generateCvWithClaude } from '../services/claudeService.service';
+import { FileCompressionService } from '../services/fileCompression.service';
+
 import logger from '../config/logger';
 
 const router = express.Router();
@@ -113,7 +112,7 @@ const upload = multer({
     files: 1,
   },
   fileFilter: (req, file, cb) => {
-    console.log(
+    logger.log(
       'File filter - Name:',
       file.originalname,
       'MIME:',
@@ -138,7 +137,7 @@ const upload = multer({
       const error = new Error(
         `Geçersiz dosya formatı. Dosya: ${file.originalname}, MIME: ${file.mimetype}`
       );
-      console.error('File rejected:', error.message);
+      logger.error('File rejected:', error.message);
       cb(error);
     }
   },
@@ -283,7 +282,7 @@ router.get('/uploads', authenticateToken, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('CV listesi getirme hatası:', error);
+    logger.error('CV listesi getirme hatası:', error);
     return res.status(500).json({
       success: false,
       message: 'CV listesi alınırken hata oluştu',
@@ -360,7 +359,7 @@ router.delete('/uploads/:id', authenticateToken, async (req, res) => {
       message: 'CV başarıyla silindi',
     });
   } catch (error) {
-    console.error('CV silme hatası:', error);
+    logger.error('CV silme hatası:', error);
     return res.status(500).json({
       success: false,
       message: 'CV silinirken hata oluştu',
@@ -451,7 +450,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
       });
     }
 
-    console.error('CV oluşturma hatası:', error);
+    logger.error('CV oluşturma hatası:', error);
     return res.status(500).json({
       success: false,
       message: 'CV oluşturulurken hata oluştu',
@@ -500,7 +499,7 @@ router.post('/save', authenticateToken, async (req, res) => {
       });
     }
 
-    console.error('CV kaydetme hatası:', error);
+    logger.error('CV kaydetme hatası:', error);
     return res.status(500).json({
       success: false,
       message: 'CV kaydedilirken hata oluştu',
@@ -520,7 +519,7 @@ router.get('/saved', authenticateToken, async (req, res) => {
       data: savedCvs,
     });
   } catch (error) {
-    console.error("Kayıtlı CV'ler getirme hatası:", error);
+    logger.error("Kayıtlı CV'ler getirme hatası:", error);
     res.status(500).json({
       success: false,
       message: "Kayıtlı CV'ler alınırken hata oluştu",
@@ -555,7 +554,7 @@ router.delete('/saved/:id', authenticateToken, async (req, res) => {
       message: 'CV başarıyla silindi',
     });
   } catch (error) {
-    console.error('CV silme hatası:', error);
+    logger.error('CV silme hatası:', error);
     return res.status(500).json({
       success: false,
       message: 'CV silinirken hata oluştu',
@@ -612,7 +611,7 @@ router.get('/download/:id', authenticateToken, async (req, res) => {
     );
     return res.send(decompressedBuffer);
   } catch (error) {
-    console.error('CV indirme hatası:', error);
+    logger.error('CV indirme hatası:', error);
     return res.status(500).json({
       success: false,
       message: 'CV indirilirken hata oluştu',

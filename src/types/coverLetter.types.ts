@@ -1,4 +1,3 @@
-// src/types/coverLetter.types.ts
 export interface CoverLetterTemplate {
   id: string;
   name: string;

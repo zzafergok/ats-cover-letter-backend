@@ -1,19 +1,20 @@
-// src/routes/auth.ts güncellenmiş hali
 import { Router } from 'express';
+
 import {
   validate,
   loginSchema,
   registerSchema,
   verifyEmailSchema,
   refreshTokenSchema,
+  resetPasswordSchema,
   forgotPasswordSchema,
-  resendEmailVerificationSchema,
   changePasswordSchema,
   updateUserProfileSchema,
-  resetPasswordSchema,
+  resendEmailVerificationSchema,
 } from '../middleware/validation';
 import { authenticateToken } from '../middleware/auth';
 import { authLimiter } from '../middleware/rateLimiter';
+
 import { AuthController } from '../controllers/auth.controller';
 
 const router = Router();

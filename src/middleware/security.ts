@@ -1,4 +1,3 @@
-// src/middleware/security.ts
 import helmet from 'helmet';
 import { Request, Response, NextFunction } from 'express';
 

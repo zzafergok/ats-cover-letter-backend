@@ -1,4 +1,3 @@
-// src/services/cvAnalysisService.service.ts - Yeni servis
 import { CvBasedCoverLetterData } from '@/types/coverLetter.types';
 
 export class CvAnalysisService {

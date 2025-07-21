@@ -1,6 +1,5 @@
-// src/services/cache.service.ts - Remove Redis dependency
-import { cacheService } from '../config/cache';
 import logger from '../config/logger';
+import { cacheService } from '../config/cache';
 
 export class CacheService {
   private static instance: CacheService;

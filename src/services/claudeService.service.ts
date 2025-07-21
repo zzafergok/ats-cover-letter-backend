@@ -1,5 +1,6 @@
-// src/services/claudeService.service.ts
 import Anthropic from '@anthropic-ai/sdk';
+
+import logger from '../config/logger';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -148,7 +149,7 @@ export async function generateCvWithClaude(
 
     return response.content[0].type === 'text' ? response.content[0].text : '';
   } catch (error: any) {
-    console.error('Claude API hatası:', error);
+    logger.error('Claude API hatası:', error);
 
     if (error.status === 401 || error.message?.includes('authentication')) {
       throw new Error('Anthropic API anahtarı geçersiz veya eksik');

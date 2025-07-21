@@ -1,5 +1,5 @@
-// src/config/env.validation.ts
 import { z } from 'zod';
+
 import logger from './logger';
 
 const envSchema = z.object({

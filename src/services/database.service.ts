@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+
 import logger from '../config/logger';
 
 export class DatabaseService {
@@ -185,7 +186,9 @@ export class DatabaseService {
       const totalCleaned = emailResult.count + passwordResult;
 
       if (totalCleaned > 0) {
-        logger.info(`DB_021: ${emailResult.count} email + ${passwordResult} password reset tokens cleaned up`);
+        logger.info(
+          `DB_021: ${emailResult.count} email + ${passwordResult} password reset tokens cleaned up`
+        );
       }
 
       return totalCleaned;
@@ -236,7 +239,9 @@ export class DatabaseService {
       });
 
       if (result.count > 0) {
-        logger.info(`DB_026: ${result.count} expired password reset tokens cleaned up`);
+        logger.info(
+          `DB_026: ${result.count} expired password reset tokens cleaned up`
+        );
       }
 
       return result.count;

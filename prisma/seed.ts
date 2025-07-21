@@ -1,5 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client';
+
 import logger from '../src/config/logger';
 
 const prisma = new PrismaClient();
@@ -185,8 +186,13 @@ async function main() {
         companyName: 'Innovation Tech',
         experienceLevel: 'SENIOR',
         keySkills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL'],
-        companyResearch: 'Innovation Tech şirketinin teknoloji odaklı çözümlerinden etkilendim.',
-        achievements: ['5+ yıllık tecrübe', 'Team Lead deneyimi', '10+ proje tamamladım'],
+        companyResearch:
+          'Innovation Tech şirketinin teknoloji odaklı çözümlerinden etkilendim.',
+        achievements: [
+          '5+ yıllık tecrübe',
+          'Team Lead deneyimi',
+          '10+ proje tamamladım',
+        ],
         careerGoals: 'Senior pozisyonlarda teknik liderlik yapmak',
         motivation: 'Yenilikçi projeler geliştirme tutkusu',
         stage: 'ENHANCEMENT',
@@ -198,7 +204,12 @@ async function main() {
         positionTitle: 'Marketing Coordinator',
         companyName: 'Creative Agency',
         experienceLevel: 'MID_LEVEL',
-        keySkills: ['Digital Marketing', 'Content Strategy', 'Analytics', 'Social Media'],
+        keySkills: [
+          'Digital Marketing',
+          'Content Strategy',
+          'Analytics',
+          'Social Media',
+        ],
         stage: 'BASIC_INFO',
         isCompleted: false,
       },

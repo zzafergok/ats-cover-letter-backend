@@ -1,8 +1,7 @@
-// src/app.ts
 import dotenv from 'dotenv';
 import express from 'express';
+
 import apiRoutes from './routes';
-import logger from './config/logger';
 
 import { corsMiddleware } from './middleware/cors';
 import { errorHandler } from './middleware/errorHandler';
@@ -10,6 +9,8 @@ import { helmetConfig, securityHeaders } from './middleware/security';
 import { generalLimiter, apiLimiter } from './middleware/rateLimiter';
 
 import { DatabaseService } from './services/database.service';
+
+import logger from './config/logger';
 
 dotenv.config();
 

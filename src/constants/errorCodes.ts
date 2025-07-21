@@ -1,4 +1,3 @@
-// src/constants/errorCodes.ts
 export enum ErrorCode {
   // Authentication
   AUTH_INVALID_CREDENTIALS = 'AUTH_001',

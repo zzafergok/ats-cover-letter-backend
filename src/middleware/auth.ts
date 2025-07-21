@@ -1,8 +1,9 @@
-// src/middleware/auth.ts - Updated with all required properties
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
+
 import { db } from '../services/database.service';
 import { SessionService } from '../services/session.service';
+
 import logger from '../config/logger';
 
 export enum UserRole {

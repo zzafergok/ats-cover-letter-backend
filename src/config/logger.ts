@@ -1,4 +1,3 @@
-// src/config/logger.ts - Vercel için güncellenmiş
 import winston from 'winston';
 
 const logger = winston.createLogger({

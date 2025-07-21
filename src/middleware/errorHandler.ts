@@ -1,15 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 
 import { sendServerError } from '../utils/response';
 
 import logger from '../config/logger';
 
-export const errorHandler = (
-  err: any,
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): void => {
+export const errorHandler = (err: any, req: Request, res: Response): void => {
   logger.error('Error occurred:', {
     message: err.message,
     stack: err.stack,
@@ -22,7 +17,7 @@ export const errorHandler = (
     timestamp: new Date().toISOString(),
   });
 
-  console.error('Error occurred:', {
+  logger.error('Error occurred:', {
     message: err.message,
     stack: err.stack,
     url: req.url,

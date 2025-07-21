@@ -1,7 +1,5 @@
 import { PrismaClient, $Enums } from '@prisma/client';
 
-// Use Prisma generated enum instead of local enum
-
 import logger from '../config/logger';
 
 const prisma = new PrismaClient();

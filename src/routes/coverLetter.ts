@@ -1,6 +1,7 @@
-// src/routes/coverLetter.ts
 import { Router } from 'express';
+
 import { CoverLetterController } from '../controllers/coverLetter.controller';
+
 import { authenticateToken } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimiter';
 

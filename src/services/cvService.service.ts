@@ -1,8 +1,9 @@
-// src/services/cvService.service.ts - Güncellenmiş hali
 import fs from 'fs';
 import path from 'path';
 import mammoth from 'mammoth';
 import pdfParse from 'pdf-parse';
+
+import logger from '../config/logger';
 
 export async function extractCvContent(filePath: string): Promise<string> {
   const fileExtension = path.extname(filePath).toLowerCase();
@@ -49,7 +50,7 @@ export async function extractCvContent(filePath: string): Promise<string> {
       throw new Error('Desteklenmeyen dosya formatı');
     }
   } catch (error) {
-    console.error('Dosya okuma hatası:', error);
+    logger.error('Dosya okuma hatası:', error);
     throw new Error(
       `Dosya içeriği okunamadı: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`
     );

@@ -1,7 +1,7 @@
-// src/routes/contact.ts - Düzeltilmiş import
-
 import { Router } from 'express';
+
 import { ContactController } from '../controllers/contact.controller';
+
 import { authenticateToken } from '../middleware/auth';
 import { validate, contactMessageSchema } from '../middleware/validation';
 

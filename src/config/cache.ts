@@ -1,5 +1,5 @@
-// src/config/cache.ts - Vercel için güncellenmiş cache servisi
 import { LRUCache } from 'lru-cache';
+
 import logger from './logger';
 
 class InMemoryCacheService {

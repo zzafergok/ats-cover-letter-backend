@@ -1,4 +1,3 @@
-// src/controllers/auth.controller.ts - Düzeltilmiş hali
 import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 
@@ -7,7 +6,6 @@ import { JwtService } from '../services/jwt.service';
 import { EmailService } from '../services/email.service';
 import { CacheService } from '../services/cache.service';
 import { SessionService } from '../services/session.service';
-
 
 import {
   AuthResponse,
@@ -40,7 +38,8 @@ export class AuthController {
         timestamp: new Date().toISOString(),
       });
 
-      const { email, password, firstName, lastName, role }: RegisterRequest = req.body;
+      const { email, password, firstName, lastName, role }: RegisterRequest =
+        req.body;
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const isValidEmail = emailRegex.test(email);

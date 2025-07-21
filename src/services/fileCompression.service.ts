@@ -1,5 +1,7 @@
-import { gzip, gunzip, constants } from 'zlib';
 import { promisify } from 'util';
+import { gzip, gunzip, constants } from 'zlib';
+
+import logger from '../config/logger';
 
 const gzipAsync = promisify(gzip);
 const gunzipAsync = promisify(gunzip);
@@ -21,7 +23,7 @@ export class FileCompressionService {
       });
       return compressed;
     } catch (error) {
-      console.error('Dosya sıkıştırma hatası:', error);
+      logger.error('Dosya sıkıştırma hatası:', error);
       throw new Error('COMPRESS_001: Dosya sıkıştırılamadı');
     }
   }
@@ -31,7 +33,7 @@ export class FileCompressionService {
       const decompressed = await gunzipAsync(compressedBuffer);
       return decompressed;
     } catch (error) {
-      console.error('Dosya açma hatası:', error);
+      logger.error('Dosya açma hatası:', error);
       throw new Error('COMPRESS_002: Sıkıştırılmış dosya açılamadı');
     }
   }

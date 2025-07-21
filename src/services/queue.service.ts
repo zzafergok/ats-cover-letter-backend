@@ -1,5 +1,5 @@
-// src/services/queue.service.ts - Vercel için basit queue servisi
 import { EmailService } from './email.service';
+
 import logger from '../config/logger';
 
 interface QueueJob {

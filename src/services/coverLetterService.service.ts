@@ -1,11 +1,14 @@
-// src/services/coverLetterService.service.ts - Düzeltilmiş versiyon
+import Anthropic from '@anthropic-ai/sdk';
+
+import { db } from '../services/database.service';
+import { CvAnalysisService } from './cvAnalysisService.service';
+
 import {
   CvBasedCoverLetterData,
   MinimalCoverLetterRequest,
 } from '@/types/coverLetter.types';
-import Anthropic from '@anthropic-ai/sdk';
-import { db } from '../services/database.service';
-import { CvAnalysisService } from './cvAnalysisService.service';
+
+import logger from '../config/logger';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -75,9 +78,10 @@ export class CoverLetterService {
         if (error.status === 529 || error.message?.includes('overloaded')) {
           const delay =
             baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
-          console.log(
-            `Anthropic API yoğun, ${delay}ms bekleyip tekrar denenecek...`
-          );
+          logger.log({
+            level: 'warn',
+            message: `Anthropic API yoğun, ${delay}ms bekleyip tekrar denenecek...`,
+          });
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
@@ -237,7 +241,7 @@ Saygılarımla,
           : '';
       });
     } catch (error: any) {
-      console.error('Cover Letter oluşturma hatası:', error);
+      logger.error('Cover Letter oluşturma hatası:', error);
       this.handleApiError(error);
     }
   }
@@ -405,7 +409,7 @@ Saygılarımla,
           : '';
       });
     } catch (error: any) {
-      console.error('CV tabanlı cover letter oluşturma hatası:', error);
+      logger.error('CV tabanlı cover letter oluşturma hatası:', error);
       this.handleApiError(error);
     }
   }

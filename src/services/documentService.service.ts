@@ -1,6 +1,8 @@
 import jsPDF from 'jspdf';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 
+import logger from '../config/logger';
+
 export async function generatePdf(content: string): Promise<Buffer> {
   try {
     const pdf = new jsPDF();
@@ -68,7 +70,7 @@ export async function generatePdf(content: string): Promise<Buffer> {
 
     return Buffer.from(pdf.output('arraybuffer'));
   } catch (error) {
-    console.error('PDF oluşturma hatası:', error);
+    logger.error('PDF oluşturma hatası:', error);
     throw new Error('PDF oluşturulamadı');
   }
 }
@@ -181,7 +183,7 @@ export async function generateDocx(content: string): Promise<Buffer> {
     const buffer = await Packer.toBuffer(doc);
     return buffer;
   } catch (error) {
-    console.error('DOCX oluşturma hatası:', error);
+    logger.error('DOCX oluşturma hatası:', error);
     throw new Error('DOCX oluşturulamadı');
   }
 }
