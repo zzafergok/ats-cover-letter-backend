@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { CoverLetterController } from '../controllers/coverLetter.controller';
 import { authenticateToken } from '../middleware/auth';
-import { apiLimiter, uploadLimiter } from '../middleware/rateLimiter';
+import { apiLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 const coverLetterController = new CoverLetterController();

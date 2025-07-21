@@ -10,13 +10,18 @@ interface StagedCoverLetterListItem {
   positionTitle: string;
   companyName: string;
   experienceLevel: 'NEW_GRADUATE' | 'JUNIOR' | 'MID_LEVEL' | 'SENIOR';
-  stage: number;
+  stage: string;
   isCompleted: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 const router = express.Router();
+
+// Helper function to validate UUID format
+const isValidUUID = (uuid: string): boolean => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid);
+};
 
 // Stage 1: Basic Information Schema
 const basicCoverLetterSchema = z.object({
@@ -99,6 +104,15 @@ router.post('/basic', authenticateToken, async (req, res) => {
 router.put('/:id/enhance', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Validate UUID format
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz ID formatı',
+      });
+    }
+    
     const userId = req.user!.userId;
     const enhancements = enhancementSchema.parse(req.body);
 
@@ -161,6 +175,15 @@ router.put('/:id/enhance', authenticateToken, async (req, res) => {
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Validate UUID format
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz ID formatı',
+      });
+    }
+    
     const userId = req.user!.userId;
 
     const stagedCoverLetter =
@@ -205,15 +228,15 @@ router.get('/', authenticateToken, async (req, res) => {
       await StagedCoverLetterService.getUserStagedCoverLetters(userId);
 
     const formattedData: StagedCoverLetterListItem[] = stagedCoverLetters.map(
-      (scl: StagedCoverLetterListItem) => ({
+      (scl) => ({
         id: scl.id,
         positionTitle: scl.positionTitle,
         companyName: scl.companyName,
         experienceLevel: scl.experienceLevel,
         stage: scl.stage,
         isCompleted: scl.isCompleted,
-        createdAt: scl.createdAt,
-        updatedAt: scl.updatedAt,
+        createdAt: scl.createdAt.toISOString(),
+        updatedAt: scl.updatedAt.toISOString(),
       })
     );
 
@@ -236,6 +259,15 @@ router.get('/', authenticateToken, async (req, res) => {
 router.post('/:id/complete', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Validate UUID format
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz ID formatı',
+      });
+    }
+    
     const userId = req.user!.userId;
 
     const result = await StagedCoverLetterService.completeStagedCoverLetter(
@@ -282,6 +314,15 @@ router.post('/:id/complete', authenticateToken, async (req, res) => {
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Validate UUID format
+    if (!isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Geçersiz ID formatı',
+      });
+    }
+    
     const userId = req.user!.userId;
 
     await StagedCoverLetterService.deleteStagedCoverLetter(id, userId);

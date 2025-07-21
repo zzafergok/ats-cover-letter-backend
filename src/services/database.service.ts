@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import logger from '../config/logger';
 
 export class DatabaseService {
   private static instance: DatabaseService;
@@ -20,7 +21,7 @@ export class DatabaseService {
 
       this.setupEventListeners();
     } catch (error) {
-      console.error('DB_001: Prisma istemci oluşturma hatası:', error);
+      logger.error('DB_001: Prisma client creation error:', error);
       throw new Error('DB_001: Veritabanı istemci başlatma başarısız');
     }
   }
@@ -50,9 +51,9 @@ export class DatabaseService {
   public async disconnect(): Promise<void> {
     try {
       await this.prisma.$disconnect();
-      console.log('Veritabanı bağlantısı başarıyla kapatıldı');
+      logger.info('Database connection closed successfully');
     } catch (error) {
-      console.error('DB_002: Veritabanı bağlantısı kapatılırken hata:', error);
+      logger.error('DB_002: Database connection close error:', error);
       throw new Error('DB_002: Veritabanı bağlantı kapatma işlemi başarısız');
     }
   }
@@ -66,9 +67,9 @@ export class DatabaseService {
       }
 
       await this.prisma.$connect();
-      console.log('Veritabanı bağlantısı başarıyla kuruldu');
+      logger.info('Database connection established successfully');
     } catch (error) {
-      console.error('DB_004: Veritabanı bağlantısı kurulurken hata:', error);
+      logger.error('DB_004: Database connection error:', error);
 
       if (error instanceof Error) {
         if (error.message.startsWith('DB_')) {
@@ -159,7 +160,7 @@ export class DatabaseService {
 
       return { connected: true, sessionCount: 0, expiredSessions: 0 };
     } catch (error) {
-      console.error('DB_017: Veritabanı sağlık kontrolü başarısız:', error);
+      logger.error('DB_017: Database health check failed:', error);
       return { connected: false, sessionCount: 0, expiredSessions: 0 };
     }
   }
@@ -184,14 +185,12 @@ export class DatabaseService {
       const totalCleaned = emailResult.count + passwordResult;
 
       if (totalCleaned > 0) {
-        console.log(
-          `DB_021: ${emailResult.count} email + ${passwordResult} password reset token temizlendi`
-        );
+        logger.info(`DB_021: ${emailResult.count} email + ${passwordResult} password reset tokens cleaned up`);
       }
 
       return totalCleaned;
     } catch (error) {
-      console.error('DB_022: Token cleanup hatası:', error);
+      logger.error('DB_022: Token cleanup error:', error);
       throw new Error('DB_022: Token temizleme işlemi başarısız');
     }
   }
@@ -210,14 +209,12 @@ export class DatabaseService {
       });
 
       if (result.count > 0) {
-        console.log(
-          `DB_023: ${result.count} doğrulanmamış kullanıcı temizlendi`
-        );
+        logger.info(`DB_023: ${result.count} unverified users cleaned up`);
       }
 
       return result.count;
     } catch (error) {
-      console.error('DB_024: Doğrulanmamış kullanıcı cleanup hatası:', error);
+      logger.error('DB_024: Unverified user cleanup error:', error);
       throw new Error(
         'DB_024: Doğrulanmamış kullanıcı temizleme işlemi başarısız'
       );
@@ -228,25 +225,23 @@ export class DatabaseService {
     try {
       const result = await this.prisma.user.updateMany({
         where: {
-          createdAt: {
+          passwordResetExpires: {
             lt: new Date(),
           },
         },
         data: {
-          emailVerifyToken: null,
-          emailVerifyExpires: null,
+          passwordResetToken: null,
+          passwordResetExpires: null,
         },
       });
 
       if (result.count > 0) {
-        console.log(
-          `DB_026: ${result.count} süresi dolmuş password reset token temizlendi`
-        );
+        logger.info(`DB_026: ${result.count} expired password reset tokens cleaned up`);
       }
 
       return result.count;
     } catch (error) {
-      console.error('DB_027: Password reset token cleanup hatası:', error);
+      logger.error('DB_027: Password reset token cleanup error:', error);
       throw new Error(
         'DB_027: Password reset token temizleme işlemi başarısız'
       );

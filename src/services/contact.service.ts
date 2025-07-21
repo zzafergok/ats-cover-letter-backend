@@ -99,17 +99,13 @@ export class ContactService {
       }
     }
 
-    try {
-      await EmailService.sendContactMessage({
-        type: data.type,
-        name: data.name,
-        email: data.email,
-        subject: data.subject,
-        message: data.message,
-      });
-    } catch (emailError) {
-      throw emailError;
-    }
+    await EmailService.sendContactMessage({
+      type: data.type,
+      name: data.name,
+      email: data.email,
+      subject: data.subject,
+      message: data.message,
+    });
   }
 
   public async getContactMessages(

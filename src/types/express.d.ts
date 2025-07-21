@@ -6,7 +6,8 @@ declare global {
       user?: {
         userId: string;
         email: string;
-        name: string;
+        firstName: string;
+        lastName: string;
         role: UserRole;
         emailVerified: boolean;
         deviceLimit: number;

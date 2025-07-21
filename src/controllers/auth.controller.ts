@@ -8,7 +8,6 @@ import { EmailService } from '../services/email.service';
 import { CacheService } from '../services/cache.service';
 import { SessionService } from '../services/session.service';
 
-import redisClient from '../config/redis';
 
 import {
   AuthResponse,
@@ -41,7 +40,7 @@ export class AuthController {
         timestamp: new Date().toISOString(),
       });
 
-      const { email, password, name, role }: RegisterRequest = req.body;
+      const { email, password, firstName, lastName, role }: RegisterRequest = req.body;
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const isValidEmail = emailRegex.test(email);
@@ -95,8 +94,7 @@ export class AuthController {
       const emailVerifyExpiry = new Date(Date.now() + 30 * 60 * 1000);
       console.log('[REGISTER] Email verification token oluşturuldu');
 
-      const [firstName, ...lastNameParts] = name.split(' ');
-      const lastName = lastNameParts.join(' ') || '';
+      // firstName and lastName already extracted from request body
 
       const user = await db.user.create({
         data: {
@@ -127,7 +125,7 @@ export class AuthController {
         await EmailService.sendEmailVerification(
           email,
           finalEmailVerifyToken,
-          name
+          `${firstName} ${lastName}`
         );
         console.log('[REGISTER] Email doğrulama başarıyla gönderildi');
 
@@ -247,7 +245,8 @@ export class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          name: `${user.firstName} ${user.lastName}`.trim(),
+          firstName: user.firstName,
+          lastName: user.lastName,
           role: user.role,
         },
         accessToken,
@@ -399,7 +398,8 @@ export class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          name: `${user.firstName} ${user.lastName}`.trim(),
+          firstName: user.firstName,
+          lastName: user.lastName,
           role: user.role,
         },
         accessToken,
@@ -471,7 +471,8 @@ export class AuthController {
         user: {
           id: user.id,
           email: user.email,
-          name: `${user.firstName} ${user.lastName}`.trim(),
+          firstName: user.firstName,
+          lastName: user.lastName,
           role: user.role,
         },
         accessToken: newAccessToken,
@@ -679,7 +680,8 @@ export class AuthController {
 
       sendSuccess(res, {
         ...user,
-        name: `${user.firstName} ${user.lastName}`.trim(),
+        firstName: user.firstName,
+        lastName: user.lastName,
       });
     } catch (error) {
       console.error('Kullanıcı bilgileri getirilemedi:', error);
@@ -696,7 +698,7 @@ export class AuthController {
   ): Promise<void> => {
     try {
       const userId = req.user?.userId as string;
-      const { name, email }: UpdateUserProfileRequest = req.body;
+      const { firstName, lastName }: UpdateUserProfileRequest = req.body;
 
       const existingUser = await db.user.findUnique({
         where: { id: userId },
@@ -708,27 +710,13 @@ export class AuthController {
         return;
       }
 
-      if (email !== existingUser.email) {
-        const emailExists = await db.user.findUnique({
-          where: { email, NOT: { id: userId } },
-        });
+      // Email updates not allowed in this implementation
 
-        if (emailExists) {
-          sendError(
-            res,
-            'AUTH_028: Bu email adresi başka bir kullanıcı tarafından kullanılmaktadır',
-            400
-          );
-          return;
-        }
-      }
-
-      const [firstName, ...lastNameParts] = name.split(' ');
-      const lastName = lastNameParts.join(' ') || '';
+      // firstName and lastName already extracted from request body
 
       const updatedUser = await db.user.update({
         where: { id: userId },
-        data: { firstName, lastName, email },
+        data: { firstName, lastName },
         select: {
           id: true,
           email: true,

@@ -1,9 +1,23 @@
+// Authentication Types
 export interface VerifyEmailRequest {
   token: string;
 }
 
 export interface ResendEmailVerificationRequest {
   email: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role?: 'ADMIN' | 'USER';
 }
 
 export interface RegisterResponse {
@@ -18,52 +32,8 @@ export interface RegisterData {
   emailSent: boolean;
 }
 
-export interface CreateProjectRequest {
-  name: string;
-  description?: string;
-}
-
-export interface UpdateProjectRequest {
-  name?: string;
-  description?: string;
-}
-
-export interface CreateColumnRequest {
-  name: string;
-  position: number;
-  color?: string;
-}
-
-export interface UpdateColumnRequest {
-  name?: string;
-  position?: number;
-  color?: string;
-}
-
-export interface CreateTaskRequest {
-  title: string;
-  description?: string;
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  position: number;
-  projectId: string; // Bu alan zorunlu olmalı
-  columnId?: string;
-  status?: 'TODO' | 'IN_PROGRESS' | 'DONE';
-  dueDate?: string;
-  estimatedTime?: number;
-  tagIds?: string[];
-}
-
-export interface UpdateTaskRequest {
-  title?: string;
-  description?: string;
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  position?: number;
-  columnId?: string;
-  status?: 'TODO' | 'IN_PROGRESS' | 'DONE';
-  dueDate?: string;
-  estimatedTime?: number;
-  // assigneeId?: string;
-  tagIds?: string[];
+export interface ForgotPasswordRequest {
+  email: string;
 }
 
 export interface ResetPasswordRequest {
@@ -72,79 +42,12 @@ export interface ResetPasswordRequest {
   confirmPassword: string;
 }
 
-export interface MoveTaskRequest {
-  columnId: string;
-  position: number;
-}
-
-export interface CreateTaskTagRequest {
-  name: string;
-  color?: string;
-}
-
-export interface UpdateTaskTagRequest {
-  name?: string;
-  color?: string;
-}
-
-export interface UploadTasksRequest {
-  tasks: {
-    title: string;
-    description?: string;
-    priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-    columnName?: string;
-    status?: 'TODO' | 'IN_PROGRESS' | 'DONE';
-    dueDate?: string;
-    estimatedTime?: number;
-    // assigneeEmail?: string;
-    tags?: string[];
-  }[];
-}
-
-export interface UploadTasksJsonRequest {
-  tasks: {
-    title: string;
-    description?: string;
-    priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-    columnName: string;
-    status?: 'TODO' | 'IN_PROGRESS' | 'DONE';
-    dueDate?: string;
-    estimatedTime?: number;
-    assigneeEmail?: string;
-    tags?: string[];
-  }[];
-  createMissingColumns?: boolean;
-  createMissingTags?: boolean;
-}
-
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface RegisterRequest {
-  email: string;
-  password: string;
-  name: string;
-  role?: 'ADMIN' | 'DEVELOPER' | 'PRODUCT_OWNER' | 'PROJECT_ANALYST';
-}
-
-export interface ForgotPasswordRequest {
-  email: string;
-}
-
 export interface AuthResponse {
   user: {
     id: string;
     email: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     role: string;
     emailVerified?: boolean;
   };
@@ -158,8 +61,8 @@ export interface RefreshTokenRequest {
 }
 
 export interface UpdateUserProfileRequest {
-  name: string;
-  email: string;
+  firstName: string;
+  lastName: string;
 }
 
 export interface ChangePasswordRequest {
@@ -168,70 +71,64 @@ export interface ChangePasswordRequest {
   confirmPassword: string;
 }
 
-export interface BulkMoveTasksRequest {
-  taskIds: string[];
-  targetColumnId: string;
-}
-
-export interface AvailableTasksResponse {
-  tasks: {
-    id: string;
-    title: string;
-    description?: string;
-    priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-    columnId: string;
-    columnName: string;
-    assignee?: {
-      id: string;
-      name: string;
-      email: string;
-    };
-    tags?: {
-      id: string;
-      name: string;
-      color: string;
-    }[];
-  }[];
-}
-
-export interface ChangeData {
-  value: number;
-  percentage: string;
-  type: 'positive' | 'negative' | 'neutral';
-}
-
-export interface StatisticsResponse {
+// API Response Types
+export interface ApiResponse<T = any> {
   success: boolean;
-  data: {
-    totalTasks: number;
-    tasksByStatus: Record<string, number>;
-    tasksByPriority: Record<string, number>;
-    tasksByColumn: Record<string, number>;
-    overdueTasks: number;
-    unassignedTasks: number;
-    previousPeriod: {
-      totalTasks: number;
-      tasksByStatus: Record<string, number>;
-      overdueTasks: number;
-      unassignedTasks: number;
-    };
-    changes: {
-      totalTasks: ChangeData;
-      completedTasks: ChangeData;
-      pendingTasks: ChangeData;
-      inProgressTasks: ChangeData;
-      overdueTasks: ChangeData;
-    };
-  };
-  message: string;
+  data?: T;
+  error?: string;
+  message?: string;
 }
 
-export interface ProjectStatisticsResponse {
-  success: boolean;
-  data: {
-    current: number;
-    previous: number;
-    change: ChangeData;
-  };
+// CV Types
+export interface CVUploadRequest {
+  file: File;
+}
+
+export interface CVGenerateRequest {
+  positionTitle: string;
+  companyName: string;
+  cvType: 'ATS_OPTIMIZED' | 'CREATIVE' | 'TECHNICAL';
+  jobDescription?: string;
+  additionalRequirements?: string;
+  targetKeywords?: string[];
+  cvUploadId: string;
+}
+
+// Cover Letter Types
+export interface CoverLetterGenerateRequest {
+  positionTitle: string;
+  companyName: string;
+  jobDescription?: string;
+  cvUploadId: string;
+  additionalInfo?: string;
+}
+
+export interface MinimalCoverLetterRequest {
+  positionTitle: string;
+  companyName: string;
+  keySkills: string[];
+  experienceLevel: 'NEW_GRADUATE' | 'JUNIOR' | 'MID_LEVEL' | 'SENIOR';
+}
+
+// Staged Cover Letter Types
+export interface BasicCoverLetterRequest {
+  positionTitle: string;
+  companyName: string;
+  experienceLevel: 'NEW_GRADUATE' | 'JUNIOR' | 'MID_LEVEL' | 'SENIOR';
+  keySkills: string[];
+}
+
+export interface EnhanceCoverLetterRequest {
+  companyResearch?: string;
+  achievements?: string[];
+  careerGoals?: string;
+  motivation?: string;
+}
+
+// Contact Types
+export interface ContactMessageRequest {
+  name: string;
+  email: string;
+  subject: string;
   message: string;
 }

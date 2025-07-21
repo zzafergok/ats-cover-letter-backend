@@ -1,11 +1,6 @@
 import { PrismaClient, $Enums } from '@prisma/client';
 
-// Define CoverLetterStage enum locally
-export enum CoverLetterStage {
-  BASIC_INFO = 'BASIC_INFO',
-  ENHANCEMENT = 'ENHANCEMENT',
-  COMPLETED = 'COMPLETED',
-}
+// Use Prisma generated enum instead of local enum
 
 import logger from '../config/logger';
 
@@ -46,7 +41,7 @@ export class StagedCoverLetterService {
           experienceLevel: data.experienceLevel,
           keySkills: data.keySkills,
           basicContent,
-          stage: CoverLetterStage.BASIC_INFO,
+          stage: $Enums.CoverLetterStage.BASIC_INFO,
         },
       });
 
@@ -96,7 +91,7 @@ export class StagedCoverLetterService {
         data: {
           ...enhancements,
           enhancedContent,
-          stage: CoverLetterStage.ENHANCEMENT,
+          stage: $Enums.CoverLetterStage.ENHANCEMENT,
           updatedAt: new Date(),
         },
       });
@@ -268,7 +263,7 @@ Saygılarımla,
       await prisma.stagedCoverLetter.update({
         where: { id },
         data: {
-          stage: CoverLetterStage.COMPLETED,
+          stage: $Enums.CoverLetterStage.COMPLETED,
           isCompleted: true,
         },
       });

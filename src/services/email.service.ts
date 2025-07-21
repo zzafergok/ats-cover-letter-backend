@@ -1,7 +1,5 @@
-import { emailQueue } from '../config/queue';
 import { Resend } from 'resend';
 import logger from '../config/logger';
-import { queueService } from './queue.service';
 
 export class EmailService {
   private static resend = new Resend(process.env.RESEND_API_KEY);
@@ -12,22 +10,17 @@ export class EmailService {
     userName: string
   ): Promise<void> {
     try {
-      await queueService.addEmailJob('verification', {
-        email,
-        token: verifyToken,
-        name: userName,
-      });
-
-      logger.info(`Email doğrulama kuyruğa eklendi: ${email}`);
+      await this.sendEmailVerificationDirect(email, verifyToken, userName);
+      logger.info(`Email doğrulama gönderildi: ${email}`);
     } catch (error) {
-      logger.error('Email kuyruğa ekleme hatası:', error);
-      throw new Error('EMAIL_007: Email kuyruğa eklenemedi');
+      logger.error('Email doğrulama gönderim hatası:', error);
+      throw new Error('EMAIL_007: Email doğrulama gönderilemedi');
     }
   }
 
   public static async sendEmailVerificationDirect(
     email: string,
-    verifyToken: string,
+    _verifyToken: string,
     userName: string
   ): Promise<void> {
     try {
@@ -36,8 +29,6 @@ export class EmailService {
           'EMAIL_001: Resend konfigürasyon hatası - API key eksik'
         );
       }
-
-      const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verifyToken}`;
 
       await this.resend.emails.send({
         from: 'Kanban System <noreply@starkon-kanban.com>',
@@ -62,28 +53,11 @@ export class EmailService {
     resetToken: string
   ): Promise<void> {
     try {
-      await emailQueue.add(
-        'email',
-        {
-          type: 'passwordReset',
-          data: {
-            email,
-            token: resetToken,
-          },
-        },
-        {
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 2000,
-          },
-        }
-      );
-
-      logger.info(`Şifre sıfırlama email kuyruğa eklendi: ${email}`);
+      await this.sendPasswordResetEmailDirect(email, resetToken);
+      logger.info(`Şifre sıfırlama emaili gönderildi: ${email}`);
     } catch (error) {
-      logger.error('Şifre sıfırlama kuyruğa ekleme hatası:', error);
-      throw new Error('EMAIL_008: Şifre sıfırlama kuyruğa eklenemedi');
+      logger.error('Şifre sıfırlama email hatası:', error);
+      throw new Error('EMAIL_008: Şifre sıfırlama emaili gönderilemedi');
     }
   }
 
@@ -95,25 +69,11 @@ export class EmailService {
     message: string;
   }): Promise<void> {
     try {
-      await emailQueue.add(
-        'email',
-        {
-          type: 'contact',
-          data,
-        },
-        {
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 2000,
-          },
-        }
-      );
-
-      logger.info(`İletişim mesajı kuyruğa eklendi: ${data.email}`);
+      await this.sendContactMessageDirect(data);
+      logger.info(`İletişim mesajı gönderildi: ${data.email}`);
     } catch (error) {
-      logger.error('İletişim mesajı kuyruğa ekleme hatası:', error);
-      throw new Error('EMAIL_009: İletişim mesajı kuyruğa eklenemedi');
+      logger.error('İletişim mesajı gönderim hatası:', error);
+      throw new Error('EMAIL_009: İletişim mesajı gönderilemedi');
     }
   }
 

@@ -79,7 +79,7 @@ export function extractContactInformation(text: string): {
 
   const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
   const phoneRegex =
-    /(\+90|0)?[\s\-\(\)]?[0-9]{3}[\s\-\(\)]?[0-9]{3}[\s\-\(\)]?[0-9]{2}[\s\-\(\)]?[0-9]{2}/;
+    /(\+90|0)?[\s\-()]?[0-9]{3}[\s\-()]?[0-9]{3}[\s\-()]?[0-9]{2}[\s\-()]?[0-9]{2}/;
   const linkedinRegex = /(linkedin\.com\/in\/[A-Za-z0-9-_]+)/;
   const websiteRegex = /(https?:\/\/[^\s]+)/;
   const nameRegex = /^[A-ZÇĞIİÖŞÜ][a-zçğıiöşü]+\s+[A-ZÇĞIİÖŞÜ][a-zçğıiöşü]+/m;

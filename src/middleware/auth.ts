@@ -66,7 +66,8 @@ export const authenticateToken = async (
     req.user = {
       userId: user.id,
       email: user.email,
-      name: `${user.firstName} ${user.lastName}`.trim(),
+      firstName: user.firstName,
+      lastName: user.lastName,
       role: user.role as UserRole,
       emailVerified: user.isEmailVerified,
       deviceLimit: 5, // Default device limit
