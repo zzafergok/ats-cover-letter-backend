@@ -41,4 +41,11 @@ router.post(
   coverLetterController.analyzeCoverLetter
 );
 
+router.post(
+  '/generate-minimal',
+  authenticateToken,
+  apiLimiter,
+  coverLetterController.generateMinimalCoverLetter
+);
+
 export default router;

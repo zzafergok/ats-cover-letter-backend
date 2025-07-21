@@ -242,3 +242,9 @@ export const saveCoverLetterSchema = z.object({
 export const analyzeCoverLetterSchema = z.object({
   content: z.string().min(1, 'Cover letter içeriği gereklidir'),
 });
+
+export const generateMinimalCoverLetterSchema = z.object({
+  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
+  companyName: z.string().min(1, 'Şirket adı gereklidir'),
+  motivation: z.string().optional(),
+});

@@ -1,3 +1,4 @@
+// src/services/claudeService.service.ts
 import Anthropic from '@anthropic-ai/sdk';
 
 const anthropic = new Anthropic({
@@ -17,6 +18,10 @@ interface CvGenerationParams {
 export async function generateCvWithClaude(
   params: CvGenerationParams
 ): Promise<string> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error('Anthropic API anahtarı yapılandırılmamış');
+  }
+
   const {
     parsedCvData,
     positionTitle,
@@ -131,7 +136,7 @@ export async function generateCvWithClaude(
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-3-sonnet-20240229',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 4000,
       messages: [
         {
@@ -142,8 +147,19 @@ export async function generateCvWithClaude(
     });
 
     return response.content[0].type === 'text' ? response.content[0].text : '';
-  } catch (error) {
+  } catch (error: any) {
     console.error('Claude API hatası:', error);
+
+    if (error.status === 401 || error.message?.includes('authentication')) {
+      throw new Error('Anthropic API anahtarı geçersiz veya eksik');
+    }
+
+    if (error.status === 529 || error.message?.includes('overloaded')) {
+      throw new Error(
+        'Anthropic servisi şu anda yoğun, lütfen birkaç dakika sonra tekrar deneyin'
+      );
+    }
+
     throw new Error('CV oluşturulurken bir hata oluştu');
   }
 }

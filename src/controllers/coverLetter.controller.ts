@@ -5,6 +5,7 @@ import { CoverLetterService } from '../services/coverLetterService.service';
 import { generatePdf, generateDocx } from '../services/documentService.service';
 import { sendSuccess, sendError, sendServerError } from '../utils/response';
 import { db } from '../services/database.service';
+import { MinimalCoverLetterRequest } from '@/types/coverLetter.types';
 
 const generateCoverLetterSchema = z.object({
   personalInfo: z.object({
@@ -61,6 +62,49 @@ const saveCoverLetterSchema = z.object({
 
 export class CoverLetterController {
   private coverLetterService = CoverLetterService.getInstance();
+
+  public generateMinimalCoverLetter = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { positionTitle, companyName, motivation } = req.body;
+      const userId = req.user!.userId;
+
+      // Basit validation
+      if (!positionTitle || !companyName) {
+        sendError(res, 'Pozisyon başlığı ve şirket adı gereklidir', 400);
+        return;
+      }
+
+      const request: MinimalCoverLetterRequest = {
+        positionTitle,
+        companyName,
+        motivation,
+      };
+
+      const generatedCoverLetter =
+        await this.coverLetterService.generateCoverLetterFromCv(
+          userId,
+          request
+        );
+
+      sendSuccess(
+        res,
+        {
+          content: generatedCoverLetter,
+          positionTitle,
+          companyName,
+          generatedAt: new Date().toISOString(),
+          method: 'cv_based',
+        },
+        'Cover letter CV bilgileri kullanılarak başarıyla oluşturuldu'
+      );
+    } catch (error) {
+      console.error('Minimal cover letter oluşturma hatası:', error);
+      sendServerError(res, 'Cover letter oluşturulurken hata oluştu');
+    }
+  };
 
   public generateCoverLetter = async (
     req: Request,

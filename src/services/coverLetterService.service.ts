@@ -1,5 +1,11 @@
-// src/services/coverLetterService.service.ts
+// src/services/coverLetterService.service.ts - Düzeltilmiş versiyon
+import {
+  CvBasedCoverLetterData,
+  MinimalCoverLetterRequest,
+} from '@/types/coverLetter.types';
 import Anthropic from '@anthropic-ai/sdk';
+import { db } from '../services/database.service';
+import { CvAnalysisService } from './cvAnalysisService.service';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -40,6 +46,11 @@ export interface CoverLetterGenerationParams {
 
 export class CoverLetterService {
   private static instance: CoverLetterService;
+  private cvAnalysisService: CvAnalysisService;
+
+  private constructor() {
+    this.cvAnalysisService = CvAnalysisService.getInstance();
+  }
 
   public static getInstance(): CoverLetterService {
     if (!CoverLetterService.instance) {
@@ -48,29 +59,47 @@ export class CoverLetterService {
     return CoverLetterService.instance;
   }
 
-  private getCoverLetterTemplates() {
-    return {
-      PROFESSIONAL: {
-        structure: 'Klasik iş dünyası formatı',
-        tone: 'Formal ve profesyonel',
-        focus: 'Deneyim ve nitelikler',
-      },
-      CREATIVE: {
-        structure: 'Yaratıcı ve özgün yaklaşım',
-        tone: 'Dinamik ve etkileyici',
-        focus: 'Yaratıcılık ve yenilikçilik',
-      },
-      TECHNICAL: {
-        structure: 'Teknik yetkinlik odaklı',
-        tone: 'Detaylı ve analitik',
-        focus: 'Teknik beceriler ve projeler',
-      },
-      ENTRY_LEVEL: {
-        structure: 'Yeni mezun dostu format',
-        tone: 'Öğrenmeye açık ve istekli',
-        focus: 'Potansiyel ve motivasyon',
-      },
-    };
+  private async retryWithExponentialBackoff<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 3,
+    baseDelay: number = 1000
+  ): Promise<T> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error: any) {
+        if (attempt === maxRetries) {
+          throw error;
+        }
+
+        if (error.status === 529 || error.message?.includes('overloaded')) {
+          const delay =
+            baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
+          console.log(
+            `Anthropic API yoğun, ${delay}ms bekleyip tekrar denenecek...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+
+        throw error;
+      }
+    }
+    throw new Error('Maksimum deneme sayısına ulaşıldı');
+  }
+
+  private handleApiError(error: any): never {
+    if (error.status === 401 || error.message?.includes('authentication')) {
+      throw new Error('Anthropic API anahtarı geçersiz veya eksik');
+    }
+
+    if (error.status === 529 || error.message?.includes('overloaded')) {
+      throw new Error(
+        'Anthropic servisi şu anda yoğun, lütfen birkaç dakika sonra tekrar deneyin'
+      );
+    }
+
+    throw new Error('Cover letter oluşturulurken bir hata oluştu');
   }
 
   private getIndustrySpecificKeywords(positionTitle: string): string[] {
@@ -126,6 +155,10 @@ export class CoverLetterService {
   public async generateCoverLetter(
     params: CoverLetterGenerationParams
   ): Promise<string> {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error('Anthropic API anahtarı yapılandırılmamış');
+    }
+
     const industryKeywords = this.getIndustrySpecificKeywords(
       params.jobInfo.positionTitle
     );
@@ -187,23 +220,25 @@ Saygılarımla,
     `;
 
     try {
-      const response = await anthropic.messages.create({
-        model: 'claude-3-sonnet-20240229',
-        max_tokens: 2000,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-      });
+      return await this.retryWithExponentialBackoff(async () => {
+        const response = await anthropic.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2000,
+          messages: [
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+        });
 
-      return response.content[0].type === 'text'
-        ? response.content[0].text
-        : '';
-    } catch (error) {
+        return response.content[0].type === 'text'
+          ? response.content[0].text
+          : '';
+      });
+    } catch (error: any) {
       console.error('Cover Letter oluşturma hatası:', error);
-      throw new Error('Cover letter oluşturulurken bir hata oluştu');
+      this.handleApiError(error);
     }
   }
 
@@ -323,5 +358,126 @@ Saygılarımla,
       hasCallToAction,
       keywordDensity: (keywordCount / words) * 100,
     };
+  }
+
+  public async generateCoverLetterFromCv(
+    userId: string,
+    request: MinimalCoverLetterRequest
+  ): Promise<string> {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error('Anthropic API anahtarı yapılandırılmamış');
+    }
+
+    const latestCv = await this.getLatestUserCv(userId);
+    if (!latestCv) {
+      throw new Error("Kullanıcının yüklenmiş CV'si bulunamadı");
+    }
+
+    const cvProfile = this.cvAnalysisService.extractProfessionalProfile(
+      latestCv.extractedData
+    );
+
+    const industryKeywords = this.getIndustrySpecificKeywords(
+      request.positionTitle
+    );
+
+    const prompt = this.buildCvBasedPrompt(
+      cvProfile,
+      request,
+      industryKeywords
+    );
+
+    try {
+      return await this.retryWithExponentialBackoff(async () => {
+        const response = await anthropic.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2000,
+          messages: [
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+        });
+
+        return response.content[0].type === 'text'
+          ? response.content[0].text
+          : '';
+      });
+    } catch (error: any) {
+      console.error('CV tabanlı cover letter oluşturma hatası:', error);
+      this.handleApiError(error);
+    }
+  }
+
+  private async getLatestUserCv(userId: string): Promise<any> {
+    const cvUpload = await db.cvUpload.findFirst({
+      where: {
+        userId,
+        processingStatus: 'COMPLETED',
+      },
+      orderBy: {
+        uploadDate: 'desc',
+      },
+      select: {
+        extractedData: true,
+      },
+    });
+
+    return cvUpload;
+  }
+
+  private buildCvBasedPrompt(
+    cvProfile: CvBasedCoverLetterData,
+    request: MinimalCoverLetterRequest,
+    industryKeywords: string[]
+  ): string {
+    return `
+Sen profesyonel bir cover letter yazma uzmanısın. Kullanıcının CV'sinden çıkarılan bilgiler ve hedef pozisyon bilgileriyle Türkçe bir cover letter oluştur.
+
+KİŞİSEL BİLGİLER (CV'den otomatik çıkarıldı):
+- Ad Soyad: ${cvProfile.personalInfo.fullName}
+- Email: ${cvProfile.personalInfo.email}
+- Telefon: ${cvProfile.personalInfo.phone}
+- Şehir: ${cvProfile.personalInfo.city || 'Belirtilmemiş'}
+${cvProfile.personalInfo.linkedin ? `- LinkedIn: ${cvProfile.personalInfo.linkedin}` : ''}
+
+PROFESYONEL PROFİL (CV'den otomatik çıkarıldı):
+- Deneyim Yılı: ${cvProfile.professionalProfile.experienceYears}
+- Mevcut/Son Pozisyon: ${cvProfile.professionalProfile.currentPosition || 'Belirtilmemiş'}
+- Temel Beceriler: ${cvProfile.professionalProfile.keySkills.join(', ')}
+- Başarılar: ${cvProfile.professionalProfile.achievements.join(' | ')}
+
+HEDEF POZİSYON BİLGİLERİ:
+- Pozisyon: ${request.positionTitle}
+- Şirket: ${request.companyName}
+${request.motivation ? `- Özel Motivasyon: ${request.motivation}` : ''}
+
+SEKTÖR ANAHTAR KELİMELERİ: ${industryKeywords.join(', ')}
+
+KURALLAR:
+1. Cover letter 3-4 paragraf olmalı
+2. İlk paragraf: Pozisyona başvuru ve kısa tanıtım
+3. İkinci paragraf: CV'den çıkarılan deneyim ve becerileri vurgula
+4. Üçüncü paragraf: Şirkete katkı potansiyeli ve başarı örnekleri
+5. Son paragraf: Görüşme talebi ve nezaket
+6. CV'den çıkarılan bilgileri doğal bir şekilde entegre et
+7. Anahtar kelimeleri organik olarak yerleştir
+8. 280-350 kelime arası olmalı
+9. Profesyonel ama samimi ton kullan
+
+Format:
+${cvProfile.personalInfo.fullName}
+${cvProfile.personalInfo.email} | ${cvProfile.personalInfo.phone}
+${new Date().toLocaleDateString('tr-TR')}
+
+${request.companyName}
+Sayın İşe Alım Sorumlusu,
+
+[Cover Letter İçeriği]
+
+Saygılarımla,
+${cvProfile.personalInfo.fullName}
+    `;
   }
 }

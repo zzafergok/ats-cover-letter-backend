@@ -1,4 +1,4 @@
-// src/app.ts - Vercel için güncellenmiş
+// src/app.ts
 import dotenv from 'dotenv';
 import express from 'express';
 import apiRoutes from './routes';
@@ -15,7 +15,13 @@ dotenv.config();
 
 const app = express();
 
-app.set('trust proxy', true);
+// Trust proxy ayarını ortama göre yapılandır
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+} else {
+  app.set('trust proxy', false);
+}
+
 app.use(helmetConfig);
 app.use(securityHeaders);
 app.use(corsMiddleware);
@@ -71,10 +77,8 @@ app.use('*', (req, res) => {
   });
 });
 
-// Vercel için serverless handler
 export default app;
 
-// Development için local server
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 5000;
 
