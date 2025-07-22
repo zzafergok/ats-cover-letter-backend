@@ -706,6 +706,92 @@ export const SERVICE_MESSAGES = {
       code: 'SCHEMA_027',
       message: 'Mesaj en fazla 2000 karakter olabilir',
       status: 'error' as const
+    },
+    // Cover Letter Schema Messages
+    FULL_NAME_REQUIRED: {
+      code: 'SCHEMA_028',
+      message: 'Ad soyad gereklidir',
+      status: 'error' as const
+    },
+    VALID_EMAIL_REQUIRED: {
+      code: 'SCHEMA_029',
+      message: 'Geçerli email gereklidir',
+      status: 'error' as const
+    },
+    PHONE_REQUIRED: {
+      code: 'SCHEMA_030',
+      message: 'Telefon gereklidir',
+      status: 'error' as const
+    },
+    POSITION_TITLE_REQUIRED: {
+      code: 'SCHEMA_031',
+      message: 'Pozisyon başlığı gereklidir',
+      status: 'error' as const
+    },
+    COMPANY_NAME_REQUIRED: {
+      code: 'SCHEMA_032',
+      message: 'Şirket adı gereklidir',
+      status: 'error' as const
+    },
+    YEARS_EXPERIENCE_MIN: {
+      code: 'SCHEMA_033',
+      message: 'Deneyim yılı 0 veya üzeri olmalı',
+      status: 'error' as const
+    },
+    SKILLS_REQUIRED: {
+      code: 'SCHEMA_034',
+      message: 'En az bir beceri gereklidir',
+      status: 'error' as const
+    },
+    ACHIEVEMENTS_REQUIRED: {
+      code: 'SCHEMA_035',
+      message: 'En az bir başarı gereklidir',
+      status: 'error' as const
+    },
+    TITLE_REQUIRED: {
+      code: 'SCHEMA_036',
+      message: 'Başlık gereklidir',
+      status: 'error' as const
+    },
+    CONTENT_REQUIRED: {
+      code: 'SCHEMA_037',
+      message: 'İçerik gereklidir',
+      status: 'error' as const
+    },
+    COVER_LETTER_CONTENT_REQUIRED: {
+      code: 'SCHEMA_038',
+      message: 'Cover letter içeriği gereklidir',
+      status: 'error' as const
+    },
+    CV_UPLOAD_ID_REQUIRED: {
+      code: 'SCHEMA_039',
+      message: 'CV upload ID gereklidir',
+      status: 'error' as const
+    },
+    JOB_DESCRIPTION_MIN: {
+      code: 'SCHEMA_040',
+      message: 'İş tanımı en az 10 karakter olmalıdır',
+      status: 'error' as const
+    },
+    LANGUAGE_OPTION_ERROR: {
+      code: 'SCHEMA_041',
+      message: 'Dil seçeneği TURKISH veya ENGLISH olmalıdır',
+      status: 'error' as const
+    },
+    COVER_LETTER_MIN_LENGTH: {
+      code: 'SCHEMA_042',
+      message: 'Cover letter içeriği en az 50 karakter olmalıdır',
+      status: 'error' as const
+    },
+    CV_TITLE_REQUIRED: {
+      code: 'SCHEMA_043',
+      message: 'CV başlığı gereklidir',
+      status: 'error' as const
+    },
+    CV_CONTENT_REQUIRED: {
+      code: 'SCHEMA_044',
+      message: 'CV içeriği gereklidir',
+      status: 'error' as const
     }
   },
 

@@ -1,8 +1,13 @@
-import { z, ZodSchema, ZodError } from 'zod';
+import { ZodSchema, ZodError } from 'zod';
 import { Request, Response, NextFunction } from 'express';
 
 import { sendError } from '../utils/response';
-import { SERVICE_MESSAGES, formatMessage, createDynamicMessage } from '../constants/messages';
+
+import {
+  formatMessage,
+  SERVICE_MESSAGES,
+  createDynamicMessage,
+} from '../constants/messages';
 
 export const validate = (schema: ZodSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -14,11 +19,20 @@ export const validate = (schema: ZodSchema) => {
         const errorMessage = error.issues.map((err) => err.message).join(', ');
         sendError(
           res,
-          createDynamicMessage(SERVICE_MESSAGES.VALIDATION.INPUT_VALIDATION_ERROR, { details: errorMessage }),
+          createDynamicMessage(
+            SERVICE_MESSAGES.VALIDATION.INPUT_VALIDATION_ERROR,
+            { details: errorMessage }
+          ),
           400
         );
       } else {
-        sendError(res, formatMessage(SERVICE_MESSAGES.VALIDATION.UNEXPECTED_VALIDATION_ERROR), 400);
+        sendError(
+          res,
+          formatMessage(
+            SERVICE_MESSAGES.VALIDATION.UNEXPECTED_VALIDATION_ERROR
+          ),
+          400
+        );
       }
     }
   };
@@ -34,13 +48,18 @@ export const validateParams = (schema: ZodSchema) => {
         const errorMessage = error.issues.map((err) => err.message).join(', ');
         sendError(
           res,
-          createDynamicMessage(SERVICE_MESSAGES.VALIDATION.PARAMS_VALIDATION_ERROR, { details: errorMessage }),
+          createDynamicMessage(
+            SERVICE_MESSAGES.VALIDATION.PARAMS_VALIDATION_ERROR,
+            { details: errorMessage }
+          ),
           400
         );
       } else {
         sendError(
           res,
-          formatMessage(SERVICE_MESSAGES.VALIDATION.UNEXPECTED_PARAMS_VALIDATION_ERROR),
+          formatMessage(
+            SERVICE_MESSAGES.VALIDATION.UNEXPECTED_PARAMS_VALIDATION_ERROR
+          ),
           400
         );
       }
@@ -48,204 +67,19 @@ export const validateParams = (schema: ZodSchema) => {
   };
 };
 
-export const loginSchema = z.object({
-  email: z.string().email(SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message),
-  password: z.string().min(1, SERVICE_MESSAGES.SCHEMA.PASSWORD_REQUIRED.message),
-});
-
-export const registerSchema = z.object({
-  email: z.string().email(SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message),
-  password: z
-    .string()
-    .min(8, SERVICE_MESSAGES.SCHEMA.PASSWORD_MIN_LENGTH.message)
-    .max(100, SERVICE_MESSAGES.SCHEMA.PASSWORD_MAX_LENGTH.message)
-    .regex(
-      /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
-      SERVICE_MESSAGES.SCHEMA.PASSWORD_PATTERN.message
-    ),
-  name: z
-    .string()
-    .min(2, SERVICE_MESSAGES.SCHEMA.NAME_MIN_LENGTH.message)
-    .max(50, SERVICE_MESSAGES.SCHEMA.NAME_MAX_LENGTH.message),
-  role: z.enum(['ADMIN', 'USER']).optional(),
-});
-
-export const forgotPasswordSchema = z.object({
-  email: z.string().email(SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message),
-});
-
-export const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, SERVICE_MESSAGES.SCHEMA.REFRESH_TOKEN_REQUIRED.message),
-});
-
-export const resetPasswordSchema = z
-  .object({
-    token: z.string().min(1, 'Şifre sıfırlama token gereklidir'),
-    newPassword: z
-      .string()
-      .min(8, 'Yeni şifre en az 8 karakter olmalıdır')
-      .max(100, 'Yeni şifre en fazla 100 karakter olabilir')
-      .regex(
-        /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
-        'Yeni şifre en az bir harf ve bir rakam içermelidir'
-      ),
-    confirmPassword: z.string().min(1, 'Şifre tekrarı gereklidir'),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Yeni şifre ve şifre tekrarı eşleşmiyor',
-    path: ['confirmPassword'],
-  });
-
-export const verifyEmailSchema = z.object({
-  token: z.string().min(1, 'Email doğrulama token gereklidir'),
-});
-
-export const resendEmailVerificationSchema = z.object({
-  email: z.string().email(SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message),
-});
-
-export const updateUserProfileSchema = z.object({
-  name: z
-    .string()
-    .min(2, 'Ad soyad en az 2 karakter olmalıdır')
-    .max(50, 'Ad soyad en fazla 50 karakter olabilir'),
-  email: z
-    .string()
-    .email('Geçerli bir email adresi giriniz')
-    .max(255, 'Email adresi en fazla 255 karakter olabilir'),
-});
-
-export const changePasswordSchema = z
-  .object({
-    currentPassword: z.string().min(1, 'Mevcut şifre gereklidir'),
-    newPassword: z
-      .string()
-      .min(8, 'Yeni şifre en az 8 karakter olmalıdır')
-      .max(100, 'Yeni şifre en fazla 100 karakter olabilir')
-      .regex(
-        /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
-        'Yeni şifre en az bir harf ve bir rakam içermelidir'
-      ),
-    confirmPassword: z.string().min(1, 'Şifre tekrarı gereklidir'),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Yeni şifre ve şifre tekrarı eşleşmiyor',
-    path: ['confirmPassword'],
-  })
-  .refine((data) => data.currentPassword !== data.newPassword, {
-    message: 'Yeni şifre mevcut şifreden farklı olmalıdır',
-    path: ['newPassword'],
-  });
-
-export const contactMessageSchema = z.object({
-  type: z.enum(['CONTACT', 'SUPPORT']),
-  name: z
-    .string()
-    .min(2, 'Ad soyad en az 2 karakter olmalıdır')
-    .max(100, 'Ad soyad en fazla 100 karakter olabilir')
-    .trim(),
-  email: z
-    .string()
-    .email('Geçerli bir email adresi giriniz')
-    .max(255, 'Email adresi çok uzun'),
-  subject: z
-    .string()
-    .min(3, 'Konu en az 3 karakter olmalıdır')
-    .max(200, 'Konu en fazla 200 karakter olabilir')
-    .trim(),
-  message: z
-    .string()
-    .min(10, 'Mesaj en az 10 karakter olmalıdır')
-    .max(2000, 'Mesaj en fazla 2000 karakter olabilir')
-    .trim(),
-});
-
-export const generateCoverLetterSchema = z.object({
-  personalInfo: z.object({
-    fullName: z.string().min(1, 'Ad soyad gereklidir'),
-    email: z.string().email('Geçerli email gereklidir'),
-    phone: z.string().min(1, 'Telefon gereklidir'),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    linkedin: z.string().optional(),
-  }),
-  jobInfo: z.object({
-    positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
-    companyName: z.string().min(1, 'Şirket adı gereklidir'),
-    department: z.string().optional(),
-    hiringManagerName: z.string().optional(),
-    jobDescription: z.string().optional(),
-    requirements: z.array(z.string()).optional(),
-  }),
-  experience: z.object({
-    currentPosition: z.string().optional(),
-    yearsOfExperience: z.number().min(0, 'Deneyim yılı 0 veya üzeri olmalı'),
-    relevantSkills: z.array(z.string()).min(1, 'En az bir beceri gereklidir'),
-    achievements: z.array(z.string()).min(1, 'En az bir başarı gereklidir'),
-    previousCompanies: z.array(z.string()).optional(),
-  }),
-  coverLetterType: z.enum([
-    'PROFESSIONAL',
-    'CREATIVE',
-    'TECHNICAL',
-    'ENTRY_LEVEL',
-  ]),
-  tone: z.enum(['FORMAL', 'FRIENDLY', 'CONFIDENT', 'ENTHUSIASTIC']),
-  additionalInfo: z
-    .object({
-      reasonForApplying: z.string().optional(),
-      companyKnowledge: z.string().optional(),
-      careerGoals: z.string().optional(),
-    })
-    .optional(),
-});
-
-export const saveCoverLetterSchema = z.object({
-  title: z.string().min(1, 'Başlık gereklidir'),
-  content: z.string().min(1, 'İçerik gereklidir'),
-  coverLetterType: z.enum([
-    'PROFESSIONAL',
-    'CREATIVE',
-    'TECHNICAL',
-    'ENTRY_LEVEL',
-  ]),
-  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
-  companyName: z.string().min(1, 'Şirket adı gereklidir'),
-  category: z
-    .enum([
-      'SOFTWARE_DEVELOPER',
-      'MARKETING_SPECIALIST',
-      'SALES_REPRESENTATIVE',
-      'PROJECT_MANAGER',
-      'DATA_ANALYST',
-      'UI_UX_DESIGNER',
-      'BUSINESS_ANALYST',
-      'CUSTOMER_SERVICE',
-      'HR_SPECIALIST',
-      'FINANCE_SPECIALIST',
-      'CONTENT_WRITER',
-      'DIGITAL_MARKETING',
-      'PRODUCT_MANAGER',
-      'QUALITY_ASSURANCE',
-      'GRAPHIC_DESIGNER',
-      'ADMINISTRATIVE_ASSISTANT',
-      'CONSULTANT',
-      'ENGINEER',
-      'TEACHER',
-      'HEALTHCARE',
-      'LEGAL',
-      'GENERAL',
-    ])
-    .optional()
-    .default('GENERAL'),
-});
-
-export const analyzeCoverLetterSchema = z.object({
-  content: z.string().min(1, 'Cover letter içeriği gereklidir'),
-});
-
-export const generateMinimalCoverLetterSchema = z.object({
-  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
-  companyName: z.string().min(1, 'Şirket adı gereklidir'),
-  motivation: z.string().optional(),
-});
+export {
+  loginSchema,
+  registerSchema,
+  verifyEmailSchema,
+  refreshTokenSchema,
+  resetPasswordSchema,
+  forgotPasswordSchema,
+  changePasswordSchema,
+  contactMessageSchema,
+  saveCoverLetterSchema,
+  updateUserProfileSchema,
+  analyzeCoverLetterSchema,
+  generateCoverLetterSchema,
+  resendEmailVerificationSchema,
+  generateMinimalCoverLetterSchema,
+} from '../schemas';

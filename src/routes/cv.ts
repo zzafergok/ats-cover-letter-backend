@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { z } from 'zod';
 import multer from 'multer';
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
@@ -364,20 +363,8 @@ router.delete('/uploads/:id', authenticateToken, async (req, res) => {
   }
 });
 
-const createCvSchema = z.object({
-  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
-  companyName: z.string().min(1, 'Şirket adı gereklidir'),
-  cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']),
-  jobDescription: z.string().optional(),
-  additionalRequirements: z.string().optional(),
-  targetKeywords: z.array(z.string()).optional(),
-});
-
-const saveCvSchema = z.object({
-  title: z.string().min(1, 'CV başlığı gereklidir'),
-  content: z.string().min(1, 'CV içeriği gereklidir'),
-  cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']),
-});
+import { createCvSchema, saveCvSchema } from '../schemas';
+import { z } from 'zod';
 
 router.post('/generate', authenticateToken, async (req, res) => {
   try {
