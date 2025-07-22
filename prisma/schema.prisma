@@ -22,10 +22,28 @@ model User {
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
-  refreshTokens        RefreshToken[]
+  // Detailed Profile Information
+  phone             String?  
+  address           String?  
+  city              String?  
+  github            String?  
+  linkedin          String?  
+  portfolioWebsite  String?  @map("portfolio_website")
+  portfolioTitle    String?  @map("portfolio_title")
+  aboutMe           String?  @map("about_me")
+  profileCompleted  Boolean  @default(false) @map("profile_completed")
+
+  refreshTokens         RefreshToken[]
   cvUploads            CvUpload[]
   savedCvs             SavedCv[]
   coverLetterBasics    CoverLetterBasic[]
+  coverLetterDetailed  CoverLetterDetailed[]
+  educations           Education[]
+  experiences          Experience[]
+  courses              Course[]
+  certificates         Certificate[]
+  hobbies              Hobby[]
+  skills               Skill[]
 
   @@map("users")
 }
@@ -106,6 +124,147 @@ model CoverLetterBasic {
   @@map("cover_letter_basics")
 }
 
+model CoverLetterDetailed {
+  id               String                    @id @default(cuid())
+  userId           String                    @map("user_id")
+  
+  // Job Information
+  positionTitle    String                    @map("position_title")
+  companyName      String                    @map("company_name")
+  jobDescription   String                    @map("job_description")
+  language         CoverLetterLanguage       @default(TURKISH)
+  
+  // Personal Motivation Questions
+  whyPosition      String?                   @map("why_position")
+  whyCompany       String?                   @map("why_company")
+  workMotivation   String?                   @map("work_motivation")
+  
+  // Generated Content
+  generatedContent String?                   @map("generated_content")
+  updatedContent   String?                   @map("updated_content")
+  
+  // Status
+  generationStatus ProcessingStatus          @default(PENDING) @map("generation_status")
+  
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  updatedAt        DateTime                  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("cover_letter_detailed")
+}
+
+model Education {
+  id            String      @id @default(cuid())
+  userId        String      @map("user_id")
+  schoolName    String      @map("school_name")
+  degree        String?     
+  fieldOfStudy  String?     @map("field_of_study")
+  grade         Float?      
+  gradeSystem   GradeSystem @map("grade_system")
+  startYear     Int         @map("start_year")
+  endYear       Int?        @map("end_year")
+  isCurrent     Boolean     @default(false) @map("is_current")
+  description   String?     
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("educations")
+}
+
+model Experience {
+  id            String         @id @default(cuid())
+  userId        String         @map("user_id")
+  companyName   String         @map("company_name")
+  position      String         
+  employmentType EmploymentType @map("employment_type")
+  workMode      WorkMode       @map("work_mode")
+  location      String?        
+  startMonth    Int            @map("start_month")
+  startYear     Int            @map("start_year")
+  endMonth      Int?           @map("end_month")
+  endYear       Int?           @map("end_year")
+  isCurrent     Boolean        @default(false) @map("is_current")
+  description   String?        
+  achievements  String?        
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("experiences")
+}
+
+model Course {
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  courseName    String    @map("course_name")
+  provider      String?   
+  startMonth    Int?      @map("start_month")
+  startYear     Int?      @map("start_year")
+  endMonth      Int?      @map("end_month")
+  endYear       Int?      @map("end_year")
+  duration      String?   
+  description   String?   
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("courses")
+}
+
+model Certificate {
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  certificateName String  @map("certificate_name")
+  issuer        String?   
+  issueMonth    Int?      @map("issue_month")
+  issueYear     Int?      @map("issue_year")
+  expiryMonth   Int?      @map("expiry_month")
+  expiryYear    Int?      @map("expiry_year")
+  credentialId  String?   @map("credential_id")
+  credentialUrl String?   @map("credential_url")
+  description   String?   
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("certificates")
+}
+
+model Hobby {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String   
+  description String?  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("hobbies")
+}
+
+model Skill {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  name        String    
+  category    SkillCategory?
+  level       SkillLevel?
+  yearsOfExperience Int? @map("years_of_experience")
+  description String?   
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("skills")
+}
+
 
 enum UserRole {
   USER
@@ -128,6 +287,42 @@ enum ProcessingStatus {
 enum CoverLetterLanguage {
   TURKISH
   ENGLISH
+}
+
+enum GradeSystem {
+  PERCENTAGE // 0-100 for high school
+  GPA_4      // 0-4 for university
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  FREELANCE
+  INTERNSHIP
+  TEMPORARY
+}
+
+enum WorkMode {
+  ONSITE
+  REMOTE
+  HYBRID
+}
+
+enum SkillCategory {
+  TECHNICAL
+  SOFT_SKILL
+  LANGUAGE
+  TOOL
+  FRAMEWORK
+  OTHER
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
 }
 
 
