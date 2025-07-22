@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 import logger from '../config/logger';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 export class DatabaseService {
   private static instance: DatabaseService;

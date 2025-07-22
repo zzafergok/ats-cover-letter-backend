@@ -5,6 +5,7 @@ import { db } from '../services/database.service';
 import { SessionService } from '../services/session.service';
 
 import logger from '../config/logger';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 export enum UserRole {
   USER = 'USER',
@@ -23,7 +24,7 @@ export const authenticateToken = async (
     if (!token) {
       res.status(401).json({
         success: false,
-        message: "Erişim token'ı gereklidir",
+        message: formatMessage(SERVICE_MESSAGES.GENERAL.UNAUTHORIZED),
       });
       return;
     }
@@ -36,7 +37,7 @@ export const authenticateToken = async (
     if (!sessionData) {
       res.status(401).json({
         success: false,
-        message: 'Oturum süresi dolmuş',
+        message: formatMessage(SERVICE_MESSAGES.GENERAL.UNAUTHORIZED),
       });
       return;
     }
@@ -57,7 +58,7 @@ export const authenticateToken = async (
     if (!user) {
       res.status(401).json({
         success: false,
-        message: 'Kullanıcı bulunamadı',
+        message: formatMessage(SERVICE_MESSAGES.GENERAL.NOT_FOUND),
       });
       return;
     }
@@ -83,12 +84,12 @@ export const authenticateToken = async (
       logger.warn('Invalid token attempt', { error: error.message });
       res.status(401).json({
         success: false,
-        message: 'Geçersiz token',
+        message: formatMessage(SERVICE_MESSAGES.AUTH.TOKEN_VERIFICATION_FAILED),
       });
       return;
     }
 
-    logger.error('Auth middleware hatası:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error));
     res.status(500).json({
       success: false,
       message: 'Sunucu hatası',
@@ -105,7 +106,7 @@ export const requireAdmin = (
   if (req.user?.role !== UserRole.ADMIN) {
     res.status(403).json({
       success: false,
-      message: 'Bu işlem için admin yetkisi gereklidir',
+      message: formatMessage(SERVICE_MESSAGES.GENERAL.UNAUTHORIZED),
     });
     return;
   }

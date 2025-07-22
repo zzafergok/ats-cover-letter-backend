@@ -1,6 +1,7 @@
 import { LRUCache } from 'lru-cache';
 
 import logger from './logger';
+import { SERVICE_MESSAGES, createErrorMessage } from '../constants/messages';
 
 class InMemoryCacheService {
   private cache: LRUCache<string, any>;
@@ -26,7 +27,7 @@ class InMemoryCacheService {
     try {
       return this.cache.get(key);
     } catch (error) {
-      logger.error('Cache get hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.GET_ERROR, error as Error));
       return null;
     }
   }
@@ -36,7 +37,7 @@ class InMemoryCacheService {
       const options = ttl ? { ttl: ttl * 1000 } : undefined;
       this.cache.set(key, value, options);
     } catch (error) {
-      logger.error('Cache set hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.SET_ERROR, error as Error));
     }
   }
 
@@ -44,7 +45,7 @@ class InMemoryCacheService {
     try {
       this.cache.delete(key);
     } catch (error) {
-      logger.error('Cache delete hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.DELETE_ERROR, error as Error));
     }
   }
 
@@ -52,7 +53,7 @@ class InMemoryCacheService {
     try {
       this.cache.clear();
     } catch (error) {
-      logger.error('Cache flush hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.FLUSH_ERROR, error as Error));
     }
   }
 
@@ -60,7 +61,7 @@ class InMemoryCacheService {
     try {
       return this.cache.has(key);
     } catch (error) {
-      logger.error('Cache exists hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.EXISTS_ERROR, error as Error));
       return false;
     }
   }

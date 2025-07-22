@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { SERVICE_MESSAGES, formatMessage } from '../constants/messages';
 
 export interface JwtPayload {
   userId: string;
@@ -78,7 +79,7 @@ export class JwtService {
         expiresIn: '1h', // 1 saat
       } as jwt.SignOptions);
     } catch (error) {
-      throw new Error('JWT_S019: Şifre sıfırlama token oluşturma hatası');
+      throw new Error(formatMessage(SERVICE_MESSAGES.AUTH.PASSWORD_RESET_TOKEN_GENERATION_FAILED));
     }
   }
 
@@ -103,12 +104,12 @@ export class JwtService {
       };
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
-        throw new Error('JWT_S021: Şifre sıfırlama süresi dolmuş');
+        throw new Error(formatMessage(SERVICE_MESSAGES.AUTH.PASSWORD_RESET_TOKEN_EXPIRED));
       }
       if (error instanceof jwt.JsonWebTokenError) {
-        throw new Error('JWT_S022: Şifre sıfırlama token geçersiz');
+        throw new Error(formatMessage(SERVICE_MESSAGES.AUTH.PASSWORD_RESET_TOKEN_INVALID));
       }
-      throw new Error('JWT_S023: Şifre sıfırlama token işlenemedi');
+      throw new Error(formatMessage(SERVICE_MESSAGES.AUTH.PASSWORD_RESET_TOKEN_INVALID));
     }
   }
 
@@ -219,7 +220,7 @@ export class JwtService {
         expiresIn: '30m', // 30 dakika
       } as jwt.SignOptions);
     } catch (error) {
-      throw new Error('JWT_S014: Email doğrulama token oluşturma hatası');
+      throw new Error(formatMessage(SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_GENERATION_FAILED));
     }
   }
 
@@ -247,9 +248,9 @@ export class JwtService {
         );
       }
       if (error instanceof jwt.JsonWebTokenError) {
-        throw new Error('JWT_S017: Email doğrulama token geçersiz');
+        throw new Error(formatMessage(SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_INVALID));
       }
-      throw new Error('JWT_S018: Email doğrulama token işlenemedi');
+      throw new Error(formatMessage(SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_INVALID));
     }
   }
 }

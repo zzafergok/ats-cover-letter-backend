@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 
 import logger from '../config/logger';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 export class EmailService {
   private static resend = new Resend(process.env.RESEND_API_KEY);
@@ -12,10 +13,10 @@ export class EmailService {
   ): Promise<void> {
     try {
       await this.sendEmailVerificationDirect(email, verifyToken, userName);
-      logger.info(`Email doğrulama gönderildi: ${email}`);
+      logger.info(formatMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT, email));
     } catch (error) {
-      logger.error('Email doğrulama gönderim hatası:', error);
-      throw new Error('EMAIL_007: Email doğrulama gönderilemedi');
+      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED, error as Error));
+      throw new Error(formatMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED));
     }
   }
 
@@ -38,14 +39,14 @@ export class EmailService {
         html: `[Mevcut HTML template aynı kalacak]`,
       });
 
-      logger.info('Email doğrulama gönderildi:', {
+      logger.info(formatMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT), {
         recipient: email,
         userName,
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      logger.error('Email doğrulama gönderim hatası:', error);
-      throw new Error('EMAIL_005: Email doğrulama gönderme başarısız');
+      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED, error as Error));
+      throw new Error(formatMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED));
     }
   }
 
@@ -55,10 +56,10 @@ export class EmailService {
   ): Promise<void> {
     try {
       await this.sendPasswordResetEmailDirect(email, resetToken);
-      logger.info(`Şifre sıfırlama emaili gönderildi: ${email}`);
+      logger.info(formatMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SENT), email);
     } catch (error) {
-      logger.error('Şifre sıfırlama email hatası:', error);
-      throw new Error('EMAIL_008: Şifre sıfırlama emaili gönderilemedi');
+      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SEND_FAILED, error as Error));
+      throw new Error(formatMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SEND_FAILED));
     }
   }
 
@@ -71,10 +72,10 @@ export class EmailService {
   }): Promise<void> {
     try {
       await this.sendContactMessageDirect(data);
-      logger.info(`İletişim mesajı gönderildi: ${data.email}`);
+      logger.info(formatMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SENT), data.email);
     } catch (error) {
-      logger.error('İletişim mesajı gönderim hatası:', error);
-      throw new Error('EMAIL_009: İletişim mesajı gönderilemedi');
+      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED, error as Error));
+      throw new Error(formatMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED));
     }
   }
 
@@ -106,10 +107,10 @@ export class EmailService {
         `,
       });
 
-      logger.info('Şifre sıfırlama emaili gönderildi:', email);
+      logger.info(formatMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SENT), email);
     } catch (error) {
-      logger.error('Şifre sıfırlama email hatası:', error);
-      throw new Error('EMAIL_006: Şifre sıfırlama emaili gönderilemedi');
+      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SEND_FAILED, error as Error));
+      throw new Error(formatMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SEND_FAILED));
     }
   }
 
@@ -143,10 +144,10 @@ export class EmailService {
         `,
       });
 
-      logger.info('İletişim mesajı gönderildi:', data.email);
+      logger.info(formatMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SENT), data.email);
     } catch (error) {
-      logger.error('İletişim mesajı gönderim hatası:', error);
-      throw new Error('EMAIL_009: İletişim mesajı gönderilemedi');
+      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED, error as Error));
+      throw new Error(formatMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED));
     }
   }
 }

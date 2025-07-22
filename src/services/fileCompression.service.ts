@@ -2,6 +2,7 @@ import { promisify } from 'util';
 import { gzip, gunzip, constants } from 'zlib';
 
 import logger from '../config/logger';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 const gzipAsync = promisify(gzip);
 const gunzipAsync = promisify(gunzip);
@@ -23,8 +24,8 @@ export class FileCompressionService {
       });
       return compressed;
     } catch (error) {
-      logger.error('Dosya sıkıştırma hatası:', error);
-      throw new Error('COMPRESS_001: Dosya sıkıştırılamadı');
+      logger.error(createErrorMessage(SERVICE_MESSAGES.FILE.COMPRESSION_FAILED, error as Error));
+      throw new Error(formatMessage(SERVICE_MESSAGES.FILE.COMPRESSION_FAILED));
     }
   }
 
@@ -33,8 +34,8 @@ export class FileCompressionService {
       const decompressed = await gunzipAsync(compressedBuffer);
       return decompressed;
     } catch (error) {
-      logger.error('Dosya açma hatası:', error);
-      throw new Error('COMPRESS_002: Sıkıştırılmış dosya açılamadı');
+      logger.error(createErrorMessage(SERVICE_MESSAGES.FILE.DECOMPRESSION_FAILED, error as Error));
+      throw new Error(formatMessage(SERVICE_MESSAGES.FILE.DECOMPRESSION_FAILED));
     }
   }
 

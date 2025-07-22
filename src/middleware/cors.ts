@@ -1,4 +1,5 @@
 import cors = require('cors');
+import { SERVICE_MESSAGES, formatMessage } from '../constants/messages';
 
 const allowedOrigins = [
   'https://www.starkon-kanban.com',
@@ -15,7 +16,7 @@ const corsOptions: cors.CorsOptions = {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS: Origin ${origin} not allowed`));
+      callback(new Error(`${formatMessage(SERVICE_MESSAGES.CORS.ORIGIN_NOT_ALLOWED)}: ${origin}`));
     }
   },
   credentials: true,

@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import logger from '../config/logger';
 import { cacheService } from '../config/cache';
+import { SERVICE_MESSAGES, createErrorMessage } from '../constants/messages';
 
 export class SessionService {
   private static instance: SessionService;
@@ -34,7 +35,7 @@ export class SessionService {
 
       return sessionId;
     } catch (error) {
-      logger.error('Session oluşturma hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.SESSION.CREATION_ERROR, error as Error));
       throw error;
     }
   }
@@ -44,7 +45,7 @@ export class SessionService {
       const sessionKey = `session:${sessionId}`;
       return await cacheService.get(sessionKey);
     } catch (error) {
-      logger.error('Session getirme hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.SESSION.GET_ERROR, error as Error));
       return null;
     }
   }
@@ -69,7 +70,7 @@ export class SessionService {
 
       await cacheService.del(sessionKey);
     } catch (error) {
-      logger.error('Session silme hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.SESSION.DELETE_ERROR, error as Error));
     }
   }
 
@@ -84,7 +85,7 @@ export class SessionService {
 
       await cacheService.del(sessionsKey);
     } catch (error) {
-      logger.error('Tüm session silme hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.SESSION.DELETE_ALL_ERROR, error as Error));
     }
   }
 
@@ -96,7 +97,7 @@ export class SessionService {
         await cacheService.set(sessionKey, sessionData, this.sessionTTL);
       }
     } catch (error) {
-      logger.error('Session uzatma hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.SESSION.EXTEND_ERROR, error as Error));
     }
   }
 }

@@ -1,5 +1,6 @@
 import logger from '../config/logger';
 import { cacheService } from '../config/cache';
+import { SERVICE_MESSAGES, createErrorMessage } from '../constants/messages';
 
 export class CacheService {
   private static instance: CacheService;
@@ -15,7 +16,7 @@ export class CacheService {
     try {
       return await cacheService.get(key);
     } catch (error) {
-      logger.error('Cache get hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.GET_ERROR, error as Error));
       return null;
     }
   }
@@ -24,7 +25,7 @@ export class CacheService {
     try {
       await cacheService.set(key, value, ttl);
     } catch (error) {
-      logger.error('Cache set hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.SET_ERROR, error as Error));
     }
   }
 
@@ -32,7 +33,7 @@ export class CacheService {
     try {
       await cacheService.del(key);
     } catch (error) {
-      logger.error('Cache delete hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.DELETE_ERROR, error as Error));
     }
   }
 
@@ -40,7 +41,7 @@ export class CacheService {
     try {
       await cacheService.flush();
     } catch (error) {
-      logger.error('Cache flush hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.FLUSH_ERROR, error as Error));
     }
   }
 
@@ -48,7 +49,7 @@ export class CacheService {
     try {
       return await cacheService.exists(key);
     } catch (error) {
-      logger.error('Cache exists hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.EXISTS_ERROR, error as Error));
       return false;
     }
   }

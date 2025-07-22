@@ -5,6 +5,7 @@ import { ContactData, ContactService } from '../services/contact.service';
 import { sendError, sendSuccess, sendServerError } from '../utils/response';
 
 import logger from '../config/logger';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage, createDynamicMessage } from '../constants/messages';
 
 export class ContactController {
   private contactService = ContactService.getInstance();
@@ -33,7 +34,7 @@ export class ContactController {
         `${messageType} başarıyla gönderildi. En kısa sürede size dönüş yapacağız.`
       );
     } catch (error) {
-      logger.error('Contact message gönderim hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED, error as Error));
 
       if (error instanceof Error && error.message.startsWith('CONTACT_001')) {
         sendError(res, error.message, 429);
@@ -75,7 +76,7 @@ export class ContactController {
         }),
       });
     } catch (error) {
-      logger.error('Limit kontrolü hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error));
       sendServerError(res, 'CONTACT_005: Limit bilgisi alınamadı');
     }
   };
@@ -88,7 +89,7 @@ export class ContactController {
       const result = await this.contactService.getContactMessages(page, limit);
       sendSuccess(res, result);
     } catch (error) {
-      logger.error('Contact messages getirilemedi:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error));
       sendServerError(res, 'CONTACT_004: Sistem hatası - Mesajlar yüklenemedi');
     }
   };
@@ -105,8 +106,9 @@ export class ContactController {
         });
 
         throw new Error(
-          `CONTACT_001: Günlük mesaj gönderme limitine ulaştınız (3/3). ` +
-            `Limit ${formattedResetTime} saatinde sıfırlanacak.`
+          createDynamicMessage(SERVICE_MESSAGES.CONTACT.DAILY_LIMIT_EXCEEDED, {
+            resetTime: formattedResetTime
+          }) + `. Limit ${formattedResetTime} saatinde sıfırlanacak.`
         );
       }
     }

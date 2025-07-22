@@ -1,9 +1,13 @@
-import express from 'express';
 import { z } from 'zod';
+import express from 'express';
+
 import { authenticateToken } from '../middleware/auth';
-import { CoverLetterBasicService } from '../services/coverLetterBasic.service';
+
 import { PdfService } from '../services/pdf.service';
+import { CoverLetterBasicService } from '../services/coverLetterBasic.service';
+
 import logger from '../config/logger';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 const router = express.Router();
 const coverLetterService = CoverLetterBasicService.getInstance();
@@ -15,9 +19,13 @@ const createCoverLetterSchema = z.object({
   positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
   companyName: z.string().min(1, 'Şirket adı gereklidir'),
   jobDescription: z.string().min(10, 'İş tanımı en az 10 karakter olmalıdır'),
-  language: z.enum(['TURKISH', 'ENGLISH'], {
-    errorMap: () => ({ message: 'Dil seçeneği TURKISH veya ENGLISH olmalıdır' })
-  }).default('TURKISH'),
+  language: z
+    .enum(['TURKISH', 'ENGLISH'], {
+      errorMap: () => ({
+        message: 'Dil seçeneği TURKISH veya ENGLISH olmalıdır',
+      }),
+    })
+    .default('TURKISH'),
 });
 
 const updateCoverLetterSchema = z.object({
@@ -53,12 +61,12 @@ router.post('/', authenticateToken, async (req, res) => {
       });
     }
 
-    logger.error('Cover letter oluşturma hatası:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.COVER_LETTER.GENERATION_FAILED, error as Error));
 
     const errorMessage =
       error instanceof Error
         ? error.message
-        : 'Cover letter oluşturulurken hata oluştu';
+        : formatMessage(SERVICE_MESSAGES.COVER_LETTER.GENERATION_FAILED);
     return res.status(500).json({
       success: false,
       message: errorMessage,
@@ -170,12 +178,12 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       message: 'Cover letter başarıyla silindi',
     });
   } catch (error) {
-    logger.error('Cover letter silme hatası:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error));
 
     const errorMessage =
       error instanceof Error
         ? error.message
-        : 'Cover letter silinirken hata oluştu';
+        : formatMessage(SERVICE_MESSAGES.GENERAL.FAILED);
     return res.status(500).json({
       success: false,
       message: errorMessage,

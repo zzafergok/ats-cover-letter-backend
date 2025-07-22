@@ -2,6 +2,7 @@ import { z, ZodSchema, ZodError } from 'zod';
 import { Request, Response, NextFunction } from 'express';
 
 import { sendError } from '../utils/response';
+import { SERVICE_MESSAGES, formatMessage, createDynamicMessage } from '../constants/messages';
 
 export const validate = (schema: ZodSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -13,11 +14,11 @@ export const validate = (schema: ZodSchema) => {
         const errorMessage = error.issues.map((err) => err.message).join(', ');
         sendError(
           res,
-          `VALID_001: Giriş doğrulama hatası - ${errorMessage}`,
+          createDynamicMessage(SERVICE_MESSAGES.VALIDATION.INPUT_VALIDATION_ERROR, { details: errorMessage }),
           400
         );
       } else {
-        sendError(res, 'VALID_002: Beklenmeyen doğrulama hatası', 400);
+        sendError(res, formatMessage(SERVICE_MESSAGES.VALIDATION.UNEXPECTED_VALIDATION_ERROR), 400);
       }
     }
   };
@@ -33,13 +34,13 @@ export const validateParams = (schema: ZodSchema) => {
         const errorMessage = error.issues.map((err) => err.message).join(', ');
         sendError(
           res,
-          `VALID_003: Parametre doğrulama hatası - ${errorMessage}`,
+          createDynamicMessage(SERVICE_MESSAGES.VALIDATION.PARAMS_VALIDATION_ERROR, { details: errorMessage }),
           400
         );
       } else {
         sendError(
           res,
-          'VALID_004: Beklenmeyen parametre doğrulama hatası',
+          formatMessage(SERVICE_MESSAGES.VALIDATION.UNEXPECTED_PARAMS_VALIDATION_ERROR),
           400
         );
       }
@@ -48,33 +49,33 @@ export const validateParams = (schema: ZodSchema) => {
 };
 
 export const loginSchema = z.object({
-  email: z.string().email('Geçerli bir email adresi giriniz'),
-  password: z.string().min(1, 'Şifre gereklidir'),
+  email: z.string().email(SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message),
+  password: z.string().min(1, SERVICE_MESSAGES.SCHEMA.PASSWORD_REQUIRED.message),
 });
 
 export const registerSchema = z.object({
-  email: z.string().email('Geçerli bir email adresi giriniz'),
+  email: z.string().email(SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message),
   password: z
     .string()
-    .min(8, 'Şifre en az 8 karakter olmalıdır')
-    .max(100, 'Şifre en fazla 100 karakter olabilir')
+    .min(8, SERVICE_MESSAGES.SCHEMA.PASSWORD_MIN_LENGTH.message)
+    .max(100, SERVICE_MESSAGES.SCHEMA.PASSWORD_MAX_LENGTH.message)
     .regex(
       /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
-      'Şifre en az bir harf, bir rakam içermeli ve sadece izin verilen özel karakterleri kullanmalıdır'
+      SERVICE_MESSAGES.SCHEMA.PASSWORD_PATTERN.message
     ),
   name: z
     .string()
-    .min(2, 'Ad en az 2 karakter olmalıdır')
-    .max(50, 'Ad en fazla 50 karakter olabilir'),
+    .min(2, SERVICE_MESSAGES.SCHEMA.NAME_MIN_LENGTH.message)
+    .max(50, SERVICE_MESSAGES.SCHEMA.NAME_MAX_LENGTH.message),
   role: z.enum(['ADMIN', 'USER']).optional(),
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email('Geçerli bir email adresi giriniz'),
+  email: z.string().email(SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message),
 });
 
 export const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token gereklidir'),
+  refreshToken: z.string().min(1, SERVICE_MESSAGES.SCHEMA.REFRESH_TOKEN_REQUIRED.message),
 });
 
 export const resetPasswordSchema = z
@@ -100,7 +101,7 @@ export const verifyEmailSchema = z.object({
 });
 
 export const resendEmailVerificationSchema = z.object({
-  email: z.string().email('Geçerli bir email adresi giriniz'),
+  email: z.string().email(SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message),
 });
 
 export const updateUserProfileSchema = z.object({

@@ -1,6 +1,7 @@
 import { db } from './database.service';
 import { EmailService } from './email.service';
 import { TurkeyTime } from '../utils/timezone';
+import { SERVICE_MESSAGES, createDynamicMessage } from '../constants/messages';
 
 export interface ContactData {
   type: 'CONTACT' | 'SUPPORT';
@@ -76,8 +77,9 @@ export class ContactService {
         });
 
         throw new Error(
-          `CONTACT_001: Günlük mesaj gönderme limitine ulaştınız (3/3). ` +
-            `Limit ${formattedResetTime} saatinde sıfırlanacak.`
+          createDynamicMessage(SERVICE_MESSAGES.CONTACT.DAILY_LIMIT_EXCEEDED, {
+            resetTime: formattedResetTime
+          }) + `. Limit ${formattedResetTime} saatinde sıfırlanacak.`
         );
       }
     }

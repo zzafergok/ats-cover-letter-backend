@@ -1,6 +1,7 @@
 import { EmailService } from './email.service';
 
 import logger from '../config/logger';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 interface QueueJob {
   id: string;
@@ -40,7 +41,7 @@ class SimpleQueueService {
 
   private async processEmailJob(job: QueueJob): Promise<void> {
     try {
-      logger.info(`Email job işleniyor: ${job.type}`);
+      logger.info(formatMessage(SERVICE_MESSAGES.QUEUE.EMAIL_JOB_PROCESSING), job.type);
 
       switch (job.type) {
         case 'verification':
@@ -60,19 +61,19 @@ class SimpleQueueService {
           await EmailService.sendContactMessageDirect(job.data);
           break;
         default:
-          throw new Error(`Bilinmeyen email tipi: ${job.type}`);
+          throw new Error(formatMessage(SERVICE_MESSAGES.QUEUE.UNKNOWN_EMAIL_TYPE) + `: ${job.type}`);
       }
 
-      logger.info(`Email job tamamlandı: ${job.type}`);
+      logger.info(formatMessage(SERVICE_MESSAGES.QUEUE.EMAIL_JOB_COMPLETED), job.type);
     } catch (error) {
-      logger.error('Email job işleme hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.QUEUE.EMAIL_JOB_FAILED, error as Error));
 
       job.attempts++;
       if (job.attempts < job.maxAttempts) {
         // Retry logic - Vercel'de setTimeout kullanarak basit retry
         setTimeout(() => this.processEmailJob(job), 2000 * job.attempts);
       } else {
-        logger.error(`Email job ${job.id} maksimum deneme sayısına ulaştı`);
+        logger.error(formatMessage(SERVICE_MESSAGES.QUEUE.MAX_RETRIES_REACHED) + `: ${job.id}`);
       }
     }
   }

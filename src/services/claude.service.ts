@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 import logger from '../config/logger';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -20,7 +21,7 @@ export async function generateCvWithClaude(
   params: CvGenerationParams
 ): Promise<string> {
   if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error('Anthropic API anahtarı yapılandırılmamış');
+    throw new Error(formatMessage(SERVICE_MESSAGES.AI.API_KEY_MISSING));
   }
 
   const {
@@ -149,10 +150,10 @@ export async function generateCvWithClaude(
 
     return response.content[0].type === 'text' ? response.content[0].text : '';
   } catch (error: any) {
-    logger.error('Claude API hatası:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.AI.API_ERROR, error as Error));
 
     if (error.status === 401 || error.message?.includes('authentication')) {
-      throw new Error('Anthropic API anahtarı geçersiz veya eksik');
+      throw new Error(formatMessage(SERVICE_MESSAGES.AI.API_KEY_INVALID));
     }
 
     if (error.status === 529 || error.message?.includes('overloaded')) {
@@ -161,13 +162,13 @@ export async function generateCvWithClaude(
       );
     }
 
-    throw new Error('CV oluşturulurken bir hata oluştu');
+    throw new Error(formatMessage(SERVICE_MESSAGES.AI.CV_ANALYSIS_FAILED));
   }
 }
 
 export async function generateCoverLetterWithClaude(prompt: string): Promise<string> {
   if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error('Anthropic API anahtarı yapılandırılmamış');
+    throw new Error(formatMessage(SERVICE_MESSAGES.AI.API_KEY_MISSING));
   }
 
   try {
@@ -184,10 +185,10 @@ export async function generateCoverLetterWithClaude(prompt: string): Promise<str
 
     return response.content[0].type === 'text' ? response.content[0].text : '';
   } catch (error: any) {
-    logger.error('Claude API hatası (Cover Letter):', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.AI.API_ERROR, error as Error));
 
     if (error.status === 401 || error.message?.includes('authentication')) {
-      throw new Error('Anthropic API anahtarı geçersiz veya eksik');
+      throw new Error(formatMessage(SERVICE_MESSAGES.AI.API_KEY_INVALID));
     }
 
     if (error.status === 529 || error.message?.includes('overloaded')) {
@@ -196,6 +197,6 @@ export async function generateCoverLetterWithClaude(prompt: string): Promise<str
       );
     }
 
-    throw new Error('Cover letter oluşturulurken bir hata oluştu');
+    throw new Error(formatMessage(SERVICE_MESSAGES.AI.COVER_LETTER_GENERATION_FAILED));
   }
 }

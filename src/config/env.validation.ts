@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import logger from './logger';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 const envSchema = z.object({
   NODE_ENV: z
@@ -26,10 +27,10 @@ const envSchema = z.object({
 export function validateEnv() {
   try {
     const env = envSchema.parse(process.env);
-    logger.info('Environment variables validated successfully');
+    logger.info(formatMessage(SERVICE_MESSAGES.GENERAL.SUCCESS));
     return env;
   } catch (error) {
-    logger.error('Environment validation failed:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.VALIDATION_ERROR, error as Error));
     process.exit(1);
   }
 }

@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import logger from '../config/logger';
 import { TurkeyTime } from '../utils/timezone';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 export class PdfService {
   private static instance: PdfService;
@@ -74,7 +75,7 @@ export class PdfService {
       // PDF'yi buffer olarak döndür
       const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
       
-      logger.info('Cover letter PDF başarıyla oluşturuldu', {
+      logger.info(formatMessage(SERVICE_MESSAGES.PDF.GENERATION_SUCCESS), {
         positionTitle,
         companyName,
         contentLength: content.length,
@@ -83,8 +84,8 @@ export class PdfService {
 
       return pdfBuffer;
     } catch (error) {
-      logger.error('PDF oluşturma hatası:', error);
-      throw new Error('PDF oluşturulurken bir hata oluştu');
+      logger.error(createErrorMessage(SERVICE_MESSAGES.PDF.GENERATION_FAILED, error as Error));
+      throw new Error(formatMessage(SERVICE_MESSAGES.PDF.GENERATION_FAILED));
     }
   }
 
@@ -184,7 +185,7 @@ export class PdfService {
 
       const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
       
-      logger.info('Özelleştirilmiş cover letter PDF başarıyla oluşturuldu', {
+      logger.info(formatMessage(SERVICE_MESSAGES.PDF.CUSTOM_FORMAT_SUCCESS), {
         positionTitle,
         companyName,
         applicantName,
@@ -193,8 +194,8 @@ export class PdfService {
 
       return pdfBuffer;
     } catch (error) {
-      logger.error('Özelleştirilmiş PDF oluşturma hatası:', error);
-      throw new Error('PDF oluşturulurken bir hata oluştu');
+      logger.error(createErrorMessage(SERVICE_MESSAGES.PDF.GENERATION_FAILED, error as Error));
+      throw new Error(formatMessage(SERVICE_MESSAGES.PDF.GENERATION_FAILED));
     }
   }
 }

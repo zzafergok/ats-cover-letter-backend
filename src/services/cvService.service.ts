@@ -5,6 +5,7 @@ import pdfParse from 'pdf-parse';
 
 import logger from '../config/logger';
 import { TurkeyTime } from '../utils/timezone';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 export async function extractCvContent(filePath: string): Promise<string> {
   const fileExtension = path.extname(filePath).toLowerCase();
@@ -12,13 +13,13 @@ export async function extractCvContent(filePath: string): Promise<string> {
   try {
     // Dosya varlığı kontrolü
     if (!fs.existsSync(filePath)) {
-      throw new Error('Dosya bulunamadı');
+      throw new Error(formatMessage(SERVICE_MESSAGES.FILE.NOT_FOUND));
     }
 
     // Dosya boyutu kontrolü
     const stats = fs.statSync(filePath);
     if (stats.size === 0) {
-      throw new Error('Dosya boş');
+      throw new Error(formatMessage(SERVICE_MESSAGES.FILE.EMPTY_FILE));
     }
 
     if (fileExtension === '.pdf') {
@@ -26,7 +27,7 @@ export async function extractCvContent(filePath: string): Promise<string> {
       const pdfData = await pdfParse(pdfBuffer);
 
       if (!pdfData.text || pdfData.text.trim().length === 0) {
-        throw new Error('PDF dosyasından metin çıkarılamadı');
+        throw new Error(formatMessage(SERVICE_MESSAGES.FILE.PDF_EXTRACTION_FAILED));
       }
 
       return pdfData.text;
@@ -35,7 +36,7 @@ export async function extractCvContent(filePath: string): Promise<string> {
       const result = await mammoth.extractRawText({ buffer: docBuffer });
 
       if (!result.value || result.value.trim().length === 0) {
-        throw new Error('Word dosyasından metin çıkarılamadı');
+        throw new Error(formatMessage(SERVICE_MESSAGES.FILE.WORD_EXTRACTION_FAILED));
       }
 
       return result.value;
@@ -43,17 +44,17 @@ export async function extractCvContent(filePath: string): Promise<string> {
       const textContent = fs.readFileSync(filePath, 'utf-8');
 
       if (!textContent || textContent.trim().length === 0) {
-        throw new Error('Metin dosyası boş');
+        throw new Error(formatMessage(SERVICE_MESSAGES.FILE.TEXT_FILE_EMPTY));
       }
 
       return textContent;
     } else {
-      throw new Error('Desteklenmeyen dosya formatı');
+      throw new Error(formatMessage(SERVICE_MESSAGES.FILE.UNSUPPORTED_FORMAT));
     }
   } catch (error) {
-    logger.error('Dosya okuma hatası:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.FILE.READING_FAILED, error as Error));
     throw new Error(
-      `Dosya içeriği okunamadı: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`
+      createErrorMessage(SERVICE_MESSAGES.FILE.READING_FAILED, error as Error)
     );
   }
 }

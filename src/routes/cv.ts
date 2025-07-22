@@ -21,6 +21,7 @@ import { generateCvWithClaude } from '../services/claude.service';
 import { FileCompressionService } from '../services/fileCompression.service';
 
 import logger from '../config/logger';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -74,9 +75,9 @@ async function processCvFile(filePath: string, cvUploadId: string) {
       fs.unlinkSync(filePath);
     }
 
-    logger.info('CV processing completed successfully', { cvUploadId });
+    logger.info(formatMessage(SERVICE_MESSAGES.CV.PROCESSING_COMPLETED), { cvUploadId });
   } catch (error) {
-    logger.error('CV processing failed:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.CV.PROCESSING_FAILED, error as Error));
 
     // Update status to failed
     await prisma.cvUpload.update({
@@ -112,14 +113,11 @@ const upload = multer({
     files: 1,
   },
   fileFilter: (req, file, cb) => {
-    logger.log(
-      'File filter - Name:',
-      file.originalname,
-      'MIME:',
-      file.mimetype,
-      'Size:',
-      file.size
-    );
+    logger.info('File filter check', {
+      name: file.originalname,
+      mime: file.mimetype,
+      size: file.size
+    });
 
     const allowedExtensions = /\.(pdf|doc|docx)$/i;
     const allowedMimeTypes = [
@@ -135,9 +133,9 @@ const upload = multer({
       cb(null, true);
     } else {
       const error = new Error(
-        `Geçersiz dosya formatı. Dosya: ${file.originalname}, MIME: ${file.mimetype}`
+        `${formatMessage(SERVICE_MESSAGES.FILE.UNSUPPORTED_FORMAT)}. Dosya: ${file.originalname}, MIME: ${file.mimetype}`
       );
-      logger.error('File rejected:', error.message);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.FILE.UNSUPPORTED_FORMAT, error));
       cb(error);
     }
   },
@@ -151,10 +149,10 @@ router.post(
   async (req, res) => {
     try {
       if (!req.file) {
-        logger.warn('No file uploaded', { userId: req.user?.userId });
+        logger.warn(formatMessage(SERVICE_MESSAGES.CV.NO_FILE_UPLOADED), { userId: req.user?.userId });
         return res.status(400).json({
           success: false,
-          message: 'CV dosyası yüklenmedi',
+          message: formatMessage(SERVICE_MESSAGES.CV.NO_FILE_UPLOADED),
         });
       }
 
@@ -179,12 +177,12 @@ router.post(
       // Process CV synchronously instead of using Redis queue
       try {
         await processCvFile(req.file.path, cvUpload.id);
-        logger.info('CV işleme tamamlandı', {
+        logger.info(formatMessage(SERVICE_MESSAGES.CV.PROCESSING_COMPLETED), {
           cvUploadId: cvUpload.id,
           userId: req.user!.userId,
         });
       } catch (processingError) {
-        logger.error('CV işleme hatası:', processingError);
+        logger.error(createErrorMessage(SERVICE_MESSAGES.CV.PROCESSING_FAILED, processingError as Error));
         // Update status to failed
         await prisma.cvUpload.update({
           where: { id: cvUpload.id },
@@ -194,16 +192,15 @@ router.post(
 
       return res.json({
         success: true,
-        message: 'CV yüklendi ve işleme alındı',
+        message: formatMessage(SERVICE_MESSAGES.CV.UPLOAD_PROCESSING),
         data: {
           id: cvUpload.id,
           status: 'PENDING',
-          message: 'CV işleniyor, lütfen bekleyin...',
+          message: formatMessage(SERVICE_MESSAGES.CV.PROCESSING_PENDING),
         },
       });
     } catch (error: any) {
-      logger.error('CV yükleme hatası:', {
-        error: error.message,
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.UPLOAD_ERROR, error), {
         stack: error.stack,
         userId: req.user?.userId,
         file: req.file
@@ -219,14 +216,14 @@ router.post(
         try {
           fs.unlinkSync(req.file.path);
         } catch (unlinkError) {
-          logger.error('Dosya silme hatası:', unlinkError);
+          logger.error(createErrorMessage(SERVICE_MESSAGES.CV.FILE_DELETE_ERROR, unlinkError as Error));
         }
       }
 
-      let errorMessage = 'CV yüklenirken hata oluştu';
+      let errorMessage = formatMessage(SERVICE_MESSAGES.CV.UPLOAD_ERROR);
       if (error.code === 'LIMIT_FILE_SIZE') {
-        errorMessage = 'Dosya boyutu çok büyük (maksimum 10MB)';
-      } else if (error.message.includes('Geçersiz dosya formatı')) {
+        errorMessage = formatMessage(SERVICE_MESSAGES.CV.FILE_SIZE_EXCEEDED);
+      } else if (error.message.includes(SERVICE_MESSAGES.FILE.UNSUPPORTED_FORMAT.message)) {
         errorMessage = error.message;
       }
 
@@ -282,10 +279,10 @@ router.get('/uploads', authenticateToken, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('CV listesi getirme hatası:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.CV.LIST_ERROR, error as Error));
     return res.status(500).json({
       success: false,
-      message: 'CV listesi alınırken hata oluştu',
+      message: formatMessage(SERVICE_MESSAGES.CV.LIST_ERROR),
     });
   }
 });
@@ -310,7 +307,7 @@ router.get('/upload/status/:id', authenticateToken, async (req, res) => {
     if (!cvUpload) {
       return res.status(404).json({
         success: false,
-        message: 'CV bulunamadı',
+        message: formatMessage(SERVICE_MESSAGES.CV.NOT_FOUND),
       });
     }
 
@@ -324,10 +321,10 @@ router.get('/upload/status/:id', authenticateToken, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('CV durumu kontrol hatası:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.CV.STATUS_CHECK_ERROR, error as Error));
     return res.status(500).json({
       success: false,
-      message: 'Durum kontrolünde hata oluştu',
+      message: formatMessage(SERVICE_MESSAGES.CV.STATUS_CHECK_ERROR),
     });
   }
 });
@@ -346,7 +343,7 @@ router.delete('/uploads/:id', authenticateToken, async (req, res) => {
     if (!cvUpload) {
       return res.status(404).json({
         success: false,
-        message: 'CV bulunamadı',
+        message: formatMessage(SERVICE_MESSAGES.CV.NOT_FOUND),
       });
     }
 
@@ -356,13 +353,13 @@ router.delete('/uploads/:id', authenticateToken, async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'CV başarıyla silindi',
+      message: formatMessage(SERVICE_MESSAGES.CV.DELETE_SUCCESS),
     });
   } catch (error) {
-    logger.error('CV silme hatası:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.CV.DELETE_ERROR, error as Error));
     return res.status(500).json({
       success: false,
-      message: 'CV silinirken hata oluştu',
+      message: formatMessage(SERVICE_MESSAGES.CV.DELETE_ERROR),
     });
   }
 });
@@ -397,7 +394,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
     if (!cvUploadId) {
       return res.status(400).json({
         success: false,
-        message: "CV yükleme ID'si gereklidir",
+        message: formatMessage(SERVICE_MESSAGES.CV.UPLOAD_ID_REQUIRED),
       });
     }
 
@@ -414,7 +411,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
     if (!cvUpload || !cvUpload.extractedData) {
       return res.status(404).json({
         success: false,
-        message: 'CV verisi bulunamadı',
+        message: formatMessage(SERVICE_MESSAGES.CV.DATA_NOT_FOUND),
       });
     }
 
@@ -430,7 +427,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'CV başarıyla oluşturuldu',
+      message: formatMessage(SERVICE_MESSAGES.CV.GENERATION_SUCCESS),
       data: {
         content: generatedCv,
         positionTitle,
@@ -442,7 +439,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        message: 'Geçersiz veri',
+        message: formatMessage(SERVICE_MESSAGES.CV.INVALID_DATA),
         errors: error.issues.map((err) => ({
           field: err.path.join('.'),
           message: err.message,
@@ -450,10 +447,10 @@ router.post('/generate', authenticateToken, async (req, res) => {
       });
     }
 
-    logger.error('CV oluşturma hatası:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.CV.GENERATION_ERROR, error as Error));
     return res.status(500).json({
       success: false,
-      message: 'CV oluşturulurken hata oluştu',
+      message: formatMessage(SERVICE_MESSAGES.CV.GENERATION_ERROR),
     });
   }
 });
@@ -469,7 +466,7 @@ router.post('/save', authenticateToken, async (req, res) => {
     if (userCvCount >= 5) {
       return res.status(400).json({
         success: false,
-        message: 'Maksimum 5 CV kaydedebilirsiniz',
+        message: formatMessage(SERVICE_MESSAGES.CV.SAVE_LIMIT_EXCEEDED),
       });
     }
 
@@ -484,14 +481,14 @@ router.post('/save', authenticateToken, async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'CV başarıyla kaydedildi',
+      message: formatMessage(SERVICE_MESSAGES.CV.SAVE_SUCCESS),
       data: savedCv,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        message: 'Geçersiz veri',
+        message: formatMessage(SERVICE_MESSAGES.CV.INVALID_DATA),
         errors: error.issues.map((err) => ({
           field: err.path.join('.'),
           message: err.message,
@@ -499,10 +496,10 @@ router.post('/save', authenticateToken, async (req, res) => {
       });
     }
 
-    logger.error('CV kaydetme hatası:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.CV.SAVE_ERROR, error as Error));
     return res.status(500).json({
       success: false,
-      message: 'CV kaydedilirken hata oluştu',
+      message: formatMessage(SERVICE_MESSAGES.CV.SAVE_ERROR),
     });
   }
 });
@@ -519,10 +516,10 @@ router.get('/saved', authenticateToken, async (req, res) => {
       data: savedCvs,
     });
   } catch (error) {
-    logger.error("Kayıtlı CV'ler getirme hatası:", error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.CV.SAVED_LIST_ERROR, error as Error));
     res.status(500).json({
       success: false,
-      message: "Kayıtlı CV'ler alınırken hata oluştu",
+      message: formatMessage(SERVICE_MESSAGES.CV.SAVED_LIST_ERROR),
     });
   }
 });
@@ -541,7 +538,7 @@ router.delete('/saved/:id', authenticateToken, async (req, res) => {
     if (!savedCv) {
       return res.status(404).json({
         success: false,
-        message: 'CV bulunamadı',
+        message: formatMessage(SERVICE_MESSAGES.CV.NOT_FOUND),
       });
     }
 
@@ -551,13 +548,13 @@ router.delete('/saved/:id', authenticateToken, async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'CV başarıyla silindi',
+      message: formatMessage(SERVICE_MESSAGES.CV.DELETE_SUCCESS),
     });
   } catch (error) {
-    logger.error('CV silme hatası:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.CV.DELETE_ERROR, error as Error));
     return res.status(500).json({
       success: false,
-      message: 'CV silinirken hata oluştu',
+      message: formatMessage(SERVICE_MESSAGES.CV.DELETE_ERROR),
     });
   }
 });
@@ -576,14 +573,14 @@ router.get('/download/:id', authenticateToken, async (req, res) => {
     if (!cvUpload) {
       return res.status(404).json({
         success: false,
-        message: 'CV bulunamadı',
+        message: formatMessage(SERVICE_MESSAGES.CV.NOT_FOUND),
       });
     }
 
     if (!cvUpload.fileData) {
       return res.status(404).json({
         success: false,
-        message: 'CV dosyası veritabanında bulunamadı',
+        message: formatMessage(SERVICE_MESSAGES.CV.FILE_NOT_IN_DATABASE),
       });
     }
 
@@ -611,10 +608,10 @@ router.get('/download/:id', authenticateToken, async (req, res) => {
     );
     return res.send(decompressedBuffer);
   } catch (error) {
-    logger.error('CV indirme hatası:', error);
+    logger.error(createErrorMessage(SERVICE_MESSAGES.CV.DOWNLOAD_ERROR, error as Error));
     return res.status(500).json({
       success: false,
-      message: 'CV indirilirken hata oluştu',
+      message: formatMessage(SERVICE_MESSAGES.CV.DOWNLOAD_ERROR),
     });
   }
 });

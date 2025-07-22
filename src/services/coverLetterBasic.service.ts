@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { generateCoverLetterWithClaude } from './claude.service';
 import { CvAnalysisService } from './cvAnalysis.service';
 import logger from '../config/logger';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 const prisma = new PrismaClient();
 
@@ -78,7 +79,7 @@ export class CoverLetterBasicService {
         updatedAt: coverLetter.updatedAt,
       };
     } catch (error) {
-      logger.error('Cover letter oluşturma hatası:', error);
+      logger.error(createErrorMessage(SERVICE_MESSAGES.COVER_LETTER.GENERATION_FAILED, error as Error));
       throw error;
     }
   }
@@ -123,7 +124,7 @@ export class CoverLetterBasicService {
     });
 
     if (!coverLetter) {
-      throw new Error('Cover letter bulunamadı');
+      throw new Error(formatMessage(SERVICE_MESSAGES.COVER_LETTER.NOT_FOUND));
     }
 
     const updated = await prisma.coverLetterBasic.update({
@@ -180,7 +181,7 @@ export class CoverLetterBasicService {
     });
 
     if (!coverLetter) {
-      throw new Error('Cover letter bulunamadı');
+      throw new Error(formatMessage(SERVICE_MESSAGES.COVER_LETTER.NOT_FOUND));
     }
 
     await prisma.coverLetterBasic.delete({
@@ -202,11 +203,11 @@ export class CoverLetterBasicService {
     });
 
     if (!cvUpload) {
-      throw new Error('CV bulunamadı veya henüz işleme tamamlanmamış');
+      throw new Error(formatMessage(SERVICE_MESSAGES.CV.NOT_FOUND));
     }
 
     if (!cvUpload.extractedData) {
-      throw new Error('CV analiz verisi bulunamadı');
+      throw new Error(formatMessage(SERVICE_MESSAGES.CV.ANALYSIS_DATA_MISSING));
     }
 
     return cvUpload;
@@ -246,9 +247,9 @@ export class CoverLetterBasicService {
         },
       });
 
-      logger.info('Cover letter başarıyla oluşturuldu', { coverLetterId });
+      logger.info(formatMessage(SERVICE_MESSAGES.COVER_LETTER.GENERATION_SUCCESS), { coverLetterId });
     } catch (error) {
-      logger.error('Cover letter oluşturma hatası:', { coverLetterId, error });
+      logger.error(createErrorMessage(SERVICE_MESSAGES.COVER_LETTER.GENERATION_FAILED, error as Error), { coverLetterId });
 
       // Hata durumunu kaydet
       await prisma.coverLetterBasic.update({

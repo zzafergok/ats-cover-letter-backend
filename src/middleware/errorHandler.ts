@@ -3,10 +3,10 @@ import { Request, Response } from 'express';
 import { sendServerError } from '../utils/response';
 
 import logger from '../config/logger';
+import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
 
 export const errorHandler = (err: any, req: Request, res: Response): void => {
-  logger.error('Error occurred:', {
-    message: err.message,
+  logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, err), {
     stack: err.stack,
     url: req.url,
     method: req.method,

@@ -1,11 +1,12 @@
 import rateLimit from 'express-rate-limit';
+import { SERVICE_MESSAGES } from '../constants/messages';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  message: 'Çok fazla istek gönderildi, lütfen daha sonra tekrar deneyin',
+  message: SERVICE_MESSAGES.RATE_LIMIT.GENERAL_EXCEEDED.message,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: isProduction ? undefined : () => 'development-key',
@@ -14,7 +15,7 @@ export const generalLimiter = rateLimit({
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  message: 'Çok fazla giriş denemesi, lütfen daha sonra tekrar deneyin',
+  message: SERVICE_MESSAGES.RATE_LIMIT.AUTH_EXCEEDED.message,
   skipSuccessfulRequests: true,
   keyGenerator: isProduction ? undefined : () => 'development-auth-key',
 });
@@ -22,13 +23,13 @@ export const authLimiter = rateLimit({
 export const uploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10,
-  message: 'Saatlik yükleme limitine ulaştınız',
+  message: SERVICE_MESSAGES.RATE_LIMIT.UPLOAD_EXCEEDED.message,
   keyGenerator: isProduction ? undefined : () => 'development-upload-key',
 });
 
 export const apiLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 30,
-  message: 'API rate limit aşıldı',
+  message: SERVICE_MESSAGES.RATE_LIMIT.API_EXCEEDED.message,
   keyGenerator: isProduction ? undefined : () => 'development-api-key',
 });
