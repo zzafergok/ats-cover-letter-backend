@@ -89,6 +89,7 @@ model CoverLetterBasic {
   positionTitle    String                    @map("position_title")
   companyName      String                    @map("company_name")
   jobDescription   String                    @map("job_description")
+  language         CoverLetterLanguage       @default(TURKISH)
   
   // Generated Content
   generatedContent String?                   @map("generated_content")
@@ -122,6 +123,11 @@ enum ProcessingStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum CoverLetterLanguage {
+  TURKISH
+  ENGLISH
 }
 
 

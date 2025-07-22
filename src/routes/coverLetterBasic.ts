@@ -15,6 +15,9 @@ const createCoverLetterSchema = z.object({
   positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
   companyName: z.string().min(1, 'Şirket adı gereklidir'),
   jobDescription: z.string().min(10, 'İş tanımı en az 10 karakter olmalıdır'),
+  language: z.enum(['TURKISH', 'ENGLISH'], {
+    errorMap: () => ({ message: 'Dil seçeneği TURKISH veya ENGLISH olmalıdır' })
+  }).default('TURKISH'),
 });
 
 const updateCoverLetterSchema = z.object({
