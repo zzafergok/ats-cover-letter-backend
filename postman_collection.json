@@ -1,28 +1,12 @@
 {
 	"info": {
-		"_postman_id": "ats-cover-letter-backend-api",
-		"name": "ATS Cover Letter Backend API",
-		"description": "Complete API collection for ATS Cover Letter Backend services",
+		"_postman_id": "eed39d65-d5a3-4c26-bce0-b0430df78b74",
+		"name": "ATS CV Generator API - Complete",
+		"description": "ATS uyumlu CV ve cover letter oluşturma sistemi - Tüm servisler dahil (Basit & Detaylı)",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "ats-cover-letter"
+		"_exporter_id": "46928109",
+		"_collection_link": "https://martian-meadow-6933930.postman.co/workspace/Zafer-G%C3%B6k's-Workspace~c1af262b-f052-46d0-8881-786d7e323e6b/collection/46928109-eed39d65-d5a3-4c26-bce0-b0430df78b74?action=share&source=collection_link&creator=46928109"
 	},
-	"variable": [
-		{
-			"key": "base_url",
-			"value": "http://localhost:3000/api/v1",
-			"type": "string"
-		},
-		{
-			"key": "access_token",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "refresh_token",
-			"value": "",
-			"type": "string"
-		}
-	],
 	"item": [
 		{
 			"name": "Authentication",
@@ -39,14 +23,20 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!@#\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\"\n}"
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123456!\",\n  \"name\": \"Test User\",\n  \"role\": \"USER\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/register",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "register"]
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
 					"name": "Login",
@@ -57,14 +47,12 @@
 								"exec": [
 									"if (pm.response.code === 200) {",
 									"    const response = pm.response.json();",
-									"    if (response.data && response.data.accessToken) {",
-									"        pm.collectionVariables.set('access_token', response.data.accessToken);",
-									"    }",
-									"    if (response.data && response.data.refreshToken) {",
-									"        pm.collectionVariables.set('refresh_token', response.data.refreshToken);",
-									"    }",
+									"    pm.collectionVariables.set('accessToken', response.data.accessToken);",
+									"    pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
 									"}"
-								]
+								],
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -78,14 +66,20 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!@#\"\n}"
+							"raw": "{\n  \"email\": \"admin@atscv.com\",\n  \"password\": \"test123456\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/login",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "login"]
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
 					"name": "Verify Email",
@@ -99,14 +93,20 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"token\": \"verification_token_here\"\n}"
+							"raw": "{\n  \"token\": \"email_verification_token_here\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/verify-email",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "verify-email"]
+							"raw": "{{baseUrl}}/auth/verify-email",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"verify-email"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
 					"name": "Resend Email Verification",
@@ -123,11 +123,17 @@
 							"raw": "{\n  \"email\": \"test@example.com\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/resend-verification",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "resend-verification"]
+							"raw": "{{baseUrl}}/auth/resend-verification",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"resend-verification"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
 					"name": "Refresh Token",
@@ -138,11 +144,11 @@
 								"exec": [
 									"if (pm.response.code === 200) {",
 									"    const response = pm.response.json();",
-									"    if (response.data && response.data.accessToken) {",
-									"        pm.collectionVariables.set('access_token', response.data.accessToken);",
-									"    }",
+									"    pm.collectionVariables.set('accessToken', response.data.accessToken);",
+									"    pm.collectionVariables.set('refreshToken', response.data.refreshToken);",
 									"}"
-								]
+								],
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -156,48 +162,20 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/refresh",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "refresh"]
+							"raw": "{{baseUrl}}/auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"refresh"
+							]
 						}
-					}
-				},
-				{
-					"name": "Logout",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/auth/logout",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "logout"]
-						}
-					}
-				},
-				{
-					"name": "Logout All Sessions",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/auth/logout-all",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "logout-all"]
-						}
-					}
+					},
+					"response": []
 				},
 				{
 					"name": "Forgot Password",
@@ -214,11 +192,17 @@
 							"raw": "{\n  \"email\": \"test@example.com\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/forgot-password",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "forgot-password"]
+							"raw": "{{baseUrl}}/auth/forgot-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"forgot-password"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
 					"name": "Reset Password",
@@ -232,14 +216,20 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"token\": \"reset_token_here\",\n  \"newPassword\": \"NewPassword123!@#\"\n}"
+							"raw": "{\n  \"token\": \"reset_token_here\",\n  \"newPassword\": \"NewPassword123!\",\n  \"confirmPassword\": \"NewPassword123!\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/reset-password",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "reset-password"]
+							"raw": "{{baseUrl}}/auth/reset-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"reset-password"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
 					"name": "Get Current User",
@@ -248,24 +238,30 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/auth/me",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "me"]
+							"raw": "{{baseUrl}}/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Update User Profile",
+					"name": "Update Profile",
 					"request": {
 						"method": "PUT",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							},
 							{
 								"key": "Content-Type",
@@ -274,14 +270,20 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"firstName\": \"Test Updated\",\n  \"lastName\": \"User Updated\"\n}"
+							"raw": "{\n  \"name\": \"Updated Name\",\n  \"email\": \"updated@example.com\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/profile",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "profile"]
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"profile"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
 					"name": "Change Password",
@@ -290,7 +292,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							},
 							{
 								"key": "Content-Type",
@@ -299,31 +301,740 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"currentPassword\": \"Test123!@#\",\n  \"newPassword\": \"NewPassword123!@#\"\n}"
+							"raw": "{\n  \"currentPassword\": \"CurrentPassword123!\",\n  \"newPassword\": \"NewPassword123!\",\n  \"confirmPassword\": \"NewPassword123!\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/auth/change-password",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "change-password"]
+							"raw": "{{baseUrl}}/auth/change-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"change-password"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Get User Sessions",
+					"name": "Get Sessions",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/auth/sessions",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "sessions"]
+							"raw": "{{baseUrl}}/auth/sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"sessions"
+							]
 						}
-					}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout All Devices",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout-all",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout-all"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User Profile Management",
+			"item": [
+				{
+					"name": "Get User Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user-profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Ahmet\",\n  \"lastName\": \"Yılmaz\",\n  \"phone\": \"+90 555 123 4567\",\n  \"address\": \"Kadıköy, İstanbul\",\n  \"city\": \"İstanbul\",\n  \"github\": \"https://github.com/ahmetyilmaz\",\n  \"linkedin\": \"https://linkedin.com/in/ahmetyilmaz\",\n  \"portfolioWebsite\": \"https://ahmetyilmaz.dev\",\n  \"portfolioTitle\": \"Full Stack Developer Portfolio\",\n  \"aboutMe\": \"5 yıllık deneyime sahip full stack developer. React, Node.js ve TypeScript konularında uzmanım.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Education",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"schoolName\": \"İstanbul Teknik Üniversitesi\",\n  \"degree\": \"Lisans\",\n  \"fieldOfStudy\": \"Bilgisayar Mühendisliği\",\n  \"grade\": 3.4,\n  \"gradeSystem\": \"GPA_4\",\n  \"startYear\": 2016,\n  \"endYear\": 2020,\n  \"isCurrent\": false,\n  \"description\": \"Yazılım geliştirme, algoritma ve veri yapıları konularında eğitim aldım.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/education",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"education"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Education",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"grade\": 3.6,\n  \"description\": \"Yazılım geliştirme, algoritma, veri yapıları ve yapay zeka konularında kapsamlı eğitim aldım.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/education/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"education",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "education_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Education",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/education/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"education",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "education_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Experience",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"companyName\": \"Tech Startup\",\n  \"position\": \"Senior Frontend Developer\",\n  \"employmentType\": \"FULL_TIME\",\n  \"workMode\": \"HYBRID\",\n  \"location\": \"İstanbul, Türkiye\",\n  \"startMonth\": 3,\n  \"startYear\": 2022,\n  \"endMonth\": null,\n  \"endYear\": null,\n  \"isCurrent\": true,\n  \"description\": \"React, TypeScript ve Next.js ile modern web uygulamaları geliştiriyorum. 5 kişilik frontend takımının teknik liderliğini yapıyorum.\",\n  \"achievements\": \"Uygulamanın performansını %40 artırdım, yeni özellik geliştirme süresini %25 azalttım.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/experience",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"experience"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Experience",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"position\": \"Lead Frontend Developer\",\n  \"achievements\": \"Uygulamanın performansını %50 artırdım, yeni mikroservis mimarisine geçişi tamamladım.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/experience/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"experience",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "experience_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Experience",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/experience/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"experience",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "experience_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Course",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"courseName\": \"Advanced React Patterns\",\n  \"provider\": \"Udemy\",\n  \"startMonth\": 1,\n  \"startYear\": 2023,\n  \"endMonth\": 2,\n  \"endYear\": 2023,\n  \"duration\": \"40 saat\",\n  \"description\": \"Gelişmiş React design pattern'ları, performance optimizasyonu ve modern React özelliklerini öğrendim.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/course",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"course"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Course",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"duration\": \"45 saat\",\n  \"description\": \"Gelişmiş React design pattern'ları, performance optimizasyonu, modern React özellikler ve test stratejilerini kapsamlı olarak öğrendim.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/course/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"course",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "course_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Course",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/course/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"course",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "course_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Certificate",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"certificateName\": \"AWS Certified Developer - Associate\",\n  \"issuer\": \"Amazon Web Services\",\n  \"issueMonth\": 6,\n  \"issueYear\": 2023,\n  \"expiryMonth\": 6,\n  \"expiryYear\": 2026,\n  \"credentialId\": \"AWS-CDA-123456789\",\n  \"credentialUrl\": \"https://aws.amazon.com/verification/123456789\",\n  \"description\": \"AWS bulut servisleri üzerinde uygulama geliştirme konusunda yetkinlik belgesi.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/certificate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"certificate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Certificate",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"AWS bulut servisleri üzerinde uygulama geliştirme, dağıtım ve izleme konularında kapsamlı yetkinlik belgesi.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/certificate/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"certificate",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "certificate_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Certificate",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/certificate/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"certificate",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "certificate_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Skill",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"React\",\n  \"category\": \"TECHNICAL\",\n  \"level\": \"EXPERT\",\n  \"yearsOfExperience\": 5,\n  \"description\": \"Modern React hooks, context API, performance optimizasyonu ve test yazma konularında uzmanım.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/skill",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"skill"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Skill",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"level\": \"EXPERT\",\n  \"yearsOfExperience\": 6,\n  \"description\": \"Modern React hooks, context API, performance optimizasyonu, test yazma ve React 18+ özellikleri konularında uzmanım.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/skill/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"skill",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "skill_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Skill",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/skill/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"skill",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "skill_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Hobby",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Fotoğrafçılık\",\n  \"description\": \"Doğa ve sokak fotoğrafçılığı ile ilgileniyorum. Instagram hesabımda 5K+ takipçim var.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/hobby",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"hobby"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Hobby",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"Doğa ve sokak fotoğrafçılığı ile ilgileniyorum. Instagram hesabımda 10K+ takipçim var ve yerel fotoğraf sergilerinde yer alıyorum.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/hobby/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"hobby",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "hobby_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Hobby",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user-profile/hobby/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"user-profile",
+								"hobby",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "hobby_id_here"
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -331,13 +1042,13 @@
 			"name": "CV Management",
 			"item": [
 				{
-					"name": "Upload CV File",
+					"name": "Upload CV",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"body": {
@@ -346,89 +1057,85 @@
 								{
 									"key": "cvFile",
 									"type": "file",
-									"src": [],
-									"description": "PDF, DOC, or DOCX file (max 10MB)"
+									"src": "postman-cloud:///1f06642f-253a-4c90-870d-4e865c169dbf"
 								}
 							]
 						},
 						"url": {
-							"raw": "{{base_url}}/cv/upload",
-							"host": ["{{base_url}}"],
-							"path": ["cv", "upload"]
+							"raw": "{{baseUrl}}/cv/upload",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"upload"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Get All CV Uploads",
+					"name": "Get CV Uploads",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/cv/uploads",
-							"host": ["{{base_url}}"],
-							"path": ["cv", "uploads"]
+							"raw": "{{baseUrl}}/cv/uploads",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"uploads"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Check CV Processing Status",
+					"name": "Check Upload Status",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/cv/upload/status/{{cv_upload_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["cv", "upload", "status", "{{cv_upload_id}}"],
+							"raw": "{{baseUrl}}/cv/upload/status/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"upload",
+								"status",
+								":id"
+							],
 							"variable": [
 								{
-									"key": "cv_upload_id",
-									"value": "your_cv_upload_id_here"
+									"key": "id",
+									"value": "cv_upload_id_here"
 								}
 							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Delete CV Upload",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/cv/uploads/{{cv_upload_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["cv", "uploads", "{{cv_upload_id}}"],
-							"variable": [
-								{
-									"key": "cv_upload_id",
-									"value": "your_cv_upload_id_here"
-								}
-							]
-						}
-					}
-				},
-				{
-					"name": "Generate Customized CV",
+					"name": "Generate CV",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							},
 							{
 								"key": "Content-Type",
@@ -437,23 +1144,29 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"positionTitle\": \"Software Engineer\",\n  \"companyName\": \"Google\",\n  \"cvType\": \"ATS_OPTIMIZED\",\n  \"cvUploadId\": \"your_cv_upload_id_here\",\n  \"jobDescription\": \"We are looking for a skilled software engineer...\",\n  \"additionalRequirements\": \"Experience with cloud technologies\",\n  \"targetKeywords\": [\"React\", \"Node.js\", \"TypeScript\", \"AWS\"]\n}"
+							"raw": "{\n  \"cvUploadId\": \"cv_upload_id_here\",\n  \"positionTitle\": \"Software Developer\",\n  \"companyName\": \"Tech Company\",\n  \"cvType\": \"ATS_OPTIMIZED\",\n  \"jobDescription\": \"React, Node.js, TypeScript geliştirici arıyoruz\",\n  \"additionalRequirements\": \"En az 3 yıl deneyim\",\n  \"targetKeywords\": [\"React\", \"Node.js\", \"TypeScript\", \"JavaScript\"]\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/cv/generate",
-							"host": ["{{base_url}}"],
-							"path": ["cv", "generate"]
+							"raw": "{{baseUrl}}/cv/generate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"generate"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Save Generated CV",
+					"name": "Save CV",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							},
 							{
 								"key": "Content-Type",
@@ -462,14 +1175,20 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"title\": \"Software Engineer CV - Google\",\n  \"content\": \"Your generated CV content here...\",\n  \"cvType\": \"ATS_OPTIMIZED\"\n}"
+							"raw": "{\n  \"title\": \"Software Developer CV\",\n  \"content\": \"CV içeriği buraya gelecek\",\n  \"cvType\": \"ATS_OPTIMIZED\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/cv/save",
-							"host": ["{{base_url}}"],
-							"path": ["cv", "save"]
+							"raw": "{{baseUrl}}/cv/save",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"save"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
 					"name": "Get Saved CVs",
@@ -478,15 +1197,21 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/cv/saved",
-							"host": ["{{base_url}}"],
-							"path": ["cv", "saved"]
+							"raw": "{{baseUrl}}/cv/saved",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"saved"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
 					"name": "Delete Saved CV",
@@ -495,268 +1220,102 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/cv/saved/{{saved_cv_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["cv", "saved", "{{saved_cv_id}}"],
+							"raw": "{{baseUrl}}/cv/saved/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"saved",
+								":id"
+							],
 							"variable": [
 								{
-									"key": "saved_cv_id",
-									"value": "your_saved_cv_id_here"
+									"key": "id",
+									"value": "saved_cv_id_here"
 								}
 							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Download Original CV File",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/cv/download/{{cv_upload_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["cv", "download", "{{cv_upload_id}}"],
-							"variable": [
-								{
-									"key": "cv_upload_id",
-									"value": "your_cv_upload_id_here"
-								}
-							]
-						}
-					}
-				}
-			]
-		},
-		{
-			"name": "Cover Letter",
-			"item": [
-				{
-					"name": "Generate Full Cover Letter",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"positionTitle\": \"Frontend Developer\",\n  \"companyName\": \"Microsoft\",\n  \"jobDescription\": \"We are seeking a talented Frontend Developer to join our team...\",\n  \"cvUploadId\": \"your_cv_upload_id_here\",\n  \"additionalInfo\": \"I am particularly interested in this role because...\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/cover-letter/generate",
-							"host": ["{{base_url}}"],
-							"path": ["cover-letter", "generate"]
-						}
-					}
-				},
-				{
-					"name": "Generate Minimal Cover Letter",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"positionTitle\": \"Backend Developer\",\n  \"companyName\": \"Amazon\",\n  \"keySkills\": [\"Python\", \"Django\"],\n  \"experienceLevel\": \"MID_LEVEL\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/cover-letter/generate-minimal",
-							"host": ["{{base_url}}"],
-							"path": ["cover-letter", "generate-minimal"]
-						}
-					}
-				},
-				{
-					"name": "Get Template by Category",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/cover-letter/template/TECHNOLOGY",
-							"host": ["{{base_url}}"],
-							"path": ["cover-letter", "template", "TECHNOLOGY"],
-							"variable": [
-								{
-									"key": "category",
-									"value": "TECHNOLOGY",
-									"description": "Categories: TECHNOLOGY, MARKETING, FINANCE, HEALTHCARE, EDUCATION"
-								}
-							]
-						}
-					}
-				},
-				{
-					"name": "Save Cover Letter",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"title\": \"Cover Letter - Frontend Developer at Microsoft\",\n  \"content\": \"Dear Hiring Manager,\\n\\nI am writing to express my interest...\",\n  \"positionTitle\": \"Frontend Developer\",\n  \"companyName\": \"Microsoft\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/cover-letter/save",
-							"host": ["{{base_url}}"],
-							"path": ["cover-letter", "save"]
-						}
-					}
-				},
-				{
-					"name": "Get All Saved Cover Letters",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/cover-letter/saved",
-							"host": ["{{base_url}}"],
-							"path": ["cover-letter", "saved"]
-						}
-					}
-				},
-				{
-					"name": "Get Cover Letter by ID",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/cover-letter/saved/{{cover_letter_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["cover-letter", "saved", "{{cover_letter_id}}"],
-							"variable": [
-								{
-									"key": "cover_letter_id",
-									"value": "your_cover_letter_id_here"
-								}
-							]
-						}
-					}
-				},
-				{
-					"name": "Delete Cover Letter",
+					"name": "Delete CV Upload",
 					"request": {
 						"method": "DELETE",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/cover-letter/saved/{{cover_letter_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["cover-letter", "saved", "{{cover_letter_id}}"],
+							"raw": "{{baseUrl}}/cv/uploads/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"uploads",
+								":id"
+							],
 							"variable": [
 								{
-									"key": "cover_letter_id",
-									"value": "your_cover_letter_id_here"
+									"key": "id",
+									"value": "cv_upload_id_here"
 								}
 							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Download Cover Letter",
+					"name": "Download CV",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/cover-letter/download/{{cover_letter_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["cover-letter", "download", "{{cover_letter_id}}"],
+							"raw": "{{baseUrl}}/cv/download/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"download",
+								":id"
+							],
 							"variable": [
 								{
-									"key": "cover_letter_id",
-									"value": "your_cover_letter_id_here"
+									"key": "id",
+									"value": "cv_upload_id_here"
 								}
 							]
 						}
-					}
-				},
-				{
-					"name": "Analyze Cover Letter",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"content\": \"Dear Hiring Manager,\\n\\nI am writing to express my interest in the Software Engineer position...\",\n  \"jobDescription\": \"We are looking for a skilled software engineer with experience in React and Node.js...\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/cover-letter/analyze",
-							"host": ["{{base_url}}"],
-							"path": ["cover-letter", "analyze"]
-						}
-					}
+					},
+					"response": []
 				}
 			]
 		},
 		{
-			"name": "Staged Cover Letter (2-Step Process)",
+			"name": "Cover Letter - Basic (CV Upload)",
 			"item": [
 				{
-					"name": "Step 1: Create Basic Cover Letter",
+					"name": "Create Basic Cover Letter",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							},
 							{
 								"key": "Content-Type",
@@ -765,23 +1324,57 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"positionTitle\": \"Data Scientist\",\n  \"companyName\": \"Netflix\",\n  \"experienceLevel\": \"SENIOR\",\n  \"keySkills\": [\"Python\", \"Machine Learning\"]\n}"
+							"raw": "{\n  \"cvUploadId\": \"cv_upload_id_here\",\n  \"positionTitle\": \"Frontend Developer\",\n  \"companyName\": \"Teknoloji Şirketi\",\n  \"jobDescription\": \"React, TypeScript ve modern JavaScript teknolojileri kullanarak kullanıcı arayüzü geliştiren deneyimli bir frontend developer arıyoruz. Minimum 3 yıl deneyim gereklidir.\",\n  \"language\": \"TURKISH\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/staged-cover-letter/basic",
-							"host": ["{{base_url}}"],
-							"path": ["staged-cover-letter", "basic"]
+							"raw": "{{baseUrl}}/cover-letter-basic",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-basic"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Step 2: Enhance Cover Letter",
+					"name": "Get Basic Cover Letter",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cover-letter-basic/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-basic",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cover_letter_basic_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Basic Cover Letter",
 					"request": {
 						"method": "PUT",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							},
 							{
 								"key": "Content-Type",
@@ -790,111 +1383,326 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"companyResearch\": \"Netflix is known for its data-driven approach to content creation and user experience...\",\n  \"achievements\": [\n    \"Led a team of 5 data scientists in developing recommendation algorithms\",\n    \"Improved model accuracy by 25% through feature engineering\"\n  ],\n  \"careerGoals\": \"I aim to leverage my expertise in machine learning to contribute to Netflix's personalization efforts\",\n  \"motivation\": \"I am excited about the opportunity to work with Netflix's vast dataset and contribute to enhancing user experience\"\n}"
+							"raw": "{\n  \"updatedContent\": \"Sayın İşe Alım Sorumlusu,\\n\\nFrontend Developer pozisyonu için başvuruda bulunuyorum. 5 yıllık deneyimimle React, TypeScript ve modern web teknolojileri konularında geniş bilgiye sahibim.\\n\\nÖnceki işimde kullanıcı deneyimini %40 artıran projeler gerçekleştirdim. Şirketinizin teknoloji vizyonu ve inovatif yaklaşımı beni çok etkiledi.\\n\\nGörüşme fırsatı için teşekkür ederim.\\n\\nSaygılarımla,\\nAhmet Yılmaz\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/staged-cover-letter/{{staged_cover_letter_id}}/enhance",
-							"host": ["{{base_url}}"],
-							"path": ["staged-cover-letter", "{{staged_cover_letter_id}}", "enhance"],
+							"raw": "{{baseUrl}}/cover-letter-basic/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-basic",
+								":id"
+							],
 							"variable": [
 								{
-									"key": "staged_cover_letter_id",
-									"value": "your_staged_cover_letter_id_here"
+									"key": "id",
+									"value": "cover_letter_basic_id_here"
 								}
 							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Get Staged Cover Letter by ID",
+					"name": "Get User Basic Cover Letters",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/staged-cover-letter/{{staged_cover_letter_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["staged-cover-letter", "{{staged_cover_letter_id}}"],
-							"variable": [
-								{
-									"key": "staged_cover_letter_id",
-									"value": "your_staged_cover_letter_id_here"
-								}
+							"raw": "{{baseUrl}}/cover-letter-basic",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-basic"
 							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Get All User's Staged Cover Letters",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/staged-cover-letter",
-							"host": ["{{base_url}}"],
-							"path": ["staged-cover-letter"]
-						}
-					}
-				},
-				{
-					"name": "Complete Staged Process (Create Final Cover Letter)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/staged-cover-letter/{{staged_cover_letter_id}}/complete",
-							"host": ["{{base_url}}"],
-							"path": ["staged-cover-letter", "{{staged_cover_letter_id}}", "complete"],
-							"variable": [
-								{
-									"key": "staged_cover_letter_id",
-									"value": "your_staged_cover_letter_id_here"
-								}
-							]
-						}
-					}
-				},
-				{
-					"name": "Delete Staged Cover Letter",
+					"name": "Delete Basic Cover Letter",
 					"request": {
 						"method": "DELETE",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/staged-cover-letter/{{staged_cover_letter_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["staged-cover-letter", "{{staged_cover_letter_id}}"],
+							"raw": "{{baseUrl}}/cover-letter-basic/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-basic",
+								":id"
+							],
 							"variable": [
 								{
-									"key": "staged_cover_letter_id",
-									"value": "your_staged_cover_letter_id_here"
+									"key": "id",
+									"value": "cover_letter_basic_id_here"
 								}
 							]
 						}
-					}
+					},
+					"response": []
+				},
+				{
+					"name": "Download Basic Cover Letter PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cover-letter-basic/:id/download/pdf",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-basic",
+								":id",
+								"download",
+								"pdf"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cover_letter_basic_id_here"
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
 		{
-			"name": "Contact & Support",
+			"name": "Cover Letter - Detailed (Manual Profile)",
+			"item": [
+				{
+					"name": "Create Detailed Cover Letter",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"positionTitle\": \"Senior Full Stack Developer\",\n  \"companyName\": \"Innovatif Teknoloji A.Ş.\",\n  \"jobDescription\": \"5+ yıl deneyimli, React, Node.js, PostgreSQL ve AWS teknolojilerinde uzman full stack developer arıyoruz. Mikroservis mimarisi deneyimi artı.\",\n  \"language\": \"TURKISH\",\n  \"whyPosition\": \"Full stack development konusundaki deneyimimi senior seviyeye taşımak ve daha büyük projelerde teknik liderlik yapmak istiyorum. Bu pozisyon kariyerimde önemli bir adım olacak.\",\n  \"whyCompany\": \"Şirketinizin fintech alanındaki yenilikçi çözümleri ve açık kaynak projelere katkısı beni çok etkiledi. Özellikle mikroservis mimarinizle ilgili Medium makalelerinizi takip ediyorum.\",\n  \"workMotivation\": \"Kompleks problemleri çözmek ve kullanıcı deneyimini iyileştiren çözümler üretmek beni motive ediyor. Takım çalışmasını seviyorum ve bilgimi paylaşarak ekibin gelişimine katkıda bulunmak istiyorum.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cover-letter-detailed",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-detailed"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Detailed Cover Letter (English)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"positionTitle\": \"Senior Software Engineer\",\n  \"companyName\": \"Tech Innovation Corp\",\n  \"jobDescription\": \"We are looking for a Senior Software Engineer with 5+ years of experience in React, Node.js, and cloud technologies. Experience with microservices architecture is a plus.\",\n  \"language\": \"ENGLISH\",\n  \"whyPosition\": \"I want to advance my technical leadership skills and work on large-scale distributed systems. This senior role aligns perfectly with my career goals and expertise.\",\n  \"whyCompany\": \"Your company's innovative approach to solving complex business problems and commitment to open-source projects really impressed me. I particularly admire your recent work on container orchestration.\",\n  \"workMotivation\": \"I'm passionate about building scalable solutions and mentoring junior developers. I thrive in collaborative environments where I can contribute to both technical excellence and team growth.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cover-letter-detailed",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-detailed"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Detailed Cover Letter",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cover-letter-detailed/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-detailed",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cover_letter_detailed_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Detailed Cover Letter",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"updatedContent\": \"Sayın İnsan Kaynakları Ekibi,\\n\\nSenior Full Stack Developer pozisyonu için başvuruda bulunuyorum. 6 yıllık yazılım geliştirme deneyimimle birlikte React, Node.js, TypeScript ve AWS konularında derinlemesine bilgiye sahibim.\\n\\nMevcut pozisyonumda 10 kişilik geliştirici takımının teknik liderliğini yapıyorum ve mikroservis mimarisine geçiş projelerinde kilit rol aldım. Bu deneyimlerim, şirketinizin büyük ölçekli projelerinde değer katacağıma inanmaktır.\\n\\nŞirketinizin fintech sektöründeki yenilikçi yaklaşımı ve teknoloji blogundaki içerikler beni çok etkiledi. Özellikle container orchestration konusundaki çalışmalarınızı yakından takip ediyorum.\\n\\nKariyerimde bir sonraki adımı atmak ve daha büyük teknik sorumluluklarda bulunmak istediğim bu dönemde, bu fırsat tam da aradığım pozisyon.\\n\\nGörüşme imkanı için şimdiden teşekkür ederim.\\n\\nSaygılarımla,\\nAhmet Yılmaz\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cover-letter-detailed/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-detailed",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cover_letter_detailed_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Detailed Cover Letters",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cover-letter-detailed",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-detailed"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Detailed Cover Letter",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cover-letter-detailed/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-detailed",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cover_letter_detailed_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Download Detailed Cover Letter PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cover-letter-detailed/:id/download/pdf",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-detailed",
+								":id",
+								"download",
+								"pdf"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "cover_letter_detailed_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Contact",
 			"item": [
 				{
 					"name": "Send Contact Message",
@@ -908,65 +1716,272 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"subject\": \"Question about CV generation\",\n  \"message\": \"I have a question about how the CV generation process works. Could you please provide more information?\"\n}"
+							"raw": "{\n  \"type\": \"CONTACT\",\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"subject\": \"API hakkında soru\",\n  \"message\": \"Merhaba, API'nizin kullanım limitleri hakkında bilgi alabilir miyim?\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/contact/send",
-							"host": ["{{base_url}}"],
-							"path": ["contact", "send"]
+							"raw": "{{baseUrl}}/contact/send",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"contact",
+								"send"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Get Contact Messages (Admin Only)",
+					"name": "Send Support Message",
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [
 							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"key": "Content-Type",
+								"value": "application/json"
 							}
 						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"SUPPORT\",\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane@example.com\",\n  \"subject\": \"CV yükleme problemi\",\n  \"message\": \"CV yüklerken 'dosya çok büyük' hatası alıyorum. Yardımcı olabilir misiniz?\"\n}"
+						},
 						"url": {
-							"raw": "{{base_url}}/contact/messages",
-							"host": ["{{base_url}}"],
-							"path": ["contact", "messages"]
+							"raw": "{{baseUrl}}/contact/send",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"contact",
+								"send"
+							]
 						}
-					}
+					},
+					"response": []
 				},
 				{
-					"name": "Check Contact Rate Limit",
+					"name": "Check Daily Limit",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/contact/limit",
-							"host": ["{{base_url}}"],
-							"path": ["contact", "limit"]
+							"raw": "{{baseUrl}}/contact/limit",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"contact",
+								"limit"
+							]
 						}
-					}
-				}
-			]
-		},
-		{
-			"name": "System Metrics (Admin Only)",
-			"item": [
+					},
+					"response": []
+				},
 				{
-					"name": "Get System Metrics",
+					"name": "Get Contact Messages (Admin)",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/metrics/metrics",
-							"host": ["{{base_url}}"],
-							"path": ["metrics", "metrics"]
+							"raw": "{{baseUrl}}/contact/messages?page=1&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"contact",
+								"messages"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
 						}
-					}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CV Detailed Management",
+			"item": [
+				{
+					"name": "Generate Detailed CV (Profile-based)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"positionTitle\": \"Senior Software Engineer\",\n  \"companyName\": \"Tech Innovation Corp\",\n  \"jobDescription\": \"5+ yıl deneyimli senior yazılım mühendisi aranıyor. React, Node.js, TypeScript konularında uzman olmalı.\",\n  \"language\": \"TURKISH\",\n  \"cvType\": \"PROFESSIONAL\",\n  \"additionalRequirements\": \"Minimum 5 yıl deneyim, takım liderliği deneyimi\",\n  \"targetKeywords\": [\"React\", \"Node.js\", \"TypeScript\", \"Team Leadership\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cv/generate-detailed",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"generate-detailed"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Detailed CVs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cv/detailed",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"detailed"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Detailed CV",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cv/detailed/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"detailed",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "detailed_cv_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Detailed CV",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cv/detailed/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"detailed",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "detailed_cv_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Download Detailed CV PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cv/detailed/:id/download/pdf",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"detailed",
+								":id",
+								"download",
+								"pdf"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "detailed_cv_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "System",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/../health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"..",
+								"health"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		}
@@ -976,24 +1991,26 @@
 		"bearer": [
 			{
 				"key": "token",
-				"value": "{{access_token}}",
+				"value": "{{accessToken}}",
 				"type": "string"
 			}
 		]
 	},
-	"event": [
+	"variable": [
 		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					"// Auto-refresh token if expired",
-					"const token = pm.collectionVariables.get('access_token');",
-					"if (!token) {",
-					"    console.log('No access token found. Please login first.');",
-					"}"
-				]
-			}
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refreshToken",
+			"value": "",
+			"type": "string"
 		}
 	]
 }
