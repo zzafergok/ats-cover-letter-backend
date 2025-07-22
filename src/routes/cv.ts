@@ -29,4 +29,11 @@ router.get('/saved', authenticateToken, cvController.getSavedCvs);
 router.delete('/saved/:id', authenticateToken, cvController.deleteSavedCv);
 router.get('/download/:id', authenticateToken, cvController.downloadCv);
 
+// Detailed CV generation endpoints (profile-based)
+router.post('/generate-detailed', authenticateToken, cvController.generateDetailedCv);
+router.get('/detailed', authenticateToken, cvController.getUserDetailedCvs);
+router.get('/detailed/:id', authenticateToken, cvController.getDetailedCv);
+router.delete('/detailed/:id', authenticateToken, cvController.deleteDetailedCv);
+router.get('/detailed/:id/download/pdf', authenticateToken, cvController.downloadDetailedCvPdf);
+
 export default router;

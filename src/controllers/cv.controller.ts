@@ -22,11 +22,13 @@ import {
   formatMessage,
   createErrorMessage,
 } from '../constants/messages';
-import { createCvSchema, saveCvSchema } from '../schemas';
+import { createCvSchema, saveCvSchema, createDetailedCvSchema } from '../schemas';
 import { UserLimitService } from '../services/userLimit.service';
+import { CvDetailedService } from '../services/cvDetailed.service';
 
 export class CvController {
   private prisma = new PrismaClient();
+  private cvDetailedService = CvDetailedService.getInstance();
 
   // CV processing function (previously handled by queue)
   private async processCvFile(
@@ -640,6 +642,157 @@ export class CvController {
       res.status(500).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.CV.DOWNLOAD_ERROR),
+      });
+    }
+  };
+
+  // Detailed CV Generation Methods (Profile-based)
+  public generateDetailedCv = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const validatedData = createDetailedCvSchema.parse(req.body);
+
+      const cv = await this.cvDetailedService.createDetailedCv(
+        req.user!.userId,
+        req.user!.role,
+        validatedData
+      );
+
+      res.status(201).json({
+        success: true,
+        message: 'Detaylı CV oluşturma başlatıldı',
+        data: cv,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({
+          success: false,
+          message: 'Geçersiz veri',
+          errors: error.issues.map((issue) => ({
+            field: issue.path.join('.'),
+            message: issue.message,
+          })),
+        });
+        return;
+      }
+
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.GENERATION_ERROR, error as Error));
+      res.status(500).json({
+        success: false,
+        message: (error as Error).message || formatMessage(SERVICE_MESSAGES.CV.GENERATION_ERROR),
+      });
+    }
+  };
+
+  public getDetailedCv = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      const cv = await this.cvDetailedService.getDetailedCv(req.user!.userId, id);
+
+      if (!cv) {
+        res.status(404).json({
+          success: false,
+          message: formatMessage(SERVICE_MESSAGES.CV.NOT_FOUND),
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: cv,
+      });
+    } catch (error) {
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.LIST_ERROR, error as Error));
+      res.status(500).json({
+        success: false,
+        message: formatMessage(SERVICE_MESSAGES.CV.LIST_ERROR),
+      });
+    }
+  };
+
+  public getUserDetailedCvs = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const result = await this.cvDetailedService.getUserDetailedCvs(
+        req.user!.userId,
+        req.user!.role
+      );
+
+      res.json({
+        success: true,
+        data: result.cvs,
+        limitInfo: result.limitInfo,
+      });
+    } catch (error) {
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.LIST_ERROR, error as Error));
+      res.status(500).json({
+        success: false,
+        message: formatMessage(SERVICE_MESSAGES.CV.LIST_ERROR),
+      });
+    }
+  };
+
+  public deleteDetailedCv = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      await this.cvDetailedService.deleteDetailedCv(req.user!.userId, id);
+
+      res.json({
+        success: true,
+        message: 'CV başarıyla silindi',
+      });
+    } catch (error) {
+      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.DELETE_ERROR, error as Error));
+      res.status(500).json({
+        success: false,
+        message: (error as Error).message || formatMessage(SERVICE_MESSAGES.CV.DELETE_ERROR),
+      });
+    }
+  };
+
+  public downloadDetailedCvPdf = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      const cv = await this.cvDetailedService.getDetailedCv(req.user!.userId, id);
+
+      if (!cv) {
+        res.status(404).json({
+          success: false,
+          message: formatMessage(SERVICE_MESSAGES.CV.NOT_FOUND),
+        });
+        return;
+      }
+
+      if (!cv.generatedContent || cv.generationStatus !== 'COMPLETED') {
+        res.status(400).json({
+          success: false,
+          message: 'CV henüz oluşturulmamış veya oluşturma devam ediyor',
+        });
+        return;
+      }
+
+      // PDF Service kullanarak CV PDF'i oluştur
+      const pdfService = require('../services/pdf.service').PdfService.getInstance();
+      const pdfBuffer = await pdfService.generateCvPdf({
+        content: cv.generatedContent,
+        positionTitle: cv.positionTitle,
+        companyName: cv.companyName,
+        language: cv.language as 'TURKISH' | 'ENGLISH',
+        cvType: cv.cvType,
+      });
+
+      const fileName = `${cv.companyName}_${cv.positionTitle}_CV.pdf`
+        .replace(/[^a-zA-Z0-9_-]/g, '_');
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      logger.error('PDF generation error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'PDF oluşturulurken hata oluştu',
       });
     }
   };
