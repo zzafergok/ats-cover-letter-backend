@@ -894,6 +894,81 @@ export const SERVICE_MESSAGES = {
       code: 'ERR_006',
       message: 'Sunucu hatası',
       status: 'error' as const
+    },
+    JWT_TOKEN_INVALID: {
+      code: 'ERR_007',
+      message: 'Token formatı geçersiz - Yeniden giriş yapın',
+      status: 'error' as const
+    },
+    JWT_TOKEN_EXPIRED: {
+      code: 'ERR_008',
+      message: 'Token süresi dolmuş - Yeniden giriş yapın',
+      status: 'error' as const
+    },
+    VALIDATION_ERROR: {
+      code: 'ERR_009',
+      message: 'Giriş verisi doğrulama hatası - Geçersiz format',
+      status: 'error' as const
+    },
+    ZOD_VALIDATION_DEFAULT: {
+      code: 'ERR_010',
+      message: 'Doğrulama hatası',
+      status: 'error' as const
+    },
+    ZOD_VALIDATION_FAILED: {
+      code: 'ERR_011',
+      message: 'Veri doğrulama başarısız',
+      status: 'error' as const
+    },
+    FILE_SIZE_LIMIT: {
+      code: 'ERR_012',
+      message: 'Dosya boyutu hatası - Maksimum dosya boyutu aşıldı',
+      status: 'error' as const
+    },
+    FILE_COUNT_LIMIT: {
+      code: 'ERR_013',
+      message: 'Dosya sayısı hatası - Çok fazla dosya yüklendi',
+      status: 'error' as const
+    },
+    JSON_PARSE_ERROR: {
+      code: 'ERR_014',
+      message: 'JSON parse hatası - Geçersiz JSON formatı',
+      status: 'error' as const
+    },
+    RATE_LIMIT_EXCEEDED: {
+      code: 'ERR_015',
+      message: 'Çok fazla istek - Lütfen daha sonra tekrar deneyin',
+      status: 'error' as const
+    },
+    CONNECTION_POOL_EXHAUSTED: {
+      code: 'ERR_016',
+      message: 'Bağlantı havuzu dolu - Sistem yoğun, daha sonra deneyin',
+      status: 'error' as const
+    },
+    MEMORY_ERROR: {
+      code: 'ERR_017',
+      message: 'Bellek yetersiz - İşlem çok büyük',
+      status: 'error' as const
+    },
+    UNEXPECTED_ERROR: {
+      code: 'ERR_018',
+      message: 'Beklenmeyen sistem hatası - Teknik ekip bilgilendirildi',
+      status: 'error' as const
+    },
+    EMAIL_VERIFICATION_CONFLICT: {
+      code: 'ERR_019',
+      message: 'Email doğrulama çakışması - Token çakışması tespit edildi',
+      status: 'error' as const
+    },
+    EMAIL_SERVICE_ERROR: {
+      code: 'ERR_020',
+      message: 'Email gönderme hatası - Mail servisi geçici olarak kullanılamıyor',
+      status: 'error' as const
+    },
+    EMAIL_TOKEN_ERROR: {
+      code: 'ERR_021',
+      message: 'Email doğrulama token hatası - Token işlenemedi',
+      status: 'error' as const
     }
   },
 
@@ -978,6 +1053,199 @@ export const SERVICE_MESSAGES = {
       code: 'AUTH_116',
       message: 'Invalid token attempt',
       status: 'warning' as const
+    },
+    // Email Verification Messages
+    EMAIL_VERIFICATION_STARTED: {
+      code: 'AUTH_117',
+      message: 'Token doğrulama başlatıldı',
+      status: 'info' as const
+    },
+    EMAIL_VERIFICATION_TOKEN_DECODED: {
+      code: 'AUTH_118',
+      message: 'Token decode edildi',
+      status: 'info' as const
+    },
+    EMAIL_VERIFICATION_USER_QUERY: {
+      code: 'AUTH_119',
+      message: 'Kullanıcı sorgusu tamamlandı',
+      status: 'info' as const
+    },
+    EMAIL_VERIFICATION_PROCESS_STARTING: {
+      code: 'AUTH_120',
+      message: 'Email doğrulama işlemi başlatılıyor',
+      status: 'info' as const
+    },
+    EMAIL_VERIFICATION_TOKEN_GENERATION: {
+      code: 'AUTH_121',
+      message: 'Token generation başlatılıyor',
+      status: 'info' as const
+    },
+    EMAIL_VERIFICATION_SUCCESS: {
+      code: 'AUTH_122',
+      message: 'Email doğrulama başarıyla tamamlandı',
+      status: 'success' as const
+    },
+    EMAIL_VERIFICATION_ERROR_DETAIL: {
+      code: 'AUTH_123',
+      message: 'Email doğrulama hatası detayı',
+      status: 'error' as const
+    },
+    EMAIL_RESEND_ERROR: {
+      code: 'AUTH_124',
+      message: 'Email doğrulama yeniden gönderme hatası',
+      status: 'error' as const
+    },
+    // Login Messages
+    LOGIN_STARTED: {
+      code: 'AUTH_125',
+      message: 'Login işlemi başlatıldı',
+      status: 'info' as const
+    },
+    // Token Messages
+    TOKEN_REFRESH_ERROR: {
+      code: 'AUTH_126',
+      message: 'Token yenileme hatası',
+      status: 'error' as const
+    },
+    // Logout Messages
+    LOGOUT_ERROR: {
+      code: 'AUTH_127',
+      message: 'Logout hatası',
+      status: 'error' as const
+    },
+    LOGOUT_ALL_ERROR: {
+      code: 'AUTH_128',
+      message: 'Logout all hatası',
+      status: 'error' as const
+    },
+    // Password Reset Messages
+    PASSWORD_RESET_ERROR: {
+      code: 'AUTH_129',
+      message: 'Şifre sıfırlama hatası',
+      status: 'error' as const
+    },
+    PASSWORD_RESET_TOKEN_RECEIVED: {
+      code: 'AUTH_130',
+      message: 'Reset token received',
+      status: 'info' as const
+    },
+    PASSWORD_RESET_JWT_VERIFIED: {
+      code: 'AUTH_131',
+      message: 'JWT verification successful for user',
+      status: 'info' as const
+    },
+    PASSWORD_RESET_JWT_FAILED: {
+      code: 'AUTH_132',
+      message: 'JWT verification failed',
+      status: 'error' as const
+    },
+    PASSWORD_RESET_TOKEN_EXPIRED_MSG: {
+      code: 'AUTH_133',
+      message: 'AUTH_036: Şifre sıfırlama süresi dolmuş',
+      status: 'error' as const
+    },
+    PASSWORD_RESET_TOKEN_INVALID_MSG: {
+      code: 'AUTH_134',
+      message: 'AUTH_035: Geçersiz şifre sıfırlama token',
+      status: 'error' as const
+    },
+    PASSWORD_RESET_USER_NOT_FOUND: {
+      code: 'AUTH_135',
+      message: 'User not found for ID',
+      status: 'error' as const
+    },
+    PASSWORD_RESET_SUCCESS_LOG: {
+      code: 'AUTH_136',
+      message: 'Password reset successful for user',
+      status: 'success' as const
+    },
+    PASSWORD_RESET_SUCCESS_MSG: {
+      code: 'AUTH_137',
+      message: 'Şifre başarıyla sıfırlandı',
+      status: 'success' as const
+    },
+    PASSWORD_RESET_SYSTEM_ERROR: {
+      code: 'AUTH_138',
+      message: 'AUTH_038: Sistem hatası - Şifre sıfırlama işlemi başarısız',
+      status: 'error' as const
+    },
+    // User Profile Messages
+    USER_NOT_FOUND: {
+      code: 'AUTH_139',
+      message: 'AUTH_013: Kullanıcı bilgisi bulunamadı',
+      status: 'error' as const
+    },
+    USER_INFO_SYSTEM_ERROR: {
+      code: 'AUTH_140',
+      message: 'AUTH_014: Sistem hatası - Kullanıcı bilgileri alınamadı',
+      status: 'error' as const
+    },
+    USER_INFO_ERROR_LOG: {
+      code: 'AUTH_141',
+      message: 'Kullanıcı bilgileri getirilemedi',
+      status: 'error' as const
+    },
+    PROFILE_USER_NOT_FOUND: {
+      code: 'AUTH_142',
+      message: 'AUTH_027: Kullanıcı bulunamadı',
+      status: 'error' as const
+    },
+    PROFILE_UPDATE_SUCCESS: {
+      code: 'AUTH_143',
+      message: 'Profil bilgileri başarıyla güncellendi',
+      status: 'success' as const
+    },
+    PROFILE_UPDATE_SYSTEM_ERROR: {
+      code: 'AUTH_144',
+      message: 'AUTH_029: Sistem hatası - Profil güncelleme işlemi başarısız',
+      status: 'error' as const
+    },
+    PROFILE_UPDATE_ERROR_LOG: {
+      code: 'AUTH_145',
+      message: 'Profil güncelleme hatası',
+      status: 'error' as const
+    },
+    // Password Change Messages
+    PASSWORD_CHANGE_USER_NOT_FOUND: {
+      code: 'AUTH_146',
+      message: 'AUTH_030: Kullanıcı bulunamadı',
+      status: 'error' as const
+    },
+    PASSWORD_CHANGE_INVALID_CURRENT: {
+      code: 'AUTH_147',
+      message: 'AUTH_031: Mevcut şifre hatalı',
+      status: 'error' as const
+    },
+    PASSWORD_CHANGE_SUCCESS: {
+      code: 'AUTH_148',
+      message: 'Şifre başarıyla değiştirildi',
+      status: 'success' as const
+    },
+    PASSWORD_CHANGE_SYSTEM_ERROR: {
+      code: 'AUTH_149',
+      message: 'AUTH_032: Sistem hatası - Şifre değiştirme işlemi başarısız',
+      status: 'error' as const
+    },
+    PASSWORD_CHANGE_ERROR_LOG: {
+      code: 'AUTH_150',
+      message: 'Şifre değiştirme hatası',
+      status: 'error' as const
+    },
+    // Session Messages
+    SESSION_USER_NOT_FOUND: {
+      code: 'AUTH_151',
+      message: 'Kullanıcı bulunamadı',
+      status: 'error' as const
+    },
+    SESSION_GET_ERROR_LOG: {
+      code: 'AUTH_152',
+      message: 'Oturumlar getirilemedi',
+      status: 'error' as const
+    },
+    SESSION_GET_SYSTEM_ERROR: {
+      code: 'AUTH_153',
+      message: 'AUTH_015: Sistem hatası - Oturum bilgileri alınamadı',
+      status: 'error' as const
     }
   },
 
@@ -1141,6 +1409,11 @@ export const SERVICE_MESSAGES = {
       code: 'CONTACT_EXT_007',
       message: 'Sistem hatası - Mesajlar yüklenemedi',
       status: 'error' as const
+    },
+    LIMIT_RESET_INFO: {
+      code: 'CONTACT_EXT_008',
+      message: 'Limit {resetTime} saatinde sıfırlanacak.',
+      status: 'info' as const
     }
   },
 
@@ -1164,6 +1437,11 @@ export const SERVICE_MESSAGES = {
     PDF_DOWNLOAD_ERROR: {
       code: 'LOG_004',
       message: 'PDF indirme hatası:',
+      status: 'error' as const
+    },
+    ERROR_OCCURRED: {
+      code: 'LOG_005',
+      message: 'Error occurred:',
       status: 'error' as const
     }
   },

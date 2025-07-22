@@ -176,9 +176,9 @@ export class AuthController {
         return;
       }
 
-      logger.info('Token doğrulama başlatıldı');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_STARTED.message);
       const decoded = JwtService.verifyEmailVerifyToken(token);
-      logger.info('Token decode edildi:', decoded.userId);
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_TOKEN_DECODED.message, decoded.userId);
 
       const user = await db.user.findUnique({
         where: {
@@ -198,7 +198,7 @@ export class AuthController {
       });
 
       logger.info(
-        'Kullanıcı sorgusu tamamlandı:',
+        SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_USER_QUERY.message,
         user ? 'bulundu' : 'bulunamadı'
       );
 
@@ -217,7 +217,7 @@ export class AuthController {
         return;
       }
 
-      logger.info('Email doğrulama işlemi başlatılıyor');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_PROCESS_STARTING.message);
       await db.user.update({
         where: { id: user.id },
         data: {
@@ -227,7 +227,7 @@ export class AuthController {
         },
       });
 
-      logger.info('Token generation başlatılıyor');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_TOKEN_GENERATION.message);
       const accessToken = JwtService.generateAccessToken(
         user.id,
         user.email,
@@ -254,10 +254,10 @@ export class AuthController {
         expiresIn: JwtService.getExpiresInSeconds(),
       };
 
-      logger.info('Email doğrulama başarıyla tamamlandı');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_SUCCESS.message);
       sendSuccess(res, response, SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT.message);
     } catch (error) {
-      logger.error('Email doğrulama hatası detayı:', {
+      logger.error(SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_ERROR_DETAIL.message, {
         message: error instanceof Error ? error.message : 'Bilinmeyen hata',
         stack: error instanceof Error ? error.stack : undefined,
       });
@@ -310,7 +310,7 @@ export class AuthController {
 
       sendSuccess(res, null, SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT.message);
     } catch (error) {
-      logger.error('Email doğrulama yeniden gönderme hatası:', error);
+      logger.error(SERVICE_MESSAGES.AUTH_EXT.EMAIL_RESEND_ERROR.message, error);
       sendServerError(
         res,
         SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED.message
@@ -320,7 +320,7 @@ export class AuthController {
 
   public login = async (req: Request, res: Response): Promise<void> => {
     try {
-      logger.info('Login işlemi başlatıldı', { email: req.body.email });
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.LOGIN_STARTED.message, { email: req.body.email });
       const { email, password }: LoginRequest = req.body;
 
       const cacheKey = `user:${email}`;
@@ -482,7 +482,7 @@ export class AuthController {
 
       sendSuccess(res, response);
     } catch (error) {
-      logger.error('Token yenileme hatası:', error);
+      logger.error(SERVICE_MESSAGES.AUTH_EXT.TOKEN_REFRESH_ERROR.message, error);
       sendError(
         res,
         SERVICE_MESSAGES.AUTH.TOKEN_VERIFICATION_FAILED.message,
@@ -502,7 +502,7 @@ export class AuthController {
       logger.info(SERVICE_MESSAGES.GENERAL.SUCCESS.message, { userId: req.user?.userId });
       sendSuccess(res, null, SERVICE_MESSAGES.GENERAL.SUCCESS.message);
     } catch (error) {
-      logger.error('Logout hatası:', error);
+      logger.error(SERVICE_MESSAGES.AUTH_EXT.LOGOUT_ERROR.message, error);
       sendServerError(
         res,
         SERVICE_MESSAGES.ERROR.SERVER_ERROR.message
@@ -522,7 +522,7 @@ export class AuthController {
       logger.info(SERVICE_MESSAGES.GENERAL.SUCCESS.message, { userId });
       sendSuccess(res, null, SERVICE_MESSAGES.GENERAL.SUCCESS.message);
     } catch (error) {
-      logger.error('Logout all hatası:', error);
+      logger.error(SERVICE_MESSAGES.AUTH_EXT.LOGOUT_ALL_ERROR.message, error);
       sendServerError(
         res,
         SERVICE_MESSAGES.ERROR.SERVER_ERROR.message
@@ -580,7 +580,7 @@ export class AuthController {
         SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SENT.message
       );
     } catch (error) {
-      logger.error('Şifre sıfırlama hatası:', error);
+      logger.error(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_ERROR.message, error);
       sendServerError(
         res,
         SERVICE_MESSAGES.ERROR.SERVER_ERROR.message
@@ -592,26 +592,26 @@ export class AuthController {
     try {
       const { token, newPassword }: ResetPasswordRequest = req.body;
 
-      logger.info('Reset token received:', token?.substring(0, 20) + '...');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_TOKEN_RECEIVED.message, token?.substring(0, 20) + '...');
 
       let decoded;
       try {
         decoded = JwtService.verifyPasswordResetToken(token);
-        logger.info('JWT verification successful for user:', decoded.userId);
+        logger.info(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_JWT_VERIFIED.message, decoded.userId);
       } catch (jwtError) {
         if (jwtError instanceof Error) {
-          logger.info('JWT verification failed:', jwtError.message);
+          logger.info(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_JWT_FAILED.message, jwtError.message);
           if (
             jwtError.message.includes('süresi dolmuş') ||
             jwtError.message.includes('expired')
           ) {
-            sendError(res, 'AUTH_036: Şifre sıfırlama süresi dolmuş', 400);
+            sendError(res, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_TOKEN_EXPIRED_MSG.message, 400);
             return;
           }
         } else {
-          logger.info('JWT verification failed:', jwtError);
+          logger.info(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_JWT_FAILED.message, jwtError);
         }
-        sendError(res, 'AUTH_035: Geçersiz şifre sıfırlama token', 400);
+        sendError(res, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_TOKEN_INVALID_MSG.message, 400);
         return;
       }
 
@@ -624,8 +624,8 @@ export class AuthController {
       });
 
       if (!user) {
-        logger.info('User not found for ID:', decoded.userId);
-        sendError(res, 'AUTH_035: Geçersiz şifre sıfırlama token', 400);
+        logger.info(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_USER_NOT_FOUND.message, decoded.userId);
+        sendError(res, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_TOKEN_INVALID_MSG.message, 400);
         return;
       }
 
@@ -638,16 +638,16 @@ export class AuthController {
         },
       });
 
-      logger.info('Password reset successful for user:', user.email);
-      sendSuccess(res, null, 'Şifre başarıyla sıfırlandı');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_SUCCESS_LOG.message, user.email);
+      sendSuccess(res, null, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_SUCCESS_MSG.message);
     } catch (error) {
-      logger.error('Şifre sıfırlama hatası:', error);
+      logger.error(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_ERROR.message, error);
       if (error instanceof Error && error.message.startsWith('JWT_S')) {
         sendError(res, error.message, 400);
       } else {
         sendServerError(
           res,
-          'AUTH_038: Sistem hatası - Şifre sıfırlama işlemi başarısız'
+          SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_SYSTEM_ERROR.message
         );
       }
     }
@@ -674,7 +674,7 @@ export class AuthController {
       });
 
       if (!user) {
-        sendNotFound(res, 'AUTH_013: Kullanıcı bilgisi bulunamadı');
+        sendNotFound(res, SERVICE_MESSAGES.AUTH_EXT.USER_NOT_FOUND.message);
         return;
       }
 
@@ -684,10 +684,10 @@ export class AuthController {
         lastName: user.lastName,
       });
     } catch (error) {
-      logger.error('Kullanıcı bilgileri getirilemedi:', error);
+      logger.error(SERVICE_MESSAGES.AUTH_EXT.USER_INFO_ERROR_LOG.message, error);
       sendServerError(
         res,
-        'AUTH_014: Sistem hatası - Kullanıcı bilgileri alınamadı'
+        SERVICE_MESSAGES.AUTH_EXT.USER_INFO_SYSTEM_ERROR.message
       );
     }
   };
@@ -706,7 +706,7 @@ export class AuthController {
       });
 
       if (!existingUser) {
-        sendNotFound(res, 'AUTH_027: Kullanıcı bulunamadı');
+        sendNotFound(res, SERVICE_MESSAGES.AUTH_EXT.PROFILE_USER_NOT_FOUND.message);
         return;
       }
 
@@ -733,13 +733,13 @@ export class AuthController {
           ...updatedUser,
           name: `${updatedUser.firstName} ${updatedUser.lastName}`.trim(),
         },
-        'Profil bilgileri başarıyla güncellendi'
+        SERVICE_MESSAGES.AUTH_EXT.PROFILE_UPDATE_SUCCESS.message
       );
     } catch (error) {
-      logger.error('Profil güncelleme hatası:', error);
+      logger.error(SERVICE_MESSAGES.AUTH_EXT.PROFILE_UPDATE_ERROR_LOG.message, error);
       sendServerError(
         res,
-        'AUTH_029: Sistem hatası - Profil güncelleme işlemi başarısız'
+        SERVICE_MESSAGES.AUTH_EXT.PROFILE_UPDATE_SYSTEM_ERROR.message
       );
     }
   };
@@ -758,7 +758,7 @@ export class AuthController {
       });
 
       if (!user) {
-        sendNotFound(res, 'AUTH_030: Kullanıcı bulunamadı');
+        sendNotFound(res, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_USER_NOT_FOUND.message);
         return;
       }
 
@@ -767,7 +767,7 @@ export class AuthController {
         user.password
       );
       if (!isCurrentPasswordValid) {
-        sendError(res, 'AUTH_031: Mevcut şifre hatalı', 400);
+        sendError(res, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_INVALID_CURRENT.message, 400);
         return;
       }
 
@@ -778,12 +778,12 @@ export class AuthController {
         data: { password: hashedNewPassword },
       });
 
-      sendSuccess(res, null, 'Şifre başarıyla değiştirildi');
+      sendSuccess(res, null, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_SUCCESS.message);
     } catch (error) {
-      logger.error('Şifre değiştirme hatası:', error);
+      logger.error(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_ERROR_LOG.message, error);
       sendServerError(
         res,
-        'AUTH_032: Sistem hatası - Şifre değiştirme işlemi başarısız'
+        SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_SYSTEM_ERROR.message
       );
     }
   };
@@ -793,7 +793,7 @@ export class AuthController {
       const userId = req.user?.userId;
 
       if (!userId) {
-        sendError(res, 'Kullanıcı bulunamadı', 401);
+        sendError(res, SERVICE_MESSAGES.AUTH_EXT.SESSION_USER_NOT_FOUND.message, 401);
         return;
       }
 
@@ -818,10 +818,10 @@ export class AuthController {
         sessions.filter((s) => s !== null)
       );
     } catch (error) {
-      logger.error('Oturumlar getirilemedi:', error);
+      logger.error(SERVICE_MESSAGES.AUTH_EXT.SESSION_GET_ERROR_LOG.message, error);
       sendServerError(
         res,
-        'AUTH_015: Sistem hatası - Oturum bilgileri alınamadı'
+        SERVICE_MESSAGES.AUTH_EXT.SESSION_GET_SYSTEM_ERROR.message
       );
     }
   };

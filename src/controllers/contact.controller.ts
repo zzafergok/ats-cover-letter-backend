@@ -5,7 +5,11 @@ import { ContactData, ContactService } from '../services/contact.service';
 import { sendError, sendSuccess, sendServerError } from '../utils/response';
 
 import logger from '../config/logger';
-import { SERVICE_MESSAGES, formatMessage, createErrorMessage, createDynamicMessage } from '../constants/messages';
+import {
+  SERVICE_MESSAGES,
+  createErrorMessage,
+  createDynamicMessage,
+} from '../constants/messages';
 
 export class ContactController {
   private contactService = ContactService.getInstance();
@@ -27,14 +31,21 @@ export class ContactController {
       });
 
       const messageType =
-        type === 'CONTACT' ? SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_TYPE_CONTACT.message : SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_TYPE_SUPPORT.message;
+        type === 'CONTACT'
+          ? SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_TYPE_CONTACT.message
+          : SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_TYPE_SUPPORT.message;
       sendSuccess(
         res,
         null,
         `${messageType} ${SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_SENT_SUCCESS.message}`
       );
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED,
+          error as Error
+        )
+      );
 
       if (error instanceof Error && error.message.startsWith('CONTACT_001')) {
         sendError(res, error.message, 429);
@@ -49,7 +60,10 @@ export class ContactController {
         return;
       }
 
-      sendServerError(res, `${SERVICE_MESSAGES.CONTACT_EXT.SYSTEM_ERROR_MESSAGE.code}: ${SERVICE_MESSAGES.CONTACT_EXT.SYSTEM_ERROR_MESSAGE.message}`);
+      sendServerError(
+        res,
+        `${SERVICE_MESSAGES.CONTACT_EXT.SYSTEM_ERROR_MESSAGE.code}: ${SERVICE_MESSAGES.CONTACT_EXT.SYSTEM_ERROR_MESSAGE.message}`
+      );
     }
   };
 
@@ -76,8 +90,13 @@ export class ContactController {
         }),
       });
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error));
-      sendServerError(res, `${SERVICE_MESSAGES.CONTACT_EXT.LIMIT_INFO_ERROR.code}: ${SERVICE_MESSAGES.CONTACT_EXT.LIMIT_INFO_ERROR.message}`);
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error)
+      );
+      sendServerError(
+        res,
+        `${SERVICE_MESSAGES.CONTACT_EXT.LIMIT_INFO_ERROR.code}: ${SERVICE_MESSAGES.CONTACT_EXT.LIMIT_INFO_ERROR.message}`
+      );
     }
   };
 
@@ -89,8 +108,13 @@ export class ContactController {
       const result = await this.contactService.getContactMessages(page, limit);
       sendSuccess(res, result);
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error));
-      sendServerError(res, `${SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_LOAD_ERROR.code}: ${SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_LOAD_ERROR.message}`);
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error)
+      );
+      sendServerError(
+        res,
+        `${SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_LOAD_ERROR.code}: ${SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_LOAD_ERROR.message}`
+      );
     }
   };
 
@@ -107,8 +131,14 @@ export class ContactController {
 
         throw new Error(
           createDynamicMessage(SERVICE_MESSAGES.CONTACT.DAILY_LIMIT_EXCEEDED, {
-            resetTime: formattedResetTime
-          }) + `. Limit ${formattedResetTime} saatinde sıfırlanacak.`
+            resetTime: formattedResetTime,
+          }) +
+            ` ${createDynamicMessage(
+              SERVICE_MESSAGES.CONTACT_EXT.LIMIT_RESET_INFO,
+              {
+                resetTime: formattedResetTime,
+              }
+            )}`
         );
       }
     }
