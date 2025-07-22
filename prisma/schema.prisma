@@ -24,9 +24,8 @@ model User {
 
   refreshTokens        RefreshToken[]
   cvUploads            CvUpload[]
-  coverLetters         CoverLetter[]
   savedCvs             SavedCv[]
-  stagedCoverLetters   StagedCoverLetter[]
+  coverLetterBasics    CoverLetterBasic[]
 
   @@map("users")
 }
@@ -65,23 +64,6 @@ model CvUpload {
   @@map("cv_uploads")
 }
 
-model CoverLetter {
-  id               String             @id @default(cuid())
-  userId           String             @map("user_id")
-  title            String
-  content          String
-  coverLetterType  CoverLetterType    @map("cover_letter_type")
-  positionTitle    String             @map("position_title")
-  companyName      String             @map("company_name")
-  category         CoverLetterCategory @default(GENERAL)
-  analysis         Json?
-  createdAt        DateTime           @default(now()) @map("created_at")
-  updatedAt        DateTime           @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("cover_letters")
-}
 
 model SavedCv {
   id        String   @id @default(cuid())
@@ -97,45 +79,32 @@ model SavedCv {
   @@map("saved_cvs")
 }
 
-model StagedCoverLetter {
+
+model CoverLetterBasic {
   id               String                    @id @default(cuid())
   userId           String                    @map("user_id")
-  sessionId        String                    @map("session_id")
+  cvUploadId       String                    @map("cv_upload_id")
   
-  // Stage 1: Basic Info (Required)
+  // Job Information
   positionTitle    String                    @map("position_title")
   companyName      String                    @map("company_name")
-  experienceLevel  ExperienceLevel           @map("experience_level")
-  keySkills        String[]                  @map("key_skills")
-  
-  // Stage 2: Optional Enhancement
-  companyResearch  String?                   @map("company_research")
-  achievements     String[]                  @default([])
-  careerGoals      String?                   @map("career_goals")
-  motivation       String?
+  jobDescription   String                    @map("job_description")
   
   // Generated Content
-  basicContent     String?                   @map("basic_content")
-  enhancedContent  String?                   @map("enhanced_content")
+  generatedContent String?                   @map("generated_content")
+  updatedContent   String?                   @map("updated_content")
   
   // Status
-  stage            CoverLetterStage          @default(BASIC_INFO)
-  isCompleted      Boolean                   @default(false) @map("is_completed")
+  generationStatus ProcessingStatus          @default(PENDING) @map("generation_status")
   
   createdAt        DateTime                  @default(now()) @map("created_at")
   updatedAt        DateTime                  @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("staged_cover_letters")
+  @@map("cover_letter_basics")
 }
 
-enum CoverLetterType {
-  PROFESSIONAL 
-  CREATIVE 
-  TECHNICAL 
-  ENTRY_LEVEL
-}
 
 enum UserRole {
   USER
@@ -155,40 +124,4 @@ enum ProcessingStatus {
   FAILED
 }
 
-enum CoverLetterCategory {
-  SOFTWARE_DEVELOPER
-  MARKETING_SPECIALIST
-  SALES_REPRESENTATIVE
-  PROJECT_MANAGER
-  DATA_ANALYST
-  UI_UX_DESIGNER
-  BUSINESS_ANALYST
-  CUSTOMER_SERVICE
-  HR_SPECIALIST
-  FINANCE_SPECIALIST
-  CONTENT_WRITER
-  DIGITAL_MARKETING
-  PRODUCT_MANAGER
-  QUALITY_ASSURANCE
-  GRAPHIC_DESIGNER
-  ADMINISTRATIVE_ASSISTANT
-  CONSULTANT
-  ENGINEER
-  TEACHER
-  HEALTHCARE
-  LEGAL
-  GENERAL
-}
 
-enum ExperienceLevel {
-  NEW_GRADUATE
-  JUNIOR
-  MID_LEVEL
-  SENIOR
-}
-
-enum CoverLetterStage {
-  BASIC_INFO
-  ENHANCEMENT
-  COMPLETED
-}

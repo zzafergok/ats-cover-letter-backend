@@ -164,3 +164,38 @@ export async function generateCvWithClaude(
     throw new Error('CV oluşturulurken bir hata oluştu');
   }
 }
+
+export async function generateCoverLetterWithClaude(prompt: string): Promise<string> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error('Anthropic API anahtarı yapılandırılmamış');
+  }
+
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 3000,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
+
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  } catch (error: any) {
+    logger.error('Claude API hatası (Cover Letter):', error);
+
+    if (error.status === 401 || error.message?.includes('authentication')) {
+      throw new Error('Anthropic API anahtarı geçersiz veya eksik');
+    }
+
+    if (error.status === 529 || error.message?.includes('overloaded')) {
+      throw new Error(
+        'Anthropic servisi şu anda yoğun, lütfen birkaç dakika sonra tekrar deneyin'
+      );
+    }
+
+    throw new Error('Cover letter oluşturulurken bir hata oluştu');
+  }
+}
