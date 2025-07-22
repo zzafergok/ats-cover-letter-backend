@@ -1812,6 +1812,157 @@
 			]
 		},
 		{
+			"name": "CV Detailed Management",
+			"item": [
+				{
+					"name": "Generate Detailed CV (Profile-based)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"positionTitle\": \"Senior Software Engineer\",\n  \"companyName\": \"Tech Innovation Corp\",\n  \"jobDescription\": \"5+ yıl deneyimli senior yazılım mühendisi aranıyor. React, Node.js, TypeScript konularında uzman olmalı.\",\n  \"language\": \"TURKISH\",\n  \"cvType\": \"PROFESSIONAL\",\n  \"additionalRequirements\": \"Minimum 5 yıl deneyim, takım liderliği deneyimi\",\n  \"targetKeywords\": [\"React\", \"Node.js\", \"TypeScript\", \"Team Leadership\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cv/generate-detailed",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"generate-detailed"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Detailed CVs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cv/detailed",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"detailed"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Detailed CV",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cv/detailed/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"detailed",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "detailed_cv_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Detailed CV",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cv/detailed/:id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"detailed",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "detailed_cv_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Download Detailed CV PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/cv/detailed/:id/download/pdf",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cv",
+								"detailed",
+								":id",
+								"download",
+								"pdf"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "detailed_cv_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "System",
 			"item": [
 				{
