@@ -2,7 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import { authenticateToken } from '../middleware/auth';
 import { CoverLetterBasicService } from '../services/coverLetterBasic.service';
-import { PdfService } from '../services/pdfService.service';
+import { PdfService } from '../services/pdf.service';
 import logger from '../config/logger';
 
 const router = express.Router();
