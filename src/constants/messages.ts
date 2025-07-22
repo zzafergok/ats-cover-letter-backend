@@ -378,25 +378,6 @@ export const SERVICE_MESSAGES = {
     },
   },
 
-  // PDF Generation Messages (PDF_xxx)
-  PDF: {
-    GENERATION_SUCCESS: {
-      code: 'PDF_001',
-      message: 'PDF başarıyla oluşturuldu',
-      status: 'success' as const,
-    },
-    GENERATION_FAILED: {
-      code: 'PDF_002',
-      message: 'PDF oluşturulurken bir hata oluştu',
-      status: 'error' as const,
-    },
-    CUSTOM_FORMAT_SUCCESS: {
-      code: 'PDF_003',
-      message: 'Özelleştirilmiş cover letter PDF başarıyla oluşturuldu',
-      status: 'success' as const,
-    },
-  },
-
   // Claude AI Messages (AI_xxx)
   AI: {
     API_KEY_MISSING: {
@@ -1447,6 +1428,103 @@ export const SERVICE_MESSAGES = {
       code: 'LOG_005',
       message: 'Error occurred:',
       status: 'error' as const,
+    },
+  },
+
+  // User Profile Messages (USER_xxx)
+  USER: {
+    PROFILE_UPDATED: {
+      code: 'USER_001',
+      message: 'Kullanıcı profili başarıyla güncellendi',
+      status: 'success' as const,
+    },
+    PROFILE_UPDATE_ERROR: {
+      code: 'USER_002',
+      message: 'Kullanıcı profili güncellenirken hata oluştu',
+      status: 'error' as const,
+    },
+    NOT_FOUND: {
+      code: 'USER_003',
+      message: 'Kullanıcı bulunamadı',
+      status: 'error' as const,
+    },
+    PROFILE_GET_ERROR: {
+      code: 'USER_004',
+      message: 'Kullanıcı profili alınırken hata oluştu',
+      status: 'error' as const,
+    },
+  },
+
+  // Cover Letter Detailed Messages (CL_DETAILED_xxx)
+  COVER_LETTER_DETAILED: {
+    GENERATION_SUCCESS: {
+      code: 'CL_DETAILED_001',
+      message: 'Detaylı cover letter oluşturma başlatıldı',
+      status: 'success' as const,
+    },
+    GENERATION_FAILED: {
+      code: 'CL_DETAILED_002',
+      message: 'Cover letter oluşturulamadı',
+      status: 'error' as const,
+    },
+    NOT_FOUND: {
+      code: 'CL_DETAILED_003',
+      message: 'Cover letter bulunamadı',
+      status: 'error' as const,
+    },
+    UPDATE_SUCCESS: {
+      code: 'CL_DETAILED_004',
+      message: 'Cover letter başarıyla güncellendi',
+      status: 'success' as const,
+    },
+    DELETE_SUCCESS: {
+      code: 'CL_DETAILED_005',
+      message: 'Cover letter başarıyla silindi',
+      status: 'success' as const,
+    },
+    GET_ERROR: {
+      code: 'CL_DETAILED_006',
+      message: 'Cover letter alınırken hata oluştu',
+      status: 'error' as const,
+    },
+    UPDATE_ERROR: {
+      code: 'CL_DETAILED_007',
+      message: 'Cover letter güncellenirken hata oluştu',
+      status: 'error' as const,
+    },
+    LIST_ERROR: {
+      code: 'CL_DETAILED_008',
+      message: 'Cover letter listesi alınırken hata oluştu',
+      status: 'error' as const,
+    },
+    DELETE_ERROR: {
+      code: 'CL_DETAILED_009',
+      message: 'Cover letter silinirken hata oluştu',
+      status: 'error' as const,
+    },
+  },
+
+  // PDF Generation Messages (PDF_xxx)
+  PDF: {
+    GENERATION_SUCCESS: {
+      code: 'PDF_001',
+      message: 'PDF başarıyla oluşturuldu',
+      status: 'success' as const,
+    },
+    GENERATION_ERROR: {
+      code: 'PDF_002',
+      message: 'PDF oluşturulurken hata oluştu',
+      status: 'error' as const,
+    },
+    GENERATION_FAILED: {
+      code: 'PDF_003',
+      message: 'PDF oluşturma başarısız',
+      status: 'error' as const,
+    },
+    CUSTOM_FORMAT_SUCCESS: {
+      code: 'PDF_003',
+      message: 'Özelleştirilmiş cover letter PDF başarıyla oluşturuldu',
+      status: 'success' as const,
     },
   },
 

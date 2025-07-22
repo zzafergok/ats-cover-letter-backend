@@ -83,11 +83,11 @@ export class CoverLetterDetailedController {
       });
     } catch (error) {
       logger.error(
-        createErrorMessage(SERVICE_MESSAGES.COVER_LETTER.GET_ERROR, error as Error)
+        createErrorMessage(SERVICE_MESSAGES.COVER_LETTER_DETAILED.GET_ERROR, error as Error)
       );
       res.status(500).json({
         success: false,
-        message: formatMessage(SERVICE_MESSAGES.COVER_LETTER.GET_ERROR),
+        message: formatMessage(SERVICE_MESSAGES.COVER_LETTER_DETAILED.GET_ERROR),
       });
     }
   };
@@ -126,11 +126,11 @@ export class CoverLetterDetailedController {
       }
 
       logger.error(
-        createErrorMessage(SERVICE_MESSAGES.COVER_LETTER.UPDATE_ERROR, error as Error)
+        createErrorMessage(SERVICE_MESSAGES.COVER_LETTER_DETAILED.UPDATE_ERROR, error as Error)
       );
       res.status(500).json({
         success: false,
-        message: (error as Error).message || formatMessage(SERVICE_MESSAGES.COVER_LETTER.UPDATE_ERROR),
+        message: (error as Error).message || formatMessage(SERVICE_MESSAGES.COVER_LETTER_DETAILED.UPDATE_ERROR),
       });
     }
   };
@@ -152,11 +152,11 @@ export class CoverLetterDetailedController {
       });
     } catch (error) {
       logger.error(
-        createErrorMessage(SERVICE_MESSAGES.COVER_LETTER.LIST_ERROR, error as Error)
+        createErrorMessage(SERVICE_MESSAGES.COVER_LETTER_DETAILED.LIST_ERROR, error as Error)
       );
       res.status(500).json({
         success: false,
-        message: formatMessage(SERVICE_MESSAGES.COVER_LETTER.LIST_ERROR),
+        message: formatMessage(SERVICE_MESSAGES.COVER_LETTER_DETAILED.LIST_ERROR),
       });
     }
   };
@@ -179,11 +179,11 @@ export class CoverLetterDetailedController {
       });
     } catch (error) {
       logger.error(
-        createErrorMessage(SERVICE_MESSAGES.COVER_LETTER.DELETE_ERROR, error as Error)
+        createErrorMessage(SERVICE_MESSAGES.COVER_LETTER_DETAILED.DELETE_ERROR, error as Error)
       );
       res.status(500).json({
         success: false,
-        message: (error as Error).message || formatMessage(SERVICE_MESSAGES.COVER_LETTER.DELETE_ERROR),
+        message: (error as Error).message || formatMessage(SERVICE_MESSAGES.COVER_LETTER_DETAILED.DELETE_ERROR),
       });
     }
   };

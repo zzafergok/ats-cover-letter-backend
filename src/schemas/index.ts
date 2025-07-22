@@ -413,11 +413,6 @@ export const updateDetailedCoverLetterSchema = z.object({
 
 // Detailed CV generation schema
 export const createDetailedCvSchema = z.object({
-  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
-  companyName: z.string().min(1, 'Şirket adı gereklidir'),
   jobDescription: z.string().min(10, 'İş tanımı en az 10 karakter olmalıdır'),
   language: z.enum(['TURKISH', 'ENGLISH']).default('TURKISH'),
-  cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']).default('ATS_OPTIMIZED'),
-  additionalRequirements: z.string().optional(),
-  targetKeywords: z.array(z.string()).optional(),
 });

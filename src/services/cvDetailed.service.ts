@@ -12,13 +12,8 @@ import {
 const prisma = new PrismaClient();
 
 export interface DetailedCvRequest {
-  positionTitle: string;
-  companyName: string;
   jobDescription: string;
   language: 'TURKISH' | 'ENGLISH';
-  cvType: 'ATS_OPTIMIZED' | 'CREATIVE' | 'TECHNICAL';
-  additionalRequirements?: string;
-  targetKeywords?: string[];
 }
 
 export interface DetailedCvResponse {
@@ -76,13 +71,17 @@ export class CvDetailedService {
         throw new Error('CV oluşturmak için önce profil bilgilerinizi tamamlamanız gerekiyor');
       }
 
+      // İş tanımından pozisyon ve şirket bilgilerini çıkar (basit çıkarım)
+      const { positionTitle, companyName } = this.extractJobInfo(request.jobDescription);
+      const cvType = 'ATS_OPTIMIZED'; // Default CV tipi
+
       // CV kaydını oluştur (başlangıçta PENDING durumda)
       const savedCv = await prisma.savedCv.create({
         data: {
           userId,
-          title: `${request.companyName} - ${request.positionTitle} CV`,
+          title: `${companyName || 'Şirket'} - ${positionTitle || 'Pozisyon'} CV`,
           content: '',
-          cvType: request.cvType,
+          cvType,
         },
       });
 
@@ -90,16 +89,19 @@ export class CvDetailedService {
       this.generateDetailedCvAsync(
         savedCv.id,
         userProfile,
-        request
+        request,
+        positionTitle,
+        companyName,
+        cvType
       );
 
       return {
         id: savedCv.id,
         generatedContent: '',
-        positionTitle: request.positionTitle,
-        companyName: request.companyName,
+        positionTitle: positionTitle || 'Pozisyon',
+        companyName: companyName || 'Şirket',
         language: request.language,
-        cvType: request.cvType,
+        cvType,
         generationStatus: 'PENDING',
         createdAt: savedCv.createdAt,
         updatedAt: savedCv.updatedAt,
@@ -118,7 +120,10 @@ export class CvDetailedService {
   private async generateDetailedCvAsync(
     cvId: string,
     userProfile: any,
-    request: DetailedCvRequest
+    request: DetailedCvRequest,
+    positionTitle: string,
+    companyName: string,
+    cvType: string
   ): Promise<void> {
     try {
       // Kullanıcı profil verisinden detaylı CV bilgilerini çıkar
@@ -127,13 +132,11 @@ export class CvDetailedService {
       // Claude ile CV oluştur
       const cvPrompt = this.buildDetailedCvPrompt(
         detailedProfile,
-        request.positionTitle,
-        request.companyName,
+        positionTitle,
+        companyName,
         request.jobDescription,
         request.language,
-        request.cvType,
-        request.additionalRequirements,
-        request.targetKeywords
+        cvType as 'ATS_OPTIMIZED' | 'CREATIVE' | 'TECHNICAL'
       );
 
       let generatedContent = await generateCoverLetterWithClaude(cvPrompt);
@@ -228,9 +231,7 @@ export class CvDetailedService {
     companyName: string,
     jobDescription: string,
     language: 'TURKISH' | 'ENGLISH',
-    cvType: 'ATS_OPTIMIZED' | 'CREATIVE' | 'TECHNICAL',
-    additionalRequirements?: string,
-    targetKeywords?: string[]
+    cvType: 'ATS_OPTIMIZED' | 'CREATIVE' | 'TECHNICAL'
   ): string {
     const languageConfig = {
       TURKISH: {
@@ -375,13 +376,6 @@ You are creating a professional ${cvType} CV for ${personalInfo.fullName} applyi
 - Company: ${companyName}
 - Job Description: ${jobDescription}`;
 
-    if (additionalRequirements) {
-      prompt += `\n- Additional Requirements: ${additionalRequirements}`;
-    }
-
-    if (targetKeywords && targetKeywords.length > 0) {
-      prompt += `\n- Target Keywords: ${targetKeywords.join(', ')}`;
-    }
 
     // Hobbies (if creative type)
     if (cvType === 'CREATIVE' && profile.hobbies && profile.hobbies.length > 0) {
@@ -419,6 +413,64 @@ Format the CV with clear sections and use the following structure:
 Write in ${language === 'TURKISH' ? 'Turkish' : 'English'} language.`;
 
     return prompt.trim();
+  }
+
+  private extractJobInfo(jobDescription: string): { positionTitle: string; companyName: string } {
+    // Basit regex patterns ile pozisyon ve şirket adını çıkarmaya çalış
+    const positionPatterns = [
+      /(?:pozisyon|position|role|job)[:]\s*([^,.]+)/i,
+      /(?:için|for)\s+([^,.]+?)\s+(?:aranıyor|needed|wanted|required)/i,
+      /([^,.]+?)\s+(?:pozisyonu|position|role)\s+(?:için|for)/i,
+    ];
+
+    const companyPatterns = [
+      /(?:şirket|company|firma)[:]\s*([^,.]+)/i,
+      /(?:at|@)\s+([^,.]+)/i,
+      /([A-Z][a-zA-ZüğıöçşÜĞIÖÇŞ\s]+(?:Ltd|A\.Ş|Inc|Corp|GmbH|Co)\.?)/,
+    ];
+
+    let positionTitle = 'İlgili Pozisyon';
+    let companyName = 'Hedef Şirket';
+
+    // Pozisyon adını bul
+    for (const pattern of positionPatterns) {
+      const match = jobDescription.match(pattern);
+      if (match && match[1]) {
+        positionTitle = match[1].trim();
+        break;
+      }
+    }
+
+    // Şirket adını bul
+    for (const pattern of companyPatterns) {
+      const match = jobDescription.match(pattern);
+      if (match && match[1]) {
+        companyName = match[1].trim();
+        break;
+      }
+    }
+
+    // Eğer hiç bulamadıysak ilk cümleden çıkarım yap
+    if (positionTitle === 'İlgili Pozisyon' || companyName === 'Hedef Şirket') {
+      const firstSentence = jobDescription.split(/[.!?]/)[0];
+      const words = firstSentence.split(/\s+/);
+      
+      if (words.length >= 2) {
+        // İlk iki kelimeyi pozisyon olarak al
+        if (positionTitle === 'İlgili Pozisyon') {
+          positionTitle = words.slice(0, 2).join(' ');
+        }
+        // Büyük harfle başlayan kelimeleri şirket olarak al
+        if (companyName === 'Hedef Şirket') {
+          const capitalizedWords = words.filter(word => /^[A-ZÇĞÜÖŞ]/.test(word));
+          if (capitalizedWords.length > 0) {
+            companyName = capitalizedWords.slice(0, 2).join(' ');
+          }
+        }
+      }
+    }
+
+    return { positionTitle, companyName };
   }
 
   private humanizeCv(content: string, language: 'TURKISH' | 'ENGLISH'): string {
