@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import { authenticateToken } from '../middleware/auth';
-import { CoverLetterBasicService } from '../services/coverLetterBasicService.service';
+import { CoverLetterBasicService } from '../services/coverLetterBasic.service';
 import { PdfService } from '../services/pdfService.service';
 import logger from '../config/logger';
 
@@ -18,14 +18,16 @@ const createCoverLetterSchema = z.object({
 });
 
 const updateCoverLetterSchema = z.object({
-  updatedContent: z.string().min(50, 'Cover letter içeriği en az 50 karakter olmalıdır'),
+  updatedContent: z
+    .string()
+    .min(50, 'Cover letter içeriği en az 50 karakter olmalıdır'),
 });
 
 // Cover letter oluştur
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const validatedData = createCoverLetterSchema.parse(req.body);
-    
+
     const coverLetter = await coverLetterService.createCoverLetter(
       req.user!.userId,
       validatedData
@@ -49,8 +51,11 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     logger.error('Cover letter oluşturma hatası:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Cover letter oluşturulurken hata oluştu';
+
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : 'Cover letter oluşturulurken hata oluştu';
     return res.status(500).json({
       success: false,
       message: errorMessage,
@@ -118,8 +123,11 @@ router.put('/:id', authenticateToken, async (req, res) => {
     }
 
     logger.error('Cover letter güncelleme hatası:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Cover letter güncellenirken hata oluştu';
+
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : 'Cover letter güncellenirken hata oluştu';
     return res.status(500).json({
       success: false,
       message: errorMessage,
@@ -160,8 +168,11 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Cover letter silme hatası:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Cover letter silinirken hata oluştu';
+
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : 'Cover letter silinirken hata oluştu';
     return res.status(500).json({
       success: false,
       message: errorMessage,
@@ -186,7 +197,10 @@ router.get('/:id/download/pdf', authenticateToken, async (req, res) => {
       });
     }
 
-    if (coverLetter.generationStatus !== 'COMPLETED' || !coverLetter.generatedContent) {
+    if (
+      coverLetter.generationStatus !== 'COMPLETED' ||
+      !coverLetter.generatedContent
+    ) {
       return res.status(400).json({
         success: false,
         message: 'Cover letter henüz hazır değil veya içerik bulunamadı',
@@ -201,8 +215,12 @@ router.get('/:id/download/pdf', authenticateToken, async (req, res) => {
     );
 
     // PDF dosya adı oluştur
-    const sanitizedCompany = coverLetter.companyName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
-    const sanitizedPosition = coverLetter.positionTitle.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+    const sanitizedCompany = coverLetter.companyName
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .replace(/\s+/g, '_');
+    const sanitizedPosition = coverLetter.positionTitle
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .replace(/\s+/g, '_');
     const fileName = `${sanitizedCompany}_${sanitizedPosition}_Cover_Letter.pdf`;
 
     // HTTP headers ayarla

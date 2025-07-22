@@ -17,7 +17,7 @@ import {
   generateDocumentMetadata,
   extractContactInformation,
 } from '../services/cvService.service';
-import { generateCvWithClaude } from '../services/claudeService.service';
+import { generateCvWithClaude } from '../services/claude.service';
 import { FileCompressionService } from '../services/fileCompression.service';
 
 import logger from '../config/logger';

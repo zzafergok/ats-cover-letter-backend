@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { generateCoverLetterWithClaude } from './claudeService.service';
-import { CvAnalysisService } from './cvAnalysisService.service';
+import { generateCoverLetterWithClaude } from './claude.service';
+import { CvAnalysisService } from './cvAnalysis.service';
 import logger from '../config/logger';
 
 const prisma = new PrismaClient();
@@ -44,7 +44,7 @@ export class CoverLetterBasicService {
     try {
       // CV verilerini al ve doğrula
       const cvUpload = await this.validateCvUpload(userId, request.cvUploadId);
-      
+
       // Cover letter kaydını oluştur (başlangıçta PENDING durumda)
       const coverLetter = await prisma.coverLetterBasic.create({
         data: {
@@ -58,7 +58,11 @@ export class CoverLetterBasicService {
       });
 
       // Arka planda cover letter oluştur
-      this.generateCoverLetterAsync(coverLetter.id, cvUpload.extractedData, request);
+      this.generateCoverLetterAsync(
+        coverLetter.id,
+        cvUpload.extractedData,
+        request
+      );
 
       return {
         id: coverLetter.id,
@@ -127,7 +131,8 @@ export class CoverLetterBasicService {
 
     return {
       id: updated.id,
-      generatedContent: updated.updatedContent || updated.generatedContent || '',
+      generatedContent:
+        updated.updatedContent || updated.generatedContent || '',
       positionTitle: updated.positionTitle,
       companyName: updated.companyName,
       generationStatus: updated.generationStatus,
@@ -136,15 +141,18 @@ export class CoverLetterBasicService {
     };
   }
 
-  async getUserCoverLetters(userId: string): Promise<CoverLetterBasicResponse[]> {
+  async getUserCoverLetters(
+    userId: string
+  ): Promise<CoverLetterBasicResponse[]> {
     const coverLetters = await prisma.coverLetterBasic.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
 
-    return coverLetters.map(coverLetter => ({
+    return coverLetters.map((coverLetter) => ({
       id: coverLetter.id,
-      generatedContent: coverLetter.updatedContent || coverLetter.generatedContent || '',
+      generatedContent:
+        coverLetter.updatedContent || coverLetter.generatedContent || '',
       positionTitle: coverLetter.positionTitle,
       companyName: coverLetter.companyName,
       generationStatus: coverLetter.generationStatus,
@@ -153,7 +161,10 @@ export class CoverLetterBasicService {
     }));
   }
 
-  async deleteCoverLetter(userId: string, coverLetterId: string): Promise<void> {
+  async deleteCoverLetter(
+    userId: string,
+    coverLetterId: string
+  ): Promise<void> {
     const coverLetter = await prisma.coverLetterBasic.findFirst({
       where: {
         id: coverLetterId,
@@ -201,8 +212,9 @@ export class CoverLetterBasicService {
   ): Promise<void> {
     try {
       // CV'den profesyonel profil çıkar
-      const professionalProfile = this.cvAnalysisService.extractProfessionalProfile(cvData);
-      
+      const professionalProfile =
+        this.cvAnalysisService.extractProfessionalProfile(cvData);
+
       // Claude ile cover letter oluştur
       const coverLetterPrompt = this.buildCoverLetterPrompt(
         professionalProfile,
@@ -211,7 +223,8 @@ export class CoverLetterBasicService {
         request.jobDescription
       );
 
-      const generatedContent = await generateCoverLetterWithClaude(coverLetterPrompt);
+      const generatedContent =
+        await generateCoverLetterWithClaude(coverLetterPrompt);
 
       // Veritabanını güncelle
       await prisma.coverLetterBasic.update({
@@ -226,7 +239,7 @@ export class CoverLetterBasicService {
       logger.info('Cover letter başarıyla oluşturuldu', { coverLetterId });
     } catch (error) {
       logger.error('Cover letter oluşturma hatası:', { coverLetterId, error });
-      
+
       // Hata durumunu kaydet
       await prisma.coverLetterBasic.update({
         where: { id: coverLetterId },
