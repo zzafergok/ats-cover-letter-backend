@@ -1,8 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import { generateCoverLetterWithClaude } from './claude.service';
 import { CvAnalysisService } from './cvAnalysis.service';
+import { UserLimitService } from './userLimit.service';
 import logger from '../config/logger';
-import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
+import {
+  SERVICE_MESSAGES,
+  formatMessage,
+  createErrorMessage,
+} from '../constants/messages';
 
 const prisma = new PrismaClient();
 
@@ -42,9 +47,20 @@ export class CoverLetterBasicService {
 
   async createCoverLetter(
     userId: string,
+    userRole: string,
     request: CoverLetterBasicRequest
   ): Promise<CoverLetterBasicResponse> {
     try {
+      // Kullanıcı limit kontrolü
+      const currentCoverLetterCount = await prisma.coverLetterBasic.count({
+        where: { userId },
+      });
+
+      if (!UserLimitService.canCreateCoverLetter(userRole, currentCoverLetterCount)) {
+        const limitInfo = UserLimitService.formatLimitInfo(userRole, currentCoverLetterCount, 'coverLetters');
+        throw new Error(`Cover letter oluşturma limitine ulaştınız (${limitInfo.current}/${limitInfo.maximum})`);
+      }
+
       // CV verilerini al ve doğrula
       const cvUpload = await this.validateCvUpload(userId, request.cvUploadId);
 
@@ -56,7 +72,6 @@ export class CoverLetterBasicService {
           positionTitle: request.positionTitle,
           companyName: request.companyName,
           jobDescription: request.jobDescription,
-          language: request.language,
           generationStatus: 'PENDING',
         },
       });
@@ -73,13 +88,18 @@ export class CoverLetterBasicService {
         generatedContent: '',
         positionTitle: coverLetter.positionTitle,
         companyName: coverLetter.companyName,
-        language: coverLetter.language,
+        language: 'TURKISH', // Default language 
         generationStatus: coverLetter.generationStatus,
         createdAt: coverLetter.createdAt,
         updatedAt: coverLetter.updatedAt,
       };
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.COVER_LETTER.GENERATION_FAILED, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.COVER_LETTER.GENERATION_FAILED,
+          error as Error
+        )
+      );
       throw error;
     }
   }
@@ -104,7 +124,7 @@ export class CoverLetterBasicService {
       generatedContent: coverLetter.generatedContent || '',
       positionTitle: coverLetter.positionTitle,
       companyName: coverLetter.companyName,
-      language: coverLetter.language,
+      language: 'TURKISH', // Default language
       generationStatus: coverLetter.generationStatus,
       createdAt: coverLetter.createdAt,
       updatedAt: coverLetter.updatedAt,
@@ -141,7 +161,7 @@ export class CoverLetterBasicService {
         updated.updatedContent || updated.generatedContent || '',
       positionTitle: updated.positionTitle,
       companyName: updated.companyName,
-      language: updated.language,
+      language: 'TURKISH', // Default language
       generationStatus: updated.generationStatus,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
@@ -149,24 +169,32 @@ export class CoverLetterBasicService {
   }
 
   async getUserCoverLetters(
-    userId: string
-  ): Promise<CoverLetterBasicResponse[]> {
+    userId: string,
+    userRole: string
+  ): Promise<{coverLetters: CoverLetterBasicResponse[], limitInfo: any}> {
     const coverLetters = await prisma.coverLetterBasic.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
 
-    return coverLetters.map((coverLetter) => ({
+    const limitInfo = UserLimitService.formatLimitInfo(userRole, coverLetters.length, 'coverLetters');
+
+    const formattedCoverLetters = coverLetters.map((coverLetter) => ({
       id: coverLetter.id,
       generatedContent:
         coverLetter.updatedContent || coverLetter.generatedContent || '',
       positionTitle: coverLetter.positionTitle,
       companyName: coverLetter.companyName,
-      language: coverLetter.language,
+      language: 'TURKISH', // Default language
       generationStatus: coverLetter.generationStatus,
       createdAt: coverLetter.createdAt,
       updatedAt: coverLetter.updatedAt,
     }));
+
+    return {
+      coverLetters: formattedCoverLetters,
+      limitInfo
+    };
   }
 
   async deleteCoverLetter(
@@ -232,10 +260,14 @@ export class CoverLetterBasicService {
         request.language
       );
 
-      let generatedContent = await generateCoverLetterWithClaude(coverLetterPrompt);
-      
+      let generatedContent =
+        await generateCoverLetterWithClaude(coverLetterPrompt);
+
       // Post-processing için human-like düzenlemeler
-      generatedContent = this.humanizeCoverLetter(generatedContent, request.language);
+      generatedContent = this.humanizeCoverLetter(
+        generatedContent,
+        request.language
+      );
 
       // Veritabanını güncelle
       await prisma.coverLetterBasic.update({
@@ -247,9 +279,18 @@ export class CoverLetterBasicService {
         },
       });
 
-      logger.info(formatMessage(SERVICE_MESSAGES.COVER_LETTER.GENERATION_SUCCESS), { coverLetterId });
+      logger.info(
+        formatMessage(SERVICE_MESSAGES.COVER_LETTER.GENERATION_SUCCESS),
+        { coverLetterId }
+      );
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.COVER_LETTER.GENERATION_FAILED, error as Error), { coverLetterId });
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.COVER_LETTER.GENERATION_FAILED,
+          error as Error
+        ),
+        { coverLetterId }
+      );
 
       // Hata durumunu kaydet
       await prisma.coverLetterBasic.update({
@@ -297,10 +338,10 @@ export class CoverLetterBasicService {
           'Klişe ifadelerden kaçın, kişisel ve özgün bir ton kullan',
           'Deneyimleri hikaye anlatır gibi aktarın, sadece listeleme',
           'Hafif coşku ve gerçek ilgi göster, robotik olmayan bir şekilde',
-          'Küçük grammar imperfection\'lar ekle - çok mükemmel olmasın',
-          'Kişinin karakterini yansıt, sadece deneyimleri değil'
+          "Küçük grammar imperfection'lar ekle - çok mükemmel olmasın",
+          'Kişinin karakterini yansıt, sadece deneyimleri değil',
         ],
-        finalPrompt: "Cover letter'ı oluşturun:"
+        finalPrompt: "Cover letter'ı oluşturun:",
       },
       ENGLISH: {
         sectionPersonal: 'PERSONAL INFORMATION:',
@@ -325,14 +366,14 @@ export class CoverLetterBasicService {
           'Use imperfect, human-like writing style - not too polished',
           'Mix short and long sentences for natural flow',
           'Avoid cliché phrases, be personal and authentic',
-          'Tell stories about experiences, don\'t just list them',
+          "Tell stories about experiences, don't just list them",
           'Show genuine enthusiasm and interest, not robotic professionalism',
-          'Include minor grammatical imperfections - don\'t be too perfect',
+          "Include minor grammatical imperfections - don't be too perfect",
           'Reflect personality and character, not just qualifications',
-          'Use conversational connectors like "Actually," "You know," occasionally'
+          'Use conversational connectors like "Actually," "You know," occasionally',
         ],
-        finalPrompt: 'Generate the cover letter:'
-      }
+        finalPrompt: 'Generate the cover letter:',
+      },
     };
 
     const config = languageConfig[language];
@@ -364,72 +405,132 @@ Write the cover letter now:
     `.trim();
   }
 
-  private humanizeCoverLetter(content: string, language: 'TURKISH' | 'ENGLISH'): string {
+  private humanizeCoverLetter(
+    content: string,
+    language: 'TURKISH' | 'ENGLISH'
+  ): string {
     let humanizedContent = content;
 
     if (language === 'TURKISH') {
       // Türkçe için humanization
       const turkishHumanizers = [
         // Çok formal ifadeleri daha doğal hale getir
-        { from: /Saygıdeğer/g, to: Math.random() > 0.5 ? 'Merhaba' : 'Saygılar' },
-        { from: /ile ilgili olarak/g, to: Math.random() > 0.5 ? 'hakkında' : 'konusunda' },
-        { from: /Bu nedenle/g, to: Math.random() > 0.3 ? 'Bu yüzden' : 'O yüzden' },
+        {
+          from: /Saygıdeğer/g,
+          to: Math.random() > 0.5 ? 'Merhaba' : 'Saygılar',
+        },
+        {
+          from: /ile ilgili olarak/g,
+          to: Math.random() > 0.5 ? 'hakkında' : 'konusunda',
+        },
+        {
+          from: /Bu nedenle/g,
+          to: Math.random() > 0.3 ? 'Bu yüzden' : 'O yüzden',
+        },
         { from: /büyük bir memnuniyet/g, to: 'çok mutluluk' },
-        
+
         // Bazı kelimelere varyasyon ekle
-        { from: /deneyimim/g, to: Math.random() > 0.4 ? 'tecrübem' : 'deneyimim' },
-        { from: /çalışmalarım/g, to: Math.random() > 0.4 ? 'projelerim' : 'çalışmalarım' },
-        { from: /başarıyla/g, to: Math.random() > 0.3 ? 'başarıyla' : 'iyi bir şekilde' },
+        {
+          from: /deneyimim/g,
+          to: Math.random() > 0.4 ? 'tecrübem' : 'deneyimim',
+        },
+        {
+          from: /çalışmalarım/g,
+          to: Math.random() > 0.4 ? 'projelerim' : 'çalışmalarım',
+        },
+        {
+          from: /başarıyla/g,
+          to: Math.random() > 0.3 ? 'başarıyla' : 'iyi bir şekilde',
+        },
       ];
 
-      turkishHumanizers.forEach(humanizer => {
-        humanizedContent = humanizedContent.replace(humanizer.from, humanizer.to.toString());
+      turkishHumanizers.forEach((humanizer) => {
+        humanizedContent = humanizedContent.replace(
+          humanizer.from,
+          humanizer.to.toString()
+        );
       });
 
       // Çok mükemmel noktalama işaretlerini biraz boz
       if (Math.random() > 0.7) {
         humanizedContent = humanizedContent.replace(/\.\s/g, '. ');
       }
-
     } else {
       // İngilizce için humanization
       const englishHumanizers = [
-        { from: /Dear Sir\/Madam/g, to: Math.random() > 0.5 ? 'Hello' : 'Hi there' },
-        { from: /I am writing to express/g, to: Math.random() > 0.4 ? 'I wanted to reach out' : 'I\'m writing because' },
-        { from: /I would be delighted/g, to: Math.random() > 0.5 ? 'I\'d love' : 'I would really like' },
+        {
+          from: /Dear Sir\/Madam/g,
+          to: Math.random() > 0.5 ? 'Hello' : 'Hi there',
+        },
+        {
+          from: /I am writing to express/g,
+          to:
+            Math.random() > 0.4
+              ? 'I wanted to reach out'
+              : "I'm writing because",
+        },
+        {
+          from: /I would be delighted/g,
+          to: Math.random() > 0.5 ? "I'd love" : 'I would really like',
+        },
         { from: /utilize/g, to: Math.random() > 0.6 ? 'use' : 'utilize' },
-        { from: /facilitate/g, to: Math.random() > 0.6 ? 'help' : 'facilitate' },
-        
+        {
+          from: /facilitate/g,
+          to: Math.random() > 0.6 ? 'help' : 'facilitate',
+        },
+
         // Çok formal kelimeleri basitleştir
         { from: /Furthermore/g, to: Math.random() > 0.4 ? 'Also' : 'Plus' },
-        { from: /Subsequently/g, to: Math.random() > 0.5 ? 'Then' : 'After that' },
+        {
+          from: /Subsequently/g,
+          to: Math.random() > 0.5 ? 'Then' : 'After that',
+        },
         { from: /Nevertheless/g, to: Math.random() > 0.5 ? 'However' : 'But' },
       ];
 
-      englishHumanizers.forEach(humanizer => {
-        humanizedContent = humanizedContent.replace(humanizer.from, humanizer.to.toString());
+      englishHumanizers.forEach((humanizer) => {
+        humanizedContent = humanizedContent.replace(
+          humanizer.from,
+          humanizer.to.toString()
+        );
       });
     }
 
     // Genel humanization - dil bağımsız
     // Çok uzun paragrafları böl
-    humanizedContent = humanizedContent.replace(/([.!?])\s*([A-Z][^.!?]{100,})/g, (match, punct, sentence) => {
-      if (Math.random() > 0.6) {
-        const midPoint = Math.floor(sentence.length / 2);
-        const breakPoint = sentence.indexOf(' ', midPoint);
-        if (breakPoint > 0) {
-          return punct + '\n\n' + sentence.substring(0, breakPoint) + '.' + sentence.substring(breakPoint);
+    humanizedContent = humanizedContent.replace(
+      /([.!?])\s*([A-Z][^.!?]{100,})/g,
+      (match, punct, sentence) => {
+        if (Math.random() > 0.6) {
+          const midPoint = Math.floor(sentence.length / 2);
+          const breakPoint = sentence.indexOf(' ', midPoint);
+          if (breakPoint > 0) {
+            return (
+              punct +
+              '\n\n' +
+              sentence.substring(0, breakPoint) +
+              '.' +
+              sentence.substring(breakPoint)
+            );
+          }
         }
+        return match;
       }
-      return match;
-    });
+    );
 
     // Ara sıra küçük typing "hataları" ekle (çok nadir)
     if (Math.random() > 0.85) {
-      const commonTypos = language === 'TURKISH' 
-        ? [{ from: 'çalışma', to: 'calışma' }, { from: 'olarak', to: 'olarakk' }]
-        : [{ from: 'experience', to: 'experiance' }, { from: 'definitely', to: 'definately' }];
-      
+      const commonTypos =
+        language === 'TURKISH'
+          ? [
+              { from: 'çalışma', to: 'calışma' },
+              { from: 'olarak', to: 'olarakk' },
+            ]
+          : [
+              { from: 'experience', to: 'experiance' },
+              { from: 'definitely', to: 'definately' },
+            ];
+
       const typo = commonTypos[Math.floor(Math.random() * commonTypos.length)];
       if (humanizedContent.includes(typo.from) && Math.random() > 0.9) {
         humanizedContent = humanizedContent.replace(typo.from, typo.to);

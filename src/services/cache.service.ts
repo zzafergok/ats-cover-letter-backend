@@ -16,7 +16,9 @@ export class CacheService {
     try {
       return await cacheService.get(key);
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.GET_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CACHE.GET_ERROR, error as Error)
+      );
       return null;
     }
   }
@@ -25,7 +27,9 @@ export class CacheService {
     try {
       await cacheService.set(key, value, ttl);
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.SET_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CACHE.SET_ERROR, error as Error)
+      );
     }
   }
 
@@ -33,7 +37,9 @@ export class CacheService {
     try {
       await cacheService.del(key);
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.DELETE_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CACHE.DELETE_ERROR, error as Error)
+      );
     }
   }
 
@@ -41,7 +47,9 @@ export class CacheService {
     try {
       await cacheService.flush();
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.FLUSH_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CACHE.FLUSH_ERROR, error as Error)
+      );
     }
   }
 
@@ -49,7 +57,9 @@ export class CacheService {
     try {
       return await cacheService.exists(key);
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CACHE.EXISTS_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CACHE.EXISTS_ERROR, error as Error)
+      );
       return false;
     }
   }

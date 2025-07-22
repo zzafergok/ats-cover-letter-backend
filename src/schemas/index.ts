@@ -61,7 +61,9 @@ export const refreshTokenSchema = z.object({
 
 export const resetPasswordSchema = z
   .object({
-    token: z.string().min(1, SERVICE_MESSAGES.SCHEMA.RESET_TOKEN_REQUIRED.message),
+    token: z
+      .string()
+      .min(1, SERVICE_MESSAGES.SCHEMA.RESET_TOKEN_REQUIRED.message),
     newPassword: z
       .string()
       .min(8, SERVICE_MESSAGES.SCHEMA.NEW_PASSWORD_MIN_LENGTH.message)
@@ -70,7 +72,9 @@ export const resetPasswordSchema = z
         /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
         SERVICE_MESSAGES.SCHEMA.NEW_PASSWORD_PATTERN.message
       ),
-    confirmPassword: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CONFIRM_PASSWORD_REQUIRED.message),
+    confirmPassword: z
+      .string()
+      .min(1, SERVICE_MESSAGES.SCHEMA.CONFIRM_PASSWORD_REQUIRED.message),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: SERVICE_MESSAGES.SCHEMA.PASSWORD_MISMATCH.message,
@@ -78,7 +82,9 @@ export const resetPasswordSchema = z
   });
 
 export const verifyEmailSchema = z.object({
-  token: z.string().min(1, SERVICE_MESSAGES.SCHEMA.EMAIL_VERIFICATION_TOKEN_REQUIRED.message),
+  token: z
+    .string()
+    .min(1, SERVICE_MESSAGES.SCHEMA.EMAIL_VERIFICATION_TOKEN_REQUIRED.message),
 });
 
 export const resendEmailVerificationSchema = z.object({
@@ -99,7 +105,9 @@ export const updateUserProfileSchema = z.object({
 
 export const changePasswordSchema = z
   .object({
-    currentPassword: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CURRENT_PASSWORD_REQUIRED.message),
+    currentPassword: z
+      .string()
+      .min(1, SERVICE_MESSAGES.SCHEMA.CURRENT_PASSWORD_REQUIRED.message),
     newPassword: z
       .string()
       .min(8, SERVICE_MESSAGES.SCHEMA.NEW_PASSWORD_MIN_LENGTH.message)
@@ -108,7 +116,9 @@ export const changePasswordSchema = z
         /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
         SERVICE_MESSAGES.SCHEMA.NEW_PASSWORD_PATTERN.message
       ),
-    confirmPassword: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CONFIRM_PASSWORD_REQUIRED.message),
+    confirmPassword: z
+      .string()
+      .min(1, SERVICE_MESSAGES.SCHEMA.CONFIRM_PASSWORD_REQUIRED.message),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: SERVICE_MESSAGES.SCHEMA.PASSWORD_MISMATCH.message,
@@ -146,16 +156,24 @@ export const contactMessageSchema = z.object({
 // Cover letter schemas
 export const generateCoverLetterSchema = z.object({
   personalInfo: z.object({
-    fullName: z.string().min(1, SERVICE_MESSAGES.SCHEMA.FULL_NAME_REQUIRED.message),
-    email: z.string().email(SERVICE_MESSAGES.SCHEMA.VALID_EMAIL_REQUIRED.message),
+    fullName: z
+      .string()
+      .min(1, SERVICE_MESSAGES.SCHEMA.FULL_NAME_REQUIRED.message),
+    email: z
+      .string()
+      .email(SERVICE_MESSAGES.SCHEMA.VALID_EMAIL_REQUIRED.message),
     phone: z.string().min(1, SERVICE_MESSAGES.SCHEMA.PHONE_REQUIRED.message),
     city: z.string().optional(),
     state: z.string().optional(),
     linkedin: z.string().optional(),
   }),
   jobInfo: z.object({
-    positionTitle: z.string().min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
-    companyName: z.string().min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
+    positionTitle: z
+      .string()
+      .min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
+    companyName: z
+      .string()
+      .min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
     department: z.string().optional(),
     hiringManagerName: z.string().optional(),
     jobDescription: z.string().optional(),
@@ -163,9 +181,15 @@ export const generateCoverLetterSchema = z.object({
   }),
   experience: z.object({
     currentPosition: z.string().optional(),
-    yearsOfExperience: z.number().min(0, SERVICE_MESSAGES.SCHEMA.YEARS_EXPERIENCE_MIN.message),
-    relevantSkills: z.array(z.string()).min(1, SERVICE_MESSAGES.SCHEMA.SKILLS_REQUIRED.message),
-    achievements: z.array(z.string()).min(1, SERVICE_MESSAGES.SCHEMA.ACHIEVEMENTS_REQUIRED.message),
+    yearsOfExperience: z
+      .number()
+      .min(0, SERVICE_MESSAGES.SCHEMA.YEARS_EXPERIENCE_MIN.message),
+    relevantSkills: z
+      .array(z.string())
+      .min(1, SERVICE_MESSAGES.SCHEMA.SKILLS_REQUIRED.message),
+    achievements: z
+      .array(z.string())
+      .min(1, SERVICE_MESSAGES.SCHEMA.ACHIEVEMENTS_REQUIRED.message),
     previousCompanies: z.array(z.string()).optional(),
   }),
   coverLetterType: z.enum([
@@ -193,8 +217,12 @@ export const saveCoverLetterSchema = z.object({
     'TECHNICAL',
     'ENTRY_LEVEL',
   ]),
-  positionTitle: z.string().min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
-  companyName: z.string().min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
+  positionTitle: z
+    .string()
+    .min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
+  companyName: z
+    .string()
+    .min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
   category: z
     .enum([
       'SOFTWARE_DEVELOPER',
@@ -225,21 +253,35 @@ export const saveCoverLetterSchema = z.object({
 });
 
 export const analyzeCoverLetterSchema = z.object({
-  content: z.string().min(1, SERVICE_MESSAGES.SCHEMA.COVER_LETTER_CONTENT_REQUIRED.message),
+  content: z
+    .string()
+    .min(1, SERVICE_MESSAGES.SCHEMA.COVER_LETTER_CONTENT_REQUIRED.message),
 });
 
 export const generateMinimalCoverLetterSchema = z.object({
-  positionTitle: z.string().min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
-  companyName: z.string().min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
+  positionTitle: z
+    .string()
+    .min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
+  companyName: z
+    .string()
+    .min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
   motivation: z.string().optional(),
 });
 
 // Cover letter basic schemas
 export const createCoverLetterSchema = z.object({
-  cvUploadId: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CV_UPLOAD_ID_REQUIRED.message),
-  positionTitle: z.string().min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
-  companyName: z.string().min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
-  jobDescription: z.string().min(10, SERVICE_MESSAGES.SCHEMA.JOB_DESCRIPTION_MIN.message),
+  cvUploadId: z
+    .string()
+    .min(1, SERVICE_MESSAGES.SCHEMA.CV_UPLOAD_ID_REQUIRED.message),
+  positionTitle: z
+    .string()
+    .min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
+  companyName: z
+    .string()
+    .min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
+  jobDescription: z
+    .string()
+    .min(10, SERVICE_MESSAGES.SCHEMA.JOB_DESCRIPTION_MIN.message),
   language: z
     .enum(['TURKISH', 'ENGLISH'], {
       errorMap: () => ({
@@ -257,8 +299,12 @@ export const updateCoverLetterSchema = z.object({
 
 // CV schemas
 export const createCvSchema = z.object({
-  positionTitle: z.string().min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
-  companyName: z.string().min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
+  positionTitle: z
+    .string()
+    .min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
+  companyName: z
+    .string()
+    .min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
   cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']),
   jobDescription: z.string().optional(),
   additionalRequirements: z.string().optional(),
@@ -267,6 +313,8 @@ export const createCvSchema = z.object({
 
 export const saveCvSchema = z.object({
   title: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CV_TITLE_REQUIRED.message),
-  content: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CV_CONTENT_REQUIRED.message),
+  content: z
+    .string()
+    .min(1, SERVICE_MESSAGES.SCHEMA.CV_CONTENT_REQUIRED.message),
   cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']),
 });

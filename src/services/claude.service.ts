@@ -1,7 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 import logger from '../config/logger';
-import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
+import {
+  SERVICE_MESSAGES,
+  formatMessage,
+  createErrorMessage,
+} from '../constants/messages';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -150,7 +154,9 @@ export async function generateCvWithClaude(
 
     return response.content[0].type === 'text' ? response.content[0].text : '';
   } catch (error: any) {
-    logger.error(createErrorMessage(SERVICE_MESSAGES.AI.API_ERROR, error as Error));
+    logger.error(
+      createErrorMessage(SERVICE_MESSAGES.AI.API_ERROR, error as Error)
+    );
 
     if (error.status === 401 || error.message?.includes('authentication')) {
       throw new Error(formatMessage(SERVICE_MESSAGES.AI.API_KEY_INVALID));
@@ -166,7 +172,9 @@ export async function generateCvWithClaude(
   }
 }
 
-export async function generateCoverLetterWithClaude(prompt: string): Promise<string> {
+export async function generateCoverLetterWithClaude(
+  prompt: string
+): Promise<string> {
   if (!process.env.ANTHROPIC_API_KEY) {
     throw new Error(formatMessage(SERVICE_MESSAGES.AI.API_KEY_MISSING));
   }
@@ -185,7 +193,9 @@ export async function generateCoverLetterWithClaude(prompt: string): Promise<str
 
     return response.content[0].type === 'text' ? response.content[0].text : '';
   } catch (error: any) {
-    logger.error(createErrorMessage(SERVICE_MESSAGES.AI.API_ERROR, error as Error));
+    logger.error(
+      createErrorMessage(SERVICE_MESSAGES.AI.API_ERROR, error as Error)
+    );
 
     if (error.status === 401 || error.message?.includes('authentication')) {
       throw new Error(formatMessage(SERVICE_MESSAGES.AI.API_KEY_INVALID));
@@ -197,6 +207,8 @@ export async function generateCoverLetterWithClaude(prompt: string): Promise<str
       );
     }
 
-    throw new Error(formatMessage(SERVICE_MESSAGES.AI.COVER_LETTER_GENERATION_FAILED));
+    throw new Error(
+      formatMessage(SERVICE_MESSAGES.AI.COVER_LETTER_GENERATION_FAILED)
+    );
   }
 }

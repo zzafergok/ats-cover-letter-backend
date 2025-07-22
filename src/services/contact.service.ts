@@ -78,7 +78,7 @@ export class ContactService {
 
         throw new Error(
           createDynamicMessage(SERVICE_MESSAGES.CONTACT.DAILY_LIMIT_EXCEEDED, {
-            resetTime: formattedResetTime
+            resetTime: formattedResetTime,
           }) + `. Limit ${formattedResetTime} saatinde sıfırlanacak.`
         );
       }

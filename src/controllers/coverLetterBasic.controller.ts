@@ -16,18 +16,23 @@ export class CoverLetterBasicController {
   private coverLetterService = CoverLetterBasicService.getInstance();
   private pdfService = PdfService.getInstance();
 
-  public createCoverLetter = async (req: Request, res: Response): Promise<void> => {
+  public createCoverLetter = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const validatedData = createCoverLetterSchema.parse(req.body);
 
       const coverLetter = await this.coverLetterService.createCoverLetter(
         req.user!.userId,
+        req.user!.role,
         validatedData
       );
 
       res.status(201).json({
         success: true,
-        message: SERVICE_MESSAGES.RESPONSE.COVER_LETTER_CREATION_STARTED.message,
+        message:
+          SERVICE_MESSAGES.RESPONSE.COVER_LETTER_CREATION_STARTED.message,
         data: coverLetter,
       });
     } catch (error) {
@@ -61,7 +66,10 @@ export class CoverLetterBasicController {
     }
   };
 
-  public getCoverLetter = async (req: Request, res: Response): Promise<void> => {
+  public getCoverLetter = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
 
@@ -83,7 +91,10 @@ export class CoverLetterBasicController {
         data: coverLetter,
       });
     } catch (error) {
-      logger.error(SERVICE_MESSAGES.LOGGER.COVER_LETTER_GET_ERROR.message, error);
+      logger.error(
+        SERVICE_MESSAGES.LOGGER.COVER_LETTER_GET_ERROR.message,
+        error
+      );
       res.status(500).json({
         success: false,
         message: SERVICE_MESSAGES.RESPONSE.COVER_LETTER_INFO_ERROR.message,
@@ -91,16 +102,20 @@ export class CoverLetterBasicController {
     }
   };
 
-  public updateCoverLetter = async (req: Request, res: Response): Promise<void> => {
+  public updateCoverLetter = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
       const { updatedContent } = updateCoverLetterSchema.parse(req.body);
 
-      const updatedCoverLetter = await this.coverLetterService.updateCoverLetter(
-        req.user!.userId,
-        id,
-        updatedContent
-      );
+      const updatedCoverLetter =
+        await this.coverLetterService.updateCoverLetter(
+          req.user!.userId,
+          id,
+          updatedContent
+        );
 
       res.json({
         success: true,
@@ -120,7 +135,10 @@ export class CoverLetterBasicController {
         return;
       }
 
-      logger.error(SERVICE_MESSAGES.LOGGER.COVER_LETTER_UPDATE_ERROR.message, error);
+      logger.error(
+        SERVICE_MESSAGES.LOGGER.COVER_LETTER_UPDATE_ERROR.message,
+        error
+      );
 
       const errorMessage =
         error instanceof Error
@@ -133,18 +151,26 @@ export class CoverLetterBasicController {
     }
   };
 
-  public getUserCoverLetters = async (req: Request, res: Response): Promise<void> => {
+  public getUserCoverLetters = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
-      const coverLetters = await this.coverLetterService.getUserCoverLetters(
-        req.user!.userId
+      const result = await this.coverLetterService.getUserCoverLetters(
+        req.user!.userId,
+        req.user!.role
       );
 
       res.json({
         success: true,
-        data: coverLetters,
+        data: result.coverLetters,
+        limitInfo: result.limitInfo,
       });
     } catch (error) {
-      logger.error(SERVICE_MESSAGES.LOGGER.COVER_LETTER_LIST_ERROR.message, error);
+      logger.error(
+        SERVICE_MESSAGES.LOGGER.COVER_LETTER_LIST_ERROR.message,
+        error
+      );
       res.status(500).json({
         success: false,
         message: SERVICE_MESSAGES.RESPONSE.COVER_LETTER_LIST_ERROR.message,
@@ -152,7 +178,10 @@ export class CoverLetterBasicController {
     }
   };
 
-  public deleteCoverLetter = async (req: Request, res: Response): Promise<void> => {
+  public deleteCoverLetter = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
 
@@ -207,11 +236,12 @@ export class CoverLetterBasicController {
       }
 
       // PDF oluştur
-      const pdfBuffer = await this.pdfService.generateCoverLetterPdfWithCustomFormat(
-        coverLetter.generatedContent,
-        coverLetter.positionTitle,
-        coverLetter.companyName
-      );
+      const pdfBuffer =
+        await this.pdfService.generateCoverLetterPdfWithCustomFormat(
+          coverLetter.generatedContent,
+          coverLetter.positionTitle,
+          coverLetter.companyName
+        );
 
       // PDF dosya adı oluştur
       const sanitizedCompany = coverLetter.companyName
@@ -224,7 +254,10 @@ export class CoverLetterBasicController {
 
       // HTTP headers ayarla
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${fileName}"`
+      );
       res.setHeader('Content-Length', pdfBuffer.length);
 
       res.send(pdfBuffer);

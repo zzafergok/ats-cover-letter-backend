@@ -1,7 +1,11 @@
 import jsPDF from 'jspdf';
 import logger from '../config/logger';
 import { TurkeyTime } from '../utils/timezone';
-import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
+import {
+  SERVICE_MESSAGES,
+  formatMessage,
+  createErrorMessage,
+} from '../constants/messages';
 
 export class PdfService {
   private static instance: PdfService;
@@ -28,7 +32,7 @@ export class PdfService {
       // Başlık ayarları
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      
+
       // Sayfa başlığı
       const title = `${companyName} - ${positionTitle} Pozisyonu İçin Başvuru Mektubu`;
       const titleLines = doc.splitTextToSize(title, 170);
@@ -45,7 +49,7 @@ export class PdfService {
       doc.setFont('helvetica', 'normal');
 
       // Cover letter içeriğini paragraf paragraf işle
-      const paragraphs = content.split('\n').filter(p => p.trim().length > 0);
+      const paragraphs = content.split('\n').filter((p) => p.trim().length > 0);
       let yPosition = 55;
       const lineHeight = 6;
       const pageHeight = doc.internal.pageSize.height;
@@ -55,9 +59,9 @@ export class PdfService {
       paragraphs.forEach((paragraph) => {
         // Paragrafı satırlara böl
         const lines = doc.splitTextToSize(paragraph.trim(), maxWidth);
-        
+
         // Sayfa sonu kontrolü
-        if (yPosition + (lines.length * lineHeight) > pageHeight - margin) {
+        if (yPosition + lines.length * lineHeight > pageHeight - margin) {
           doc.addPage();
           yPosition = 25;
         }
@@ -74,17 +78,22 @@ export class PdfService {
 
       // PDF'yi buffer olarak döndür
       const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
-      
+
       logger.info(formatMessage(SERVICE_MESSAGES.PDF.GENERATION_SUCCESS), {
         positionTitle,
         companyName,
         contentLength: content.length,
-        pdfSize: pdfBuffer.length
+        pdfSize: pdfBuffer.length,
       });
 
       return pdfBuffer;
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.PDF.GENERATION_FAILED, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.PDF.GENERATION_FAILED,
+          error as Error
+        )
+      );
       throw new Error(formatMessage(SERVICE_MESSAGES.PDF.GENERATION_FAILED));
     }
   }
@@ -106,7 +115,7 @@ export class PdfService {
       const leftMargin = 25;
       const topMargin = 30;
       const pageWidth = doc.internal.pageSize.width;
-      const contentWidth = pageWidth - (leftMargin * 2);
+      const contentWidth = pageWidth - leftMargin * 2;
 
       let yPosition = topMargin;
 
@@ -143,16 +152,16 @@ export class PdfService {
       doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
 
-      const paragraphs = content.split('\n').filter(p => p.trim().length > 0);
+      const paragraphs = content.split('\n').filter((p) => p.trim().length > 0);
       const lineHeight = 5.5;
       const pageHeight = doc.internal.pageSize.height;
       const bottomMargin = 25;
 
       paragraphs.forEach((paragraph, index) => {
         const lines = doc.splitTextToSize(paragraph.trim(), contentWidth);
-        
+
         // Sayfa sonu kontrolü
-        if (yPosition + (lines.length * lineHeight) > pageHeight - bottomMargin) {
+        if (yPosition + lines.length * lineHeight > pageHeight - bottomMargin) {
           doc.addPage();
           yPosition = topMargin;
         }
@@ -175,7 +184,7 @@ export class PdfService {
         doc.addPage();
         yPosition = topMargin;
       }
-      
+
       doc.text('Saygılarımla,', leftMargin, yPosition);
       if (applicantName) {
         yPosition += 15;
@@ -184,17 +193,22 @@ export class PdfService {
       }
 
       const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
-      
+
       logger.info(formatMessage(SERVICE_MESSAGES.PDF.CUSTOM_FORMAT_SUCCESS), {
         positionTitle,
         companyName,
         applicantName,
-        pdfSize: pdfBuffer.length
+        pdfSize: pdfBuffer.length,
       });
 
       return pdfBuffer;
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.PDF.GENERATION_FAILED, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.PDF.GENERATION_FAILED,
+          error as Error
+        )
+      );
       throw new Error(formatMessage(SERVICE_MESSAGES.PDF.GENERATION_FAILED));
     }
   }

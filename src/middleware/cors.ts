@@ -16,7 +16,11 @@ const corsOptions: cors.CorsOptions = {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error(`${formatMessage(SERVICE_MESSAGES.CORS.ORIGIN_NOT_ALLOWED)}: ${origin}`));
+      callback(
+        new Error(
+          `${formatMessage(SERVICE_MESSAGES.CORS.ORIGIN_NOT_ALLOWED)}: ${origin}`
+        )
+      );
     }
   },
   credentials: true,

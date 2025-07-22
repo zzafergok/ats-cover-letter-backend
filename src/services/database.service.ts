@@ -43,9 +43,7 @@ export class DatabaseService {
 
   public getClient(): PrismaClient {
     if (!this.prisma) {
-      throw new Error(
-        SERVICE_MESSAGES.DATABASE.CLIENT_CREATION_FAILED.message
-      );
+      throw new Error(SERVICE_MESSAGES.DATABASE.CLIENT_CREATION_FAILED.message);
     }
     return this.prisma;
   }
@@ -63,9 +61,7 @@ export class DatabaseService {
   public async connect(): Promise<void> {
     try {
       if (!process.env.DATABASE_URL) {
-        throw new Error(
-          SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
-        );
+        throw new Error(SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message);
       }
 
       await this.prisma.$connect();
@@ -82,69 +78,47 @@ export class DatabaseService {
       if (typeof error === 'object' && error !== null && 'code' in error) {
         const errorCode = (error as { code: string }).code;
         if (errorCode === 'P1001') {
-          throw new Error(
-            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
-          );
+          throw new Error(SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message);
         }
 
         if (errorCode === 'P1002') {
-          throw new Error(
-            SERVICE_MESSAGES.ERROR.TIMEOUT_ERROR.message
-          );
+          throw new Error(SERVICE_MESSAGES.ERROR.TIMEOUT_ERROR.message);
         }
 
         if (errorCode === 'P1003') {
-          throw new Error(
-            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
-          );
+          throw new Error(SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message);
         }
 
         if (errorCode === 'P1008') {
-          throw new Error(
-            SERVICE_MESSAGES.ERROR.TIMEOUT_ERROR.message
-          );
+          throw new Error(SERVICE_MESSAGES.ERROR.TIMEOUT_ERROR.message);
         }
 
         if (errorCode === 'P1009') {
-          throw new Error(
-            SERVICE_MESSAGES.ERROR.DATA_CONFLICT.message
-          );
+          throw new Error(SERVICE_MESSAGES.ERROR.DATA_CONFLICT.message);
         }
 
         if (errorCode === 'P1010') {
-          throw new Error(
-            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
-          );
+          throw new Error(SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message);
         }
 
         if (errorCode === 'P1011') {
-          throw new Error(
-            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
-          );
+          throw new Error(SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message);
         }
 
         if (errorCode === 'P1012') {
-          throw new Error(
-            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
-          );
+          throw new Error(SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message);
         }
 
         if (errorCode === 'P1013') {
-          throw new Error(
-            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
-          );
+          throw new Error(SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message);
         }
 
         if (errorCode === 'P1014') {
-          throw new Error(
-            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
-          );
+          throw new Error(SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message);
         }
 
         if (errorCode === 'P1015') {
-          throw new Error(
-            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
-          );
+          throw new Error(SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message);
         }
       }
 
@@ -219,9 +193,7 @@ export class DatabaseService {
       return result.count;
     } catch (error) {
       logger.error('DB_024: Unverified user cleanup error:', error);
-      throw new Error(
-        SERVICE_MESSAGES.DATABASE.USER_CLEANUP_FAILED.message
-      );
+      throw new Error(SERVICE_MESSAGES.DATABASE.USER_CLEANUP_FAILED.message);
     }
   }
 

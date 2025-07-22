@@ -35,7 +35,12 @@ export class SessionService {
 
       return sessionId;
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.SESSION.CREATION_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.SESSION.CREATION_ERROR,
+          error as Error
+        )
+      );
       throw error;
     }
   }
@@ -45,7 +50,9 @@ export class SessionService {
       const sessionKey = `session:${sessionId}`;
       return await cacheService.get(sessionKey);
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.SESSION.GET_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.SESSION.GET_ERROR, error as Error)
+      );
       return null;
     }
   }
@@ -70,7 +77,12 @@ export class SessionService {
 
       await cacheService.del(sessionKey);
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.SESSION.DELETE_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.SESSION.DELETE_ERROR,
+          error as Error
+        )
+      );
     }
   }
 
@@ -85,7 +97,12 @@ export class SessionService {
 
       await cacheService.del(sessionsKey);
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.SESSION.DELETE_ALL_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.SESSION.DELETE_ALL_ERROR,
+          error as Error
+        )
+      );
     }
   }
 
@@ -97,7 +114,12 @@ export class SessionService {
         await cacheService.set(sessionKey, sessionData, this.sessionTTL);
       }
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.SESSION.EXTEND_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.SESSION.EXTEND_ERROR,
+          error as Error
+        )
+      );
     }
   }
 }

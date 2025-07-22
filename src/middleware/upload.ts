@@ -3,7 +3,11 @@ import path from 'path';
 import multer from 'multer';
 
 import logger from '../config/logger';
-import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
+import {
+  formatMessage,
+  SERVICE_MESSAGES,
+  createErrorMessage,
+} from '../constants/messages';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -22,11 +26,15 @@ const storage = multer.diskStorage({
   },
 });
 
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (
+  req: any,
+  file: any,
+  cb: multer.FileFilterCallback
+) => {
   logger.info('File filter check', {
     name: file.originalname,
     mime: file.mimetype,
-    size: file.size
+    size: file.size,
   });
 
   const allowedExtensions = /\.(pdf|doc|docx)$/i;
@@ -45,7 +53,9 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
     const error = new Error(
       `${formatMessage(SERVICE_MESSAGES.FILE.UNSUPPORTED_FORMAT)}. Dosya: ${file.originalname}, MIME: ${file.mimetype}`
     );
-    logger.error(createErrorMessage(SERVICE_MESSAGES.FILE.UNSUPPORTED_FORMAT, error));
+    logger.error(
+      createErrorMessage(SERVICE_MESSAGES.FILE.UNSUPPORTED_FORMAT, error)
+    );
     cb(error);
   }
 };

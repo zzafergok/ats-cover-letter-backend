@@ -30,30 +30,21 @@ export const errorHandler = (err: any, req: Request, res: Response): void => {
   // Prisma unique constraint violation
   if (err.code === 'P2002') {
     res.status(409);
-    sendServerError(
-      res,
-      SERVICE_MESSAGES.ERROR.DATA_CONFLICT.message
-    );
+    sendServerError(res, SERVICE_MESSAGES.ERROR.DATA_CONFLICT.message);
     return;
   }
 
   // Prisma foreign key constraint violation
   if (err.code === 'P2003') {
     res.status(400);
-    sendServerError(
-      res,
-      SERVICE_MESSAGES.ERROR.RELATIONSHIP_ERROR.message
-    );
+    sendServerError(res, SERVICE_MESSAGES.ERROR.RELATIONSHIP_ERROR.message);
     return;
   }
 
   // Prisma record not found
   if (err.code === 'P2025') {
     res.status(404);
-    sendServerError(
-      res,
-      SERVICE_MESSAGES.ERROR.RECORD_NOT_FOUND.message
-    );
+    sendServerError(res, SERVICE_MESSAGES.ERROR.RECORD_NOT_FOUND.message);
     return;
   }
 
@@ -70,20 +61,14 @@ export const errorHandler = (err: any, req: Request, res: Response): void => {
   // Prisma timeout
   if (err.code === 'P1008') {
     res.status(504);
-    sendServerError(
-      res,
-      SERVICE_MESSAGES.ERROR.TIMEOUT_ERROR.message
-    );
+    sendServerError(res, SERVICE_MESSAGES.ERROR.TIMEOUT_ERROR.message);
     return;
   }
 
   // JWT token errors
   if (err.name === 'JsonWebTokenError') {
     res.status(401);
-    sendServerError(
-      res,
-      SERVICE_MESSAGES.ERROR.JWT_TOKEN_INVALID.message
-    );
+    sendServerError(res, SERVICE_MESSAGES.ERROR.JWT_TOKEN_INVALID.message);
     return;
   }
 
@@ -96,38 +81,33 @@ export const errorHandler = (err: any, req: Request, res: Response): void => {
   // Validation errors
   if (err.name === 'ValidationError') {
     res.status(400);
-    sendServerError(
-      res,
-      SERVICE_MESSAGES.ERROR.VALIDATION_ERROR.message
-    );
+    sendServerError(res, SERVICE_MESSAGES.ERROR.VALIDATION_ERROR.message);
     return;
   }
 
   // Zod validation errors
   if (err.name === 'ZodError') {
     const errorMessage =
-      err.errors?.map((e: any) => e.message).join(', ') || SERVICE_MESSAGES.ERROR.ZOD_VALIDATION_DEFAULT.message;
+      err.errors?.map((e: any) => e.message).join(', ') ||
+      SERVICE_MESSAGES.ERROR.ZOD_VALIDATION_DEFAULT.message;
     res.status(400);
-    sendServerError(res, `${SERVICE_MESSAGES.ERROR.ZOD_VALIDATION_FAILED.code}: ${SERVICE_MESSAGES.ERROR.ZOD_VALIDATION_FAILED.message} - ${errorMessage}`);
+    sendServerError(
+      res,
+      `${SERVICE_MESSAGES.ERROR.ZOD_VALIDATION_FAILED.code}: ${SERVICE_MESSAGES.ERROR.ZOD_VALIDATION_FAILED.message} - ${errorMessage}`
+    );
     return;
   }
 
   // Multer file upload errors
   if (err.code === 'LIMIT_FILE_SIZE') {
     res.status(413);
-    sendServerError(
-      res,
-      SERVICE_MESSAGES.ERROR.FILE_SIZE_LIMIT.message
-    );
+    sendServerError(res, SERVICE_MESSAGES.ERROR.FILE_SIZE_LIMIT.message);
     return;
   }
 
   if (err.code === 'LIMIT_FILE_COUNT') {
     res.status(413);
-    sendServerError(
-      res,
-      SERVICE_MESSAGES.ERROR.FILE_COUNT_LIMIT.message
-    );
+    sendServerError(res, SERVICE_MESSAGES.ERROR.FILE_COUNT_LIMIT.message);
     return;
   }
 
@@ -141,10 +121,7 @@ export const errorHandler = (err: any, req: Request, res: Response): void => {
   // Rate limiting
   if (err.status === 429) {
     res.status(429);
-    sendServerError(
-      res,
-      SERVICE_MESSAGES.ERROR.RATE_LIMIT_EXCEEDED.message
-    );
+    sendServerError(res, SERVICE_MESSAGES.ERROR.RATE_LIMIT_EXCEEDED.message);
     return;
   }
 
@@ -167,10 +144,7 @@ export const errorHandler = (err: any, req: Request, res: Response): void => {
 
   // Default error
   res.status(500);
-  sendServerError(
-    res,
-    SERVICE_MESSAGES.ERROR.UNEXPECTED_ERROR.message
-  );
+  sendServerError(res, SERVICE_MESSAGES.ERROR.UNEXPECTED_ERROR.message);
 
   // Email verification errors
   if (err.code === 'P2002' && err.meta?.target?.includes('emailVerifyToken')) {
@@ -185,29 +159,20 @@ export const errorHandler = (err: any, req: Request, res: Response): void => {
   // Email service errors
   if (err.message?.startsWith('EMAIL_')) {
     res.status(503);
-    sendServerError(
-      res,
-      SERVICE_MESSAGES.ERROR.EMAIL_SERVICE_ERROR.message
-    );
+    sendServerError(res, SERVICE_MESSAGES.ERROR.EMAIL_SERVICE_ERROR.message);
     return;
   }
 
   // JWT email verification errors
   if (err.message?.startsWith('JWT_S01')) {
     res.status(400);
-    sendServerError(
-      res,
-      SERVICE_MESSAGES.ERROR.EMAIL_TOKEN_ERROR.message
-    );
+    sendServerError(res, SERVICE_MESSAGES.ERROR.EMAIL_TOKEN_ERROR.message);
     return;
   }
 
   if (err.message?.startsWith('AUTH_039')) {
     res.status(503);
-    sendServerError(
-      res,
-      SERVICE_MESSAGES.ERROR.EMAIL_SERVICE_ERROR.message
-    );
+    sendServerError(res, SERVICE_MESSAGES.ERROR.EMAIL_SERVICE_ERROR.message);
     return;
   }
 };

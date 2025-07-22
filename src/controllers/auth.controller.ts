@@ -50,11 +50,7 @@ export class AuthController {
 
       if (!isValidEmail || !isValidPassword) {
         logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_FORMAT_ERROR.message);
-        sendError(
-          res,
-          SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message,
-          400
-        );
+        sendError(res, SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message, 400);
         return;
       }
 
@@ -62,8 +58,15 @@ export class AuthController {
 
       const existingUser = await db.user.findUnique({ where: { email } });
       if (existingUser) {
-        logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_DUPLICATE_EMAIL.message, email);
-        sendError(res, SERVICE_MESSAGES.AUTH.TOKEN_VERIFICATION_FAILED.message, 400);
+        logger.info(
+          SERVICE_MESSAGES.AUTH_EXT.REGISTER_DUPLICATE_EMAIL.message,
+          email
+        );
+        sendError(
+          res,
+          SERVICE_MESSAGES.AUTH.TOKEN_VERIFICATION_FAILED.message,
+          400
+        );
         return;
       }
       logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_EMAIL_UNIQUE.message);
@@ -73,7 +76,10 @@ export class AuthController {
           where: { role: role as any },
         });
         if (roleUser) {
-          logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_ROLE_CONFLICT.message, role);
+          logger.info(
+            SERVICE_MESSAGES.AUTH_EXT.REGISTER_ROLE_CONFLICT.message,
+            role
+          );
           sendError(
             res,
             SERVICE_MESSAGES.AUTH_EXT.REGISTER_ROLE_CONFLICT.message,
@@ -108,7 +114,10 @@ export class AuthController {
           emailVerifyExpires: emailVerifyExpiry,
         },
       });
-      logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_USER_CREATED.message, user.id);
+      logger.info(
+        SERVICE_MESSAGES.AUTH_EXT.REGISTER_USER_CREATED.message,
+        user.id
+      );
 
       const finalEmailVerifyToken = JwtService.generateEmailVerifyToken(
         user.id,
@@ -139,7 +148,10 @@ export class AuthController {
           SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT.message
         );
       } catch (emailError) {
-        logger.error(SERVICE_MESSAGES.AUTH_EXT.REGISTER_EMAIL_ERROR.message, emailError);
+        logger.error(
+          SERVICE_MESSAGES.AUTH_EXT.REGISTER_EMAIL_ERROR.message,
+          emailError
+        );
 
         await db.user.delete({ where: { id: user.id } });
         logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_ROLLBACK.message);
@@ -172,13 +184,20 @@ export class AuthController {
       const { token } = req.body;
 
       if (!token) {
-        sendError(res, SERVICE_MESSAGES.SCHEMA.EMAIL_VERIFICATION_TOKEN_REQUIRED.message, 400);
+        sendError(
+          res,
+          SERVICE_MESSAGES.SCHEMA.EMAIL_VERIFICATION_TOKEN_REQUIRED.message,
+          400
+        );
         return;
       }
 
       logger.info(SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_STARTED.message);
       const decoded = JwtService.verifyEmailVerifyToken(token);
-      logger.info(SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_TOKEN_DECODED.message, decoded.userId);
+      logger.info(
+        SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_TOKEN_DECODED.message,
+        decoded.userId
+      );
 
       const user = await db.user.findUnique({
         where: {
@@ -203,21 +222,35 @@ export class AuthController {
       );
 
       if (!user) {
-        sendError(res, SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_INVALID.message, 400);
+        sendError(
+          res,
+          SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_INVALID.message,
+          400
+        );
         return;
       }
 
       if (user.isEmailVerified) {
-        sendError(res, SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_EXPIRED.message, 400);
+        sendError(
+          res,
+          SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_EXPIRED.message,
+          400
+        );
         return;
       }
 
       if (user.emailVerifyExpires && user.emailVerifyExpires < new Date()) {
-        sendError(res, SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_EXPIRED.message, 400);
+        sendError(
+          res,
+          SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_EXPIRED.message,
+          400
+        );
         return;
       }
 
-      logger.info(SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_PROCESS_STARTING.message);
+      logger.info(
+        SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_PROCESS_STARTING.message
+      );
       await db.user.update({
         where: { id: user.id },
         data: {
@@ -227,7 +260,9 @@ export class AuthController {
         },
       });
 
-      logger.info(SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_TOKEN_GENERATION.message);
+      logger.info(
+        SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_TOKEN_GENERATION.message
+      );
       const accessToken = JwtService.generateAccessToken(
         user.id,
         user.email,
@@ -255,13 +290,23 @@ export class AuthController {
       };
 
       logger.info(SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_SUCCESS.message);
-      sendSuccess(res, response, SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT.message);
+      sendSuccess(
+        res,
+        response,
+        SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT.message
+      );
     } catch (error) {
-      logger.error(SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_ERROR_DETAIL.message, {
-        message: error instanceof Error ? error.message : 'Bilinmeyen hata',
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-      sendServerError(res, SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED.message);
+      logger.error(
+        SERVICE_MESSAGES.AUTH_EXT.EMAIL_VERIFICATION_ERROR_DETAIL.message,
+        {
+          message: error instanceof Error ? error.message : 'Bilinmeyen hata',
+          stack: error instanceof Error ? error.stack : undefined,
+        }
+      );
+      sendServerError(
+        res,
+        SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED.message
+      );
     }
   };
 
@@ -284,7 +329,11 @@ export class AuthController {
       }
 
       if (user.isEmailVerified) {
-        sendError(res, SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_EXPIRED.message, 400);
+        sendError(
+          res,
+          SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_EXPIRED.message,
+          400
+        );
         return;
       }
 
@@ -320,7 +369,9 @@ export class AuthController {
 
   public login = async (req: Request, res: Response): Promise<void> => {
     try {
-      logger.info(SERVICE_MESSAGES.AUTH_EXT.LOGIN_STARTED.message, { email: req.body.email });
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.LOGIN_STARTED.message, {
+        email: req.body.email,
+      });
       const { email, password }: LoginRequest = req.body;
 
       const cacheKey = `user:${email}`;
@@ -346,18 +397,18 @@ export class AuthController {
       }
 
       if (!user) {
-        logger.warn(SERVICE_MESSAGES.LOGGER.COVER_LETTER_GET_ERROR.message, { email });
-        sendError(
-          res,
-          SERVICE_MESSAGES.GENERAL.NOT_FOUND.message,
-          401
-        );
+        logger.warn(SERVICE_MESSAGES.LOGGER.COVER_LETTER_GET_ERROR.message, {
+          email,
+        });
+        sendError(res, SERVICE_MESSAGES.GENERAL.NOT_FOUND.message, 401);
         return;
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
-        logger.warn(SERVICE_MESSAGES.AUTH_EXT.REGISTER_FORMAT_ERROR.message, { email });
+        logger.warn(SERVICE_MESSAGES.AUTH_EXT.REGISTER_FORMAT_ERROR.message, {
+          email,
+        });
         sendError(
           res,
           SERVICE_MESSAGES.AUTH.TOKEN_VERIFICATION_FAILED.message,
@@ -367,7 +418,10 @@ export class AuthController {
       }
 
       if (!user.isEmailVerified) {
-        logger.warn(SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_INVALID.message, { email });
+        logger.warn(
+          SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_INVALID.message,
+          { email }
+        );
         sendError(
           res,
           SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_INVALID.message,
@@ -407,14 +461,17 @@ export class AuthController {
         expiresIn: JwtService.getExpiresInSeconds(),
       };
 
-      logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_USER_CREATED.message, { userId: user.id, email });
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_USER_CREATED.message, {
+        userId: user.id,
+        email,
+      });
       sendSuccess(res, response, SERVICE_MESSAGES.GENERAL.SUCCESS.message);
     } catch (error) {
-      logger.error(SERVICE_MESSAGES.LOGGER.COVER_LETTER_GET_ERROR.message, error);
-      sendServerError(
-        res,
-        SERVICE_MESSAGES.ERROR.SERVER_ERROR.message
+      logger.error(
+        SERVICE_MESSAGES.LOGGER.COVER_LETTER_GET_ERROR.message,
+        error
       );
+      sendServerError(res, SERVICE_MESSAGES.ERROR.SERVER_ERROR.message);
     }
   };
 
@@ -437,11 +494,7 @@ export class AuthController {
       });
 
       if (!user) {
-        sendError(
-          res,
-          SERVICE_MESSAGES.GENERAL.NOT_FOUND.message,
-          401
-        );
+        sendError(res, SERVICE_MESSAGES.GENERAL.NOT_FOUND.message, 401);
         return;
       }
 
@@ -482,7 +535,10 @@ export class AuthController {
 
       sendSuccess(res, response);
     } catch (error) {
-      logger.error(SERVICE_MESSAGES.AUTH_EXT.TOKEN_REFRESH_ERROR.message, error);
+      logger.error(
+        SERVICE_MESSAGES.AUTH_EXT.TOKEN_REFRESH_ERROR.message,
+        error
+      );
       sendError(
         res,
         SERVICE_MESSAGES.AUTH.TOKEN_VERIFICATION_FAILED.message,
@@ -499,14 +555,13 @@ export class AuthController {
         await this.sessionService.destroySession(sessionId);
       }
 
-      logger.info(SERVICE_MESSAGES.GENERAL.SUCCESS.message, { userId: req.user?.userId });
+      logger.info(SERVICE_MESSAGES.GENERAL.SUCCESS.message, {
+        userId: req.user?.userId,
+      });
       sendSuccess(res, null, SERVICE_MESSAGES.GENERAL.SUCCESS.message);
     } catch (error) {
       logger.error(SERVICE_MESSAGES.AUTH_EXT.LOGOUT_ERROR.message, error);
-      sendServerError(
-        res,
-        SERVICE_MESSAGES.ERROR.SERVER_ERROR.message
-      );
+      sendServerError(res, SERVICE_MESSAGES.ERROR.SERVER_ERROR.message);
     }
   };
 
@@ -523,10 +578,7 @@ export class AuthController {
       sendSuccess(res, null, SERVICE_MESSAGES.GENERAL.SUCCESS.message);
     } catch (error) {
       logger.error(SERVICE_MESSAGES.AUTH_EXT.LOGOUT_ALL_ERROR.message, error);
-      sendServerError(
-        res,
-        SERVICE_MESSAGES.ERROR.SERVER_ERROR.message
-      );
+      sendServerError(res, SERVICE_MESSAGES.ERROR.SERVER_ERROR.message);
     }
   };
 
@@ -550,11 +602,7 @@ export class AuthController {
       });
 
       if (!user) {
-        sendError(
-          res,
-          SERVICE_MESSAGES.GENERAL.NOT_FOUND.message,
-          404
-        );
+        sendError(res, SERVICE_MESSAGES.GENERAL.NOT_FOUND.message, 404);
         return;
       }
 
@@ -580,11 +628,11 @@ export class AuthController {
         SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SENT.message
       );
     } catch (error) {
-      logger.error(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_ERROR.message, error);
-      sendServerError(
-        res,
-        SERVICE_MESSAGES.ERROR.SERVER_ERROR.message
+      logger.error(
+        SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_ERROR.message,
+        error
       );
+      sendServerError(res, SERVICE_MESSAGES.ERROR.SERVER_ERROR.message);
     }
   };
 
@@ -592,26 +640,47 @@ export class AuthController {
     try {
       const { token, newPassword }: ResetPasswordRequest = req.body;
 
-      logger.info(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_TOKEN_RECEIVED.message, token?.substring(0, 20) + '...');
+      logger.info(
+        SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_TOKEN_RECEIVED.message,
+        token?.substring(0, 20) + '...'
+      );
 
       let decoded;
       try {
         decoded = JwtService.verifyPasswordResetToken(token);
-        logger.info(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_JWT_VERIFIED.message, decoded.userId);
+        logger.info(
+          SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_JWT_VERIFIED.message,
+          decoded.userId
+        );
       } catch (jwtError) {
         if (jwtError instanceof Error) {
-          logger.info(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_JWT_FAILED.message, jwtError.message);
+          logger.info(
+            SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_JWT_FAILED.message,
+            jwtError.message
+          );
           if (
             jwtError.message.includes('süresi dolmuş') ||
             jwtError.message.includes('expired')
           ) {
-            sendError(res, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_TOKEN_EXPIRED_MSG.message, 400);
+            sendError(
+              res,
+              SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_TOKEN_EXPIRED_MSG
+                .message,
+              400
+            );
             return;
           }
         } else {
-          logger.info(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_JWT_FAILED.message, jwtError);
+          logger.info(
+            SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_JWT_FAILED.message,
+            jwtError
+          );
         }
-        sendError(res, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_TOKEN_INVALID_MSG.message, 400);
+        sendError(
+          res,
+          SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_TOKEN_INVALID_MSG.message,
+          400
+        );
         return;
       }
 
@@ -624,8 +693,15 @@ export class AuthController {
       });
 
       if (!user) {
-        logger.info(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_USER_NOT_FOUND.message, decoded.userId);
-        sendError(res, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_TOKEN_INVALID_MSG.message, 400);
+        logger.info(
+          SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_USER_NOT_FOUND.message,
+          decoded.userId
+        );
+        sendError(
+          res,
+          SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_TOKEN_INVALID_MSG.message,
+          400
+        );
         return;
       }
 
@@ -638,10 +714,20 @@ export class AuthController {
         },
       });
 
-      logger.info(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_SUCCESS_LOG.message, user.email);
-      sendSuccess(res, null, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_SUCCESS_MSG.message);
+      logger.info(
+        SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_SUCCESS_LOG.message,
+        user.email
+      );
+      sendSuccess(
+        res,
+        null,
+        SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_SUCCESS_MSG.message
+      );
     } catch (error) {
-      logger.error(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_ERROR.message, error);
+      logger.error(
+        SERVICE_MESSAGES.AUTH_EXT.PASSWORD_RESET_ERROR.message,
+        error
+      );
       if (error instanceof Error && error.message.startsWith('JWT_S')) {
         sendError(res, error.message, 400);
       } else {
@@ -684,7 +770,10 @@ export class AuthController {
         lastName: user.lastName,
       });
     } catch (error) {
-      logger.error(SERVICE_MESSAGES.AUTH_EXT.USER_INFO_ERROR_LOG.message, error);
+      logger.error(
+        SERVICE_MESSAGES.AUTH_EXT.USER_INFO_ERROR_LOG.message,
+        error
+      );
       sendServerError(
         res,
         SERVICE_MESSAGES.AUTH_EXT.USER_INFO_SYSTEM_ERROR.message
@@ -706,7 +795,10 @@ export class AuthController {
       });
 
       if (!existingUser) {
-        sendNotFound(res, SERVICE_MESSAGES.AUTH_EXT.PROFILE_USER_NOT_FOUND.message);
+        sendNotFound(
+          res,
+          SERVICE_MESSAGES.AUTH_EXT.PROFILE_USER_NOT_FOUND.message
+        );
         return;
       }
 
@@ -736,7 +828,10 @@ export class AuthController {
         SERVICE_MESSAGES.AUTH_EXT.PROFILE_UPDATE_SUCCESS.message
       );
     } catch (error) {
-      logger.error(SERVICE_MESSAGES.AUTH_EXT.PROFILE_UPDATE_ERROR_LOG.message, error);
+      logger.error(
+        SERVICE_MESSAGES.AUTH_EXT.PROFILE_UPDATE_ERROR_LOG.message,
+        error
+      );
       sendServerError(
         res,
         SERVICE_MESSAGES.AUTH_EXT.PROFILE_UPDATE_SYSTEM_ERROR.message
@@ -758,7 +853,10 @@ export class AuthController {
       });
 
       if (!user) {
-        sendNotFound(res, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_USER_NOT_FOUND.message);
+        sendNotFound(
+          res,
+          SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_USER_NOT_FOUND.message
+        );
         return;
       }
 
@@ -767,7 +865,11 @@ export class AuthController {
         user.password
       );
       if (!isCurrentPasswordValid) {
-        sendError(res, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_INVALID_CURRENT.message, 400);
+        sendError(
+          res,
+          SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_INVALID_CURRENT.message,
+          400
+        );
         return;
       }
 
@@ -778,9 +880,16 @@ export class AuthController {
         data: { password: hashedNewPassword },
       });
 
-      sendSuccess(res, null, SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_SUCCESS.message);
+      sendSuccess(
+        res,
+        null,
+        SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_SUCCESS.message
+      );
     } catch (error) {
-      logger.error(SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_ERROR_LOG.message, error);
+      logger.error(
+        SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_ERROR_LOG.message,
+        error
+      );
       sendServerError(
         res,
         SERVICE_MESSAGES.AUTH_EXT.PASSWORD_CHANGE_SYSTEM_ERROR.message
@@ -793,7 +902,11 @@ export class AuthController {
       const userId = req.user?.userId;
 
       if (!userId) {
-        sendError(res, SERVICE_MESSAGES.AUTH_EXT.SESSION_USER_NOT_FOUND.message, 401);
+        sendError(
+          res,
+          SERVICE_MESSAGES.AUTH_EXT.SESSION_USER_NOT_FOUND.message,
+          401
+        );
         return;
       }
 
@@ -818,7 +931,10 @@ export class AuthController {
         sessions.filter((s) => s !== null)
       );
     } catch (error) {
-      logger.error(SERVICE_MESSAGES.AUTH_EXT.SESSION_GET_ERROR_LOG.message, error);
+      logger.error(
+        SERVICE_MESSAGES.AUTH_EXT.SESSION_GET_ERROR_LOG.message,
+        error
+      );
       sendServerError(
         res,
         SERVICE_MESSAGES.AUTH_EXT.SESSION_GET_SYSTEM_ERROR.message

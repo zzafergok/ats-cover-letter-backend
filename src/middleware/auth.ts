@@ -5,7 +5,11 @@ import { db } from '../services/database.service';
 import { SessionService } from '../services/session.service';
 
 import logger from '../config/logger';
-import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
+import {
+  SERVICE_MESSAGES,
+  formatMessage,
+  createErrorMessage,
+} from '../constants/messages';
 
 export enum UserRole {
   USER = 'USER',
@@ -81,7 +85,9 @@ export const authenticateToken = async (
     return;
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      logger.warn(SERVICE_MESSAGES.AUTH_EXT.INVALID_TOKEN_ATTEMPT.message, { error: error.message });
+      logger.warn(SERVICE_MESSAGES.AUTH_EXT.INVALID_TOKEN_ATTEMPT.message, {
+        error: error.message,
+      });
       res.status(401).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.AUTH.TOKEN_VERIFICATION_FAILED),
@@ -89,7 +95,9 @@ export const authenticateToken = async (
       return;
     }
 
-    logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error));
+    logger.error(
+      createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error)
+    );
     res.status(500).json({
       success: false,
       message: SERVICE_MESSAGES.ERROR.SERVER_ERROR.message,

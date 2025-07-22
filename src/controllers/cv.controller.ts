@@ -17,14 +17,22 @@ import { generateCvWithClaude } from '../services/claude.service';
 import { FileCompressionService } from '../services/fileCompression.service';
 
 import logger from '../config/logger';
-import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
+import {
+  SERVICE_MESSAGES,
+  formatMessage,
+  createErrorMessage,
+} from '../constants/messages';
 import { createCvSchema, saveCvSchema } from '../schemas';
+import { UserLimitService } from '../services/userLimit.service';
 
 export class CvController {
   private prisma = new PrismaClient();
 
   // CV processing function (previously handled by queue)
-  private async processCvFile(filePath: string, cvUploadId: string): Promise<void> {
+  private async processCvFile(
+    filePath: string,
+    cvUploadId: string
+  ): Promise<void> {
     try {
       // Extract content from CV
       const extractedText = await extractCvContent(filePath);
@@ -49,7 +57,8 @@ export class CvController {
       // Get file compression service
       const compressionService = FileCompressionService.getInstance();
       const fileBuffer = fs.readFileSync(filePath);
-      const compressedBuffer = await compressionService.compressFile(fileBuffer);
+      const compressedBuffer =
+        await compressionService.compressFile(fileBuffer);
 
       // Update CV upload record
       await this.prisma.cvUpload.update({
@@ -62,7 +71,8 @@ export class CvController {
           originalSize: fileBuffer.length,
           compressedSize: compressedBuffer.length,
           compressionRatio:
-            ((fileBuffer.length - compressedBuffer.length) / fileBuffer.length) *
+            ((fileBuffer.length - compressedBuffer.length) /
+              fileBuffer.length) *
             100,
         },
       });
@@ -72,9 +82,16 @@ export class CvController {
         fs.unlinkSync(filePath);
       }
 
-      logger.info(formatMessage(SERVICE_MESSAGES.CV.PROCESSING_COMPLETED), { cvUploadId });
+      logger.info(formatMessage(SERVICE_MESSAGES.CV.PROCESSING_COMPLETED), {
+        cvUploadId,
+      });
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.PROCESSING_FAILED, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.CV.PROCESSING_FAILED,
+          error as Error
+        )
+      );
 
       // Update status to failed
       await this.prisma.cvUpload.update({
@@ -89,10 +106,31 @@ export class CvController {
   public uploadCv = async (req: Request, res: Response): Promise<void> => {
     try {
       if (!req.file) {
-        logger.warn(formatMessage(SERVICE_MESSAGES.CV.NO_FILE_UPLOADED), { userId: req.user?.userId });
+        logger.warn(formatMessage(SERVICE_MESSAGES.CV.NO_FILE_UPLOADED), {
+          userId: req.user?.userId,
+        });
         res.status(400).json({
           success: false,
           message: formatMessage(SERVICE_MESSAGES.CV.NO_FILE_UPLOADED),
+        });
+        return;
+      }
+
+      // Check user upload limits
+      const currentCvCount = await this.prisma.cvUpload.count({
+        where: { userId: req.user!.userId },
+      });
+
+      if (!UserLimitService.canUploadCv(req.user!.role, currentCvCount)) {
+        const limitInfo = UserLimitService.formatLimitInfo(
+          req.user!.role,
+          currentCvCount,
+          'cvUploads'
+        );
+        res.status(400).json({
+          success: false,
+          message: `CV yükleme limitine ulaştınız (${limitInfo.current}/${limitInfo.maximum})`,
+          limitInfo,
         });
         return;
       }
@@ -123,7 +161,12 @@ export class CvController {
           userId: req.user!.userId,
         });
       } catch (processingError) {
-        logger.error(createErrorMessage(SERVICE_MESSAGES.CV.PROCESSING_FAILED, processingError as Error));
+        logger.error(
+          createErrorMessage(
+            SERVICE_MESSAGES.CV.PROCESSING_FAILED,
+            processingError as Error
+          )
+        );
         // Update status to failed
         await this.prisma.cvUpload.update({
           where: { id: cvUpload.id },
@@ -141,30 +184,40 @@ export class CvController {
         },
       });
     } catch (error: any) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.UPLOAD_ERROR, error), {
-        stack: error.stack,
-        userId: req.user?.userId,
-        file: req.file
-          ? {
-              name: req.file.originalname,
-              size: req.file.size,
-              mimetype: req.file.mimetype,
-            }
-          : null,
-      });
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CV.UPLOAD_ERROR, error),
+        {
+          stack: error.stack,
+          userId: req.user?.userId,
+          file: req.file
+            ? {
+                name: req.file.originalname,
+                size: req.file.size,
+                mimetype: req.file.mimetype,
+              }
+            : null,
+        }
+      );
 
       if (req.file && fs.existsSync(req.file.path)) {
         try {
           fs.unlinkSync(req.file.path);
         } catch (unlinkError) {
-          logger.error(createErrorMessage(SERVICE_MESSAGES.CV.FILE_DELETE_ERROR, unlinkError as Error));
+          logger.error(
+            createErrorMessage(
+              SERVICE_MESSAGES.CV.FILE_DELETE_ERROR,
+              unlinkError as Error
+            )
+          );
         }
       }
 
       let errorMessage = formatMessage(SERVICE_MESSAGES.CV.UPLOAD_ERROR);
       if (error.code === 'LIMIT_FILE_SIZE') {
         errorMessage = formatMessage(SERVICE_MESSAGES.CV.FILE_SIZE_EXCEEDED);
-      } else if (error.message.includes(SERVICE_MESSAGES.FILE.UNSUPPORTED_FORMAT.message)) {
+      } else if (
+        error.message.includes(SERVICE_MESSAGES.FILE.UNSUPPORTED_FORMAT.message)
+      ) {
         errorMessage = error.message;
       }
 
@@ -209,17 +262,21 @@ export class CvController {
         },
       }));
 
+      const limitInfo = UserLimitService.formatLimitInfo(
+        req.user!.role,
+        cvUploads.length,
+        'cvUploads'
+      );
+
       res.json({
         success: true,
         data: uploadsWithInfo,
-        uploadLimit: {
-          current: cvUploads.length,
-          maximum: 5,
-          remaining: Math.max(0, 5 - cvUploads.length),
-        },
+        uploadLimit: limitInfo,
       });
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.LIST_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CV.LIST_ERROR, error as Error)
+      );
       res.status(500).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.CV.LIST_ERROR),
@@ -227,7 +284,10 @@ export class CvController {
     }
   };
 
-  public getCvUploadStatus = async (req: Request, res: Response): Promise<void> => {
+  public getCvUploadStatus = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
 
@@ -262,7 +322,12 @@ export class CvController {
         },
       });
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.STATUS_CHECK_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.CV.STATUS_CHECK_ERROR,
+          error as Error
+        )
+      );
       res.status(500).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.CV.STATUS_CHECK_ERROR),
@@ -270,7 +335,10 @@ export class CvController {
     }
   };
 
-  public deleteCvUpload = async (req: Request, res: Response): Promise<void> => {
+  public deleteCvUpload = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
 
@@ -298,7 +366,9 @@ export class CvController {
         message: formatMessage(SERVICE_MESSAGES.CV.DELETE_SUCCESS),
       });
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.DELETE_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CV.DELETE_ERROR, error as Error)
+      );
       res.status(500).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.CV.DELETE_ERROR),
@@ -377,7 +447,9 @@ export class CvController {
         return;
       }
 
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.GENERATION_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CV.GENERATION_ERROR, error as Error)
+      );
       res.status(500).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.CV.GENERATION_ERROR),
@@ -393,10 +465,16 @@ export class CvController {
         where: { userId: req.user!.userId },
       });
 
-      if (userCvCount >= 5) {
+      if (!UserLimitService.canSaveCv(req.user!.role, userCvCount)) {
+        const limitInfo = UserLimitService.formatLimitInfo(
+          req.user!.role,
+          userCvCount,
+          'savedCvs'
+        );
         res.status(400).json({
           success: false,
-          message: formatMessage(SERVICE_MESSAGES.CV.SAVE_LIMIT_EXCEEDED),
+          message: `CV kaydetme limitine ulaştınız (${limitInfo.current}/${limitInfo.maximum})`,
+          limitInfo,
         });
         return;
       }
@@ -428,7 +506,9 @@ export class CvController {
         return;
       }
 
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.SAVE_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CV.SAVE_ERROR, error as Error)
+      );
       res.status(500).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.CV.SAVE_ERROR),
@@ -443,12 +523,21 @@ export class CvController {
         orderBy: { createdAt: 'desc' },
       });
 
+      const limitInfo = UserLimitService.formatLimitInfo(
+        req.user!.role,
+        savedCvs.length,
+        'savedCvs'
+      );
+
       res.json({
         success: true,
         data: savedCvs,
+        saveLimit: limitInfo,
       });
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.SAVED_LIST_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CV.SAVED_LIST_ERROR, error as Error)
+      );
       res.status(500).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.CV.SAVED_LIST_ERROR),
@@ -484,7 +573,9 @@ export class CvController {
         message: formatMessage(SERVICE_MESSAGES.CV.DELETE_SUCCESS),
       });
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.DELETE_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CV.DELETE_ERROR, error as Error)
+      );
       res.status(500).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.CV.DELETE_ERROR),
@@ -543,7 +634,9 @@ export class CvController {
       );
       res.send(decompressedBuffer);
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.CV.DOWNLOAD_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.CV.DOWNLOAD_ERROR, error as Error)
+      );
       res.status(500).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.CV.DOWNLOAD_ERROR),

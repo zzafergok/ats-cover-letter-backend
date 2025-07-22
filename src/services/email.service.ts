@@ -1,7 +1,11 @@
 import { Resend } from 'resend';
 
 import logger from '../config/logger';
-import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
+import {
+  SERVICE_MESSAGES,
+  formatMessage,
+  createErrorMessage,
+} from '../constants/messages';
 
 export class EmailService {
   private static resend = new Resend(process.env.RESEND_API_KEY);
@@ -13,10 +17,19 @@ export class EmailService {
   ): Promise<void> {
     try {
       await this.sendEmailVerificationDirect(email, verifyToken, userName);
-      logger.info(formatMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT, email));
+      logger.info(
+        formatMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT, email)
+      );
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED, error as Error));
-      throw new Error(formatMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED,
+          error as Error
+        )
+      );
+      throw new Error(
+        formatMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED)
+      );
     }
   }
 
@@ -45,8 +58,15 @@ export class EmailService {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED, error as Error));
-      throw new Error(formatMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED,
+          error as Error
+        )
+      );
+      throw new Error(
+        formatMessage(SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED)
+      );
     }
   }
 
@@ -56,10 +76,20 @@ export class EmailService {
   ): Promise<void> {
     try {
       await this.sendPasswordResetEmailDirect(email, resetToken);
-      logger.info(formatMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SENT), email);
+      logger.info(
+        formatMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SENT),
+        email
+      );
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SEND_FAILED, error as Error));
-      throw new Error(formatMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SEND_FAILED));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SEND_FAILED,
+          error as Error
+        )
+      );
+      throw new Error(
+        formatMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SEND_FAILED)
+      );
     }
   }
 
@@ -72,10 +102,20 @@ export class EmailService {
   }): Promise<void> {
     try {
       await this.sendContactMessageDirect(data);
-      logger.info(formatMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SENT), data.email);
+      logger.info(
+        formatMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SENT),
+        data.email
+      );
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED, error as Error));
-      throw new Error(formatMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED,
+          error as Error
+        )
+      );
+      throw new Error(
+        formatMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED)
+      );
     }
   }
 
@@ -107,10 +147,20 @@ export class EmailService {
         `,
       });
 
-      logger.info(formatMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SENT), email);
+      logger.info(
+        formatMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SENT),
+        email
+      );
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SEND_FAILED, error as Error));
-      throw new Error(formatMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SEND_FAILED));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SEND_FAILED,
+          error as Error
+        )
+      );
+      throw new Error(
+        formatMessage(SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SEND_FAILED)
+      );
     }
   }
 
@@ -144,10 +194,20 @@ export class EmailService {
         `,
       });
 
-      logger.info(formatMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SENT), data.email);
+      logger.info(
+        formatMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SENT),
+        data.email
+      );
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED, error as Error));
-      throw new Error(formatMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED,
+          error as Error
+        )
+      );
+      throw new Error(
+        formatMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED)
+      );
     }
   }
 }
