@@ -1,5 +1,6 @@
 import { db } from './database.service';
 import { EmailService } from './email.service';
+import { TurkeyTime } from '../utils/timezone';
 
 export interface ContactData {
   type: 'CONTACT' | 'SUPPORT';
@@ -22,19 +23,9 @@ export class ContactService {
   }
 
   private getTurkeyDayBounds(): { todayStart: Date; tomorrowStart: Date } {
-    const now = new Date();
-    const turkeyOffset = 3 * 60 * 60 * 1000;
-    const turkeyTime = new Date(now.getTime() + turkeyOffset);
-
-    const todayStart = new Date(turkeyTime);
-    todayStart.setUTCHours(0, 0, 0, 0);
-
-    const tomorrowStart = new Date(todayStart);
-    tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
-
     return {
-      todayStart: new Date(todayStart.getTime() - turkeyOffset),
-      tomorrowStart: new Date(tomorrowStart.getTime() - turkeyOffset),
+      todayStart: TurkeyTime.getTodayStart(),
+      tomorrowStart: TurkeyTime.getTomorrowStart(),
     };
   }
 
@@ -71,15 +62,7 @@ export class ContactService {
   }
 
   public getNextResetTime(): Date {
-    const now = new Date();
-    const turkeyOffset = 3 * 60 * 60 * 1000;
-    const turkeyTime = new Date(now.getTime() + turkeyOffset);
-
-    const tomorrowStart = new Date(turkeyTime);
-    tomorrowStart.setUTCHours(0, 0, 0, 0);
-    tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
-
-    return tomorrowStart;
+    return TurkeyTime.fromUTC(TurkeyTime.getTomorrowStart());
   }
 
   public async sendContactMessage(data: ContactData): Promise<void> {
@@ -129,11 +112,10 @@ export class ContactService {
       db.user.count(),
     ]);
 
-    const turkeyOffset = 3 * 60 * 60 * 1000;
     const messagesWithTurkeyTime = messages.map((message: any) => ({
       ...message,
-      createdAt: new Date(message.createdAt.getTime() + turkeyOffset),
-      updatedAt: new Date(message.updatedAt.getTime() + turkeyOffset),
+      createdAt: TurkeyTime.fromUTC(message.createdAt),
+      updatedAt: TurkeyTime.fromUTC(message.updatedAt),
     }));
 
     return {

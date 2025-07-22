@@ -4,6 +4,7 @@ import mammoth from 'mammoth';
 import pdfParse from 'pdf-parse';
 
 import logger from '../config/logger';
+import { TurkeyTime } from '../utils/timezone';
 
 export async function extractCvContent(filePath: string): Promise<string> {
   const fileExtension = path.extname(filePath).toLowerCase();
@@ -413,6 +414,6 @@ export function generateDocumentMetadata(
     wordCount,
     characterCount,
     pageEstimate,
-    processingDate: new Date().toISOString(),
+    processingDate: TurkeyTime.now().toISOString(),
   };
 }

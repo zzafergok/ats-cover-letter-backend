@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import logger from '../config/logger';
+import { TurkeyTime } from '../utils/timezone';
 
 export class PdfService {
   private static instance: PdfService;
@@ -35,7 +36,7 @@ export class PdfService {
       // Tarih
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      const currentDate = new Date().toLocaleDateString('tr-TR');
+      const currentDate = TurkeyTime.formatDate();
       doc.text(currentDate, 20, 40);
 
       // İçerik ayarları
@@ -119,11 +120,7 @@ export class PdfService {
       // Tarih
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      const currentDate = new Date().toLocaleDateString('tr-TR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      const currentDate = TurkeyTime.formatDateLong();
       doc.text(currentDate, leftMargin, yPosition);
       yPosition += 15;
 
