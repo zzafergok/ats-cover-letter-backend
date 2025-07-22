@@ -11,6 +11,7 @@ import { generalLimiter, apiLimiter } from './middleware/rateLimiter';
 import { DatabaseService } from './services/database.service';
 
 import logger from './config/logger';
+import { SERVICE_MESSAGES } from './constants/messages';
 
 dotenv.config();
 
@@ -44,7 +45,7 @@ app.get('/health', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'API is running',
+      message: SERVICE_MESSAGES.APP.API_RUNNING.message,
       timestamp: new Date().toISOString(),
       version: '1.0.0',
       environment: process.env.NODE_ENV,
@@ -58,7 +59,7 @@ app.get('/health', async (req, res) => {
     logger.error('Health check failed:', error);
     res.status(503).json({
       success: false,
-      error: 'Health check failed',
+      error: SERVICE_MESSAGES.APP.HEALTH_CHECK_FAILED.message,
       timestamp: new Date().toISOString(),
     });
   }
@@ -71,7 +72,7 @@ app.use(errorHandler);
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    error: 'Endpoint not found',
+    error: SERVICE_MESSAGES.APP.ENDPOINT_NOT_FOUND.message,
     path: req.originalUrl,
     method: req.method,
     timestamp: new Date().toISOString(),

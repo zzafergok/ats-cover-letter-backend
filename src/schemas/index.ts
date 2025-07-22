@@ -61,24 +61,24 @@ export const refreshTokenSchema = z.object({
 
 export const resetPasswordSchema = z
   .object({
-    token: z.string().min(1, 'Şifre sıfırlama token gereklidir'),
+    token: z.string().min(1, SERVICE_MESSAGES.SCHEMA.RESET_TOKEN_REQUIRED.message),
     newPassword: z
       .string()
-      .min(8, 'Yeni şifre en az 8 karakter olmalıdır')
-      .max(100, 'Yeni şifre en fazla 100 karakter olabilir')
+      .min(8, SERVICE_MESSAGES.SCHEMA.NEW_PASSWORD_MIN_LENGTH.message)
+      .max(100, SERVICE_MESSAGES.SCHEMA.NEW_PASSWORD_MAX_LENGTH.message)
       .regex(
         /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
-        'Yeni şifre en az bir harf ve bir rakam içermelidir'
+        SERVICE_MESSAGES.SCHEMA.NEW_PASSWORD_PATTERN.message
       ),
-    confirmPassword: z.string().min(1, 'Şifre tekrarı gereklidir'),
+    confirmPassword: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CONFIRM_PASSWORD_REQUIRED.message),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Yeni şifre ve şifre tekrarı eşleşmiyor',
+    message: SERVICE_MESSAGES.SCHEMA.PASSWORD_MISMATCH.message,
     path: ['confirmPassword'],
   });
 
 export const verifyEmailSchema = z.object({
-  token: z.string().min(1, 'Email doğrulama token gereklidir'),
+  token: z.string().min(1, SERVICE_MESSAGES.SCHEMA.EMAIL_VERIFICATION_TOKEN_REQUIRED.message),
 });
 
 export const resendEmailVerificationSchema = z.object({
@@ -89,33 +89,33 @@ export const resendEmailVerificationSchema = z.object({
 export const updateUserProfileSchema = z.object({
   name: z
     .string()
-    .min(2, 'Ad soyad en az 2 karakter olmalıdır')
-    .max(50, 'Ad soyad en fazla 50 karakter olabilir'),
+    .min(2, SERVICE_MESSAGES.SCHEMA.USER_PROFILE_NAME_MIN.message)
+    .max(50, SERVICE_MESSAGES.SCHEMA.USER_PROFILE_NAME_MAX.message),
   email: z
     .string()
-    .email('Geçerli bir email adresi giriniz')
-    .max(255, 'Email adresi en fazla 255 karakter olabilir'),
+    .email(SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message)
+    .max(255, SERVICE_MESSAGES.SCHEMA.USER_PROFILE_EMAIL_MAX.message),
 });
 
 export const changePasswordSchema = z
   .object({
-    currentPassword: z.string().min(1, 'Mevcut şifre gereklidir'),
+    currentPassword: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CURRENT_PASSWORD_REQUIRED.message),
     newPassword: z
       .string()
-      .min(8, 'Yeni şifre en az 8 karakter olmalıdır')
-      .max(100, 'Yeni şifre en fazla 100 karakter olabilir')
+      .min(8, SERVICE_MESSAGES.SCHEMA.NEW_PASSWORD_MIN_LENGTH.message)
+      .max(100, SERVICE_MESSAGES.SCHEMA.NEW_PASSWORD_MAX_LENGTH.message)
       .regex(
         /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
-        'Yeni şifre en az bir harf ve bir rakam içermelidir'
+        SERVICE_MESSAGES.SCHEMA.NEW_PASSWORD_PATTERN.message
       ),
-    confirmPassword: z.string().min(1, 'Şifre tekrarı gereklidir'),
+    confirmPassword: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CONFIRM_PASSWORD_REQUIRED.message),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: 'Yeni şifre ve şifre tekrarı eşleşmiyor',
+    message: SERVICE_MESSAGES.SCHEMA.PASSWORD_MISMATCH.message,
     path: ['confirmPassword'],
   })
   .refine((data) => data.currentPassword !== data.newPassword, {
-    message: 'Yeni şifre mevcut şifreden farklı olmalıdır',
+    message: SERVICE_MESSAGES.SCHEMA.PASSWORD_SAME_AS_CURRENT.message,
     path: ['newPassword'],
   });
 
@@ -124,38 +124,38 @@ export const contactMessageSchema = z.object({
   type: z.enum(['CONTACT', 'SUPPORT']),
   name: z
     .string()
-    .min(2, 'Ad soyad en az 2 karakter olmalıdır')
-    .max(100, 'Ad soyad en fazla 100 karakter olabilir')
+    .min(2, SERVICE_MESSAGES.SCHEMA.CONTACT_NAME_MIN.message)
+    .max(100, SERVICE_MESSAGES.SCHEMA.CONTACT_NAME_MAX.message)
     .trim(),
   email: z
     .string()
-    .email('Geçerli bir email adresi giriniz')
-    .max(255, 'Email adresi çok uzun'),
+    .email(SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message)
+    .max(255, SERVICE_MESSAGES.SCHEMA.CONTACT_EMAIL_MAX.message),
   subject: z
     .string()
-    .min(3, 'Konu en az 3 karakter olmalıdır')
-    .max(200, 'Konu en fazla 200 karakter olabilir')
+    .min(3, SERVICE_MESSAGES.SCHEMA.CONTACT_SUBJECT_MIN.message)
+    .max(200, SERVICE_MESSAGES.SCHEMA.CONTACT_SUBJECT_MAX.message)
     .trim(),
   message: z
     .string()
-    .min(10, 'Mesaj en az 10 karakter olmalıdır')
-    .max(2000, 'Mesaj en fazla 2000 karakter olabilir')
+    .min(10, SERVICE_MESSAGES.SCHEMA.CONTACT_MESSAGE_MIN.message)
+    .max(2000, SERVICE_MESSAGES.SCHEMA.CONTACT_MESSAGE_MAX.message)
     .trim(),
 });
 
 // Cover letter schemas
 export const generateCoverLetterSchema = z.object({
   personalInfo: z.object({
-    fullName: z.string().min(1, 'Ad soyad gereklidir'),
-    email: z.string().email('Geçerli email gereklidir'),
-    phone: z.string().min(1, 'Telefon gereklidir'),
+    fullName: z.string().min(1, SERVICE_MESSAGES.SCHEMA.FULL_NAME_REQUIRED.message),
+    email: z.string().email(SERVICE_MESSAGES.SCHEMA.VALID_EMAIL_REQUIRED.message),
+    phone: z.string().min(1, SERVICE_MESSAGES.SCHEMA.PHONE_REQUIRED.message),
     city: z.string().optional(),
     state: z.string().optional(),
     linkedin: z.string().optional(),
   }),
   jobInfo: z.object({
-    positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
-    companyName: z.string().min(1, 'Şirket adı gereklidir'),
+    positionTitle: z.string().min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
+    companyName: z.string().min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
     department: z.string().optional(),
     hiringManagerName: z.string().optional(),
     jobDescription: z.string().optional(),
@@ -163,9 +163,9 @@ export const generateCoverLetterSchema = z.object({
   }),
   experience: z.object({
     currentPosition: z.string().optional(),
-    yearsOfExperience: z.number().min(0, 'Deneyim yılı 0 veya üzeri olmalı'),
-    relevantSkills: z.array(z.string()).min(1, 'En az bir beceri gereklidir'),
-    achievements: z.array(z.string()).min(1, 'En az bir başarı gereklidir'),
+    yearsOfExperience: z.number().min(0, SERVICE_MESSAGES.SCHEMA.YEARS_EXPERIENCE_MIN.message),
+    relevantSkills: z.array(z.string()).min(1, SERVICE_MESSAGES.SCHEMA.SKILLS_REQUIRED.message),
+    achievements: z.array(z.string()).min(1, SERVICE_MESSAGES.SCHEMA.ACHIEVEMENTS_REQUIRED.message),
     previousCompanies: z.array(z.string()).optional(),
   }),
   coverLetterType: z.enum([
@@ -185,16 +185,16 @@ export const generateCoverLetterSchema = z.object({
 });
 
 export const saveCoverLetterSchema = z.object({
-  title: z.string().min(1, 'Başlık gereklidir'),
-  content: z.string().min(1, 'İçerik gereklidir'),
+  title: z.string().min(1, SERVICE_MESSAGES.SCHEMA.TITLE_REQUIRED.message),
+  content: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CONTENT_REQUIRED.message),
   coverLetterType: z.enum([
     'PROFESSIONAL',
     'CREATIVE',
     'TECHNICAL',
     'ENTRY_LEVEL',
   ]),
-  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
-  companyName: z.string().min(1, 'Şirket adı gereklidir'),
+  positionTitle: z.string().min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
+  companyName: z.string().min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
   category: z
     .enum([
       'SOFTWARE_DEVELOPER',
@@ -225,25 +225,25 @@ export const saveCoverLetterSchema = z.object({
 });
 
 export const analyzeCoverLetterSchema = z.object({
-  content: z.string().min(1, 'Cover letter içeriği gereklidir'),
+  content: z.string().min(1, SERVICE_MESSAGES.SCHEMA.COVER_LETTER_CONTENT_REQUIRED.message),
 });
 
 export const generateMinimalCoverLetterSchema = z.object({
-  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
-  companyName: z.string().min(1, 'Şirket adı gereklidir'),
+  positionTitle: z.string().min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
+  companyName: z.string().min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
   motivation: z.string().optional(),
 });
 
 // Cover letter basic schemas
 export const createCoverLetterSchema = z.object({
-  cvUploadId: z.string().min(1, 'CV upload ID gereklidir'),
-  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
-  companyName: z.string().min(1, 'Şirket adı gereklidir'),
-  jobDescription: z.string().min(10, 'İş tanımı en az 10 karakter olmalıdır'),
+  cvUploadId: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CV_UPLOAD_ID_REQUIRED.message),
+  positionTitle: z.string().min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
+  companyName: z.string().min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
+  jobDescription: z.string().min(10, SERVICE_MESSAGES.SCHEMA.JOB_DESCRIPTION_MIN.message),
   language: z
     .enum(['TURKISH', 'ENGLISH'], {
       errorMap: () => ({
-        message: 'Dil seçeneği TURKISH veya ENGLISH olmalıdır',
+        message: SERVICE_MESSAGES.SCHEMA.LANGUAGE_OPTION_ERROR.message,
       }),
     })
     .default('TURKISH'),
@@ -252,13 +252,13 @@ export const createCoverLetterSchema = z.object({
 export const updateCoverLetterSchema = z.object({
   updatedContent: z
     .string()
-    .min(50, 'Cover letter içeriği en az 50 karakter olmalıdır'),
+    .min(50, SERVICE_MESSAGES.SCHEMA.COVER_LETTER_MIN_LENGTH.message),
 });
 
 // CV schemas
 export const createCvSchema = z.object({
-  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
-  companyName: z.string().min(1, 'Şirket adı gereklidir'),
+  positionTitle: z.string().min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
+  companyName: z.string().min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
   cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']),
   jobDescription: z.string().optional(),
   additionalRequirements: z.string().optional(),
@@ -266,7 +266,7 @@ export const createCvSchema = z.object({
 });
 
 export const saveCvSchema = z.object({
-  title: z.string().min(1, 'CV başlığı gereklidir'),
-  content: z.string().min(1, 'CV içeriği gereklidir'),
+  title: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CV_TITLE_REQUIRED.message),
+  content: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CV_CONTENT_REQUIRED.message),
   cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']),
 });

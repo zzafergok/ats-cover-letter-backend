@@ -27,11 +27,11 @@ export class ContactController {
       });
 
       const messageType =
-        type === 'CONTACT' ? 'İletişim mesajınız' : 'Destek talebiniz';
+        type === 'CONTACT' ? SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_TYPE_CONTACT.message : SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_TYPE_SUPPORT.message;
       sendSuccess(
         res,
         null,
-        `${messageType} başarıyla gönderildi. En kısa sürede size dönüş yapacağız.`
+        `${messageType} ${SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_SENT_SUCCESS.message}`
       );
     } catch (error) {
       logger.error(createErrorMessage(SERVICE_MESSAGES.EMAIL.CONTACT_MESSAGE_SEND_FAILED, error as Error));
@@ -44,12 +44,12 @@ export class ContactController {
       if (error instanceof Error && error.message.startsWith('EMAIL_')) {
         sendServerError(
           res,
-          'CONTACT_002: Email gönderimi başarısız - Lütfen daha sonra tekrar deneyin'
+          `${SERVICE_MESSAGES.CONTACT_EXT.EMAIL_SEND_FAILED.code}: ${SERVICE_MESSAGES.CONTACT_EXT.EMAIL_SEND_FAILED.message}`
         );
         return;
       }
 
-      sendServerError(res, 'CONTACT_003: Sistem hatası - Mesaj gönderilemedi');
+      sendServerError(res, `${SERVICE_MESSAGES.CONTACT_EXT.SYSTEM_ERROR_MESSAGE.code}: ${SERVICE_MESSAGES.CONTACT_EXT.SYSTEM_ERROR_MESSAGE.message}`);
     }
   };
 
@@ -77,7 +77,7 @@ export class ContactController {
       });
     } catch (error) {
       logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error));
-      sendServerError(res, 'CONTACT_005: Limit bilgisi alınamadı');
+      sendServerError(res, `${SERVICE_MESSAGES.CONTACT_EXT.LIMIT_INFO_ERROR.code}: ${SERVICE_MESSAGES.CONTACT_EXT.LIMIT_INFO_ERROR.message}`);
     }
   };
 
@@ -90,7 +90,7 @@ export class ContactController {
       sendSuccess(res, result);
     } catch (error) {
       logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error));
-      sendServerError(res, 'CONTACT_004: Sistem hatası - Mesajlar yüklenemedi');
+      sendServerError(res, `${SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_LOAD_ERROR.code}: ${SERVICE_MESSAGES.CONTACT_EXT.MESSAGE_LOAD_ERROR.message}`);
     }
   };
 

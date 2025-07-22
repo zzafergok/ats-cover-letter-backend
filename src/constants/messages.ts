@@ -795,6 +795,379 @@ export const SERVICE_MESSAGES = {
     }
   },
 
+  // Application Messages (APP_xxx)
+  APP: {
+    API_RUNNING: {
+      code: 'APP_001',
+      message: 'API is running',
+      status: 'success' as const
+    },
+    HEALTH_CHECK_FAILED: {
+      code: 'APP_002',
+      message: 'Health check failed',
+      status: 'error' as const
+    },
+    ENDPOINT_NOT_FOUND: {
+      code: 'APP_003',
+      message: 'Endpoint not found',
+      status: 'error' as const
+    }
+  },
+
+  // Response Messages (RESPONSE_xxx)
+  RESPONSE: {
+    COVER_LETTER_CREATION_STARTED: {
+      code: 'RESPONSE_001',
+      message: 'Cover letter oluşturma işlemi başlatıldı',
+      status: 'success' as const
+    },
+    INVALID_DATA: {
+      code: 'RESPONSE_002',
+      message: 'Geçersiz veri',
+      status: 'error' as const
+    },
+    COVER_LETTER_NOT_FOUND: {
+      code: 'RESPONSE_003',
+      message: 'Cover letter bulunamadı',
+      status: 'error' as const
+    },
+    COVER_LETTER_INFO_ERROR: {
+      code: 'RESPONSE_004',
+      message: 'Cover letter bilgileri alınırken hata oluştu',
+      status: 'error' as const
+    },
+    COVER_LETTER_UPDATE_SUCCESS: {
+      code: 'RESPONSE_005',
+      message: 'Cover letter başarıyla güncellendi',
+      status: 'success' as const
+    },
+    COVER_LETTER_UPDATE_ERROR: {
+      code: 'RESPONSE_006',
+      message: 'Cover letter güncellenirken hata oluştu',
+      status: 'error' as const
+    },
+    COVER_LETTER_LIST_ERROR: {
+      code: 'RESPONSE_007',
+      message: 'Cover letter listesi alınırken hata oluştu',
+      status: 'error' as const
+    },
+    COVER_LETTER_NOT_READY: {
+      code: 'RESPONSE_008',
+      message: 'Cover letter henüz hazır değil veya içerik bulunamadı',
+      status: 'error' as const
+    },
+    PDF_GENERATION_ERROR: {
+      code: 'RESPONSE_009',
+      message: 'PDF oluşturulurken hata oluştu',
+      status: 'error' as const
+    }
+  },
+
+  // Error Messages (ERR_xxx)
+  ERROR: {
+    DATA_CONFLICT: {
+      code: 'ERR_001',
+      message: 'Veri çakışması - Bu kayıt zaten mevcut (Unique constraint)',
+      status: 'error' as const
+    },
+    RELATIONSHIP_ERROR: {
+      code: 'ERR_002',
+      message: 'İlişki hatası - Bağlantılı kayıt bulunamadı (Foreign key constraint)',
+      status: 'error' as const
+    },
+    RECORD_NOT_FOUND: {
+      code: 'ERR_003',
+      message: 'Kayıt bulunamadı - İşlem yapılacak veri mevcut değil',
+      status: 'error' as const
+    },
+    DATABASE_CONNECTION_ERROR: {
+      code: 'ERR_004',
+      message: 'Veritabanı bağlantı hatası - Lütfen daha sonra tekrar deneyin',
+      status: 'error' as const
+    },
+    TIMEOUT_ERROR: {
+      code: 'ERR_005',
+      message: 'İşlem zaman aşımı - Veritabanı yanıt vermiyor',
+      status: 'error' as const
+    },
+    SERVER_ERROR: {
+      code: 'ERR_006',
+      message: 'Sunucu hatası',
+      status: 'error' as const
+    }
+  },
+
+  // Authentication Messages (AUTH_xxx) - Extended
+  AUTH_EXT: {
+    REGISTER_STARTED: {
+      code: 'AUTH_101',
+      message: '[REGISTER] İşlem başlatıldı',
+      status: 'info' as const
+    },
+    REGISTER_FORMAT_ERROR: {
+      code: 'AUTH_102',
+      message: '[REGISTER] Email veya password format hatası',
+      status: 'info' as const
+    },
+    REGISTER_VALIDATION_PASSED: {
+      code: 'AUTH_103',
+      message: '[REGISTER] Email ve password format validation geçti',
+      status: 'info' as const
+    },
+    REGISTER_DUPLICATE_EMAIL: {
+      code: 'AUTH_104',
+      message: '[REGISTER] Duplicate email tespit edildi',
+      status: 'info' as const
+    },
+    REGISTER_EMAIL_UNIQUE: {
+      code: 'AUTH_105',
+      message: '[REGISTER] Email uniqueness validation geçti',
+      status: 'info' as const
+    },
+    REGISTER_ROLE_CONFLICT: {
+      code: 'AUTH_106',
+      message: '[REGISTER] Rol çakışması tespit edildi',
+      status: 'info' as const
+    },
+    REGISTER_ROLE_VALIDATED: {
+      code: 'AUTH_107',
+      message: '[REGISTER] Role validation geçti',
+      status: 'info' as const
+    },
+    REGISTER_PASSWORD_HASHED: {
+      code: 'AUTH_108',
+      message: '[REGISTER] Password hashing tamamlandı',
+      status: 'info' as const
+    },
+    REGISTER_TOKEN_CREATED: {
+      code: 'AUTH_109',
+      message: '[REGISTER] Email verification token oluşturuldu',
+      status: 'info' as const
+    },
+    REGISTER_USER_CREATED: {
+      code: 'AUTH_110',
+      message: '[REGISTER] User veritabanında oluşturuldu',
+      status: 'info' as const
+    },
+    REGISTER_TOKEN_UPDATED: {
+      code: 'AUTH_111',
+      message: '[REGISTER] Token güncelleme tamamlandı',
+      status: 'info' as const
+    },
+    REGISTER_EMAIL_SENT: {
+      code: 'AUTH_112',
+      message: '[REGISTER] Email doğrulama başarıyla gönderildi',
+      status: 'info' as const
+    },
+    REGISTER_EMAIL_ERROR: {
+      code: 'AUTH_113',
+      message: '[REGISTER] Email gönderim hatası',
+      status: 'error' as const
+    },
+    REGISTER_ROLLBACK: {
+      code: 'AUTH_114',
+      message: '[REGISTER] User kaydı email hatası nedeniyle geri alındı',
+      status: 'info' as const
+    },
+    REGISTER_CRITICAL_ERROR: {
+      code: 'AUTH_115',
+      message: '[REGISTER] Kritik hata',
+      status: 'error' as const
+    },
+    INVALID_TOKEN_ATTEMPT: {
+      code: 'AUTH_116',
+      message: 'Invalid token attempt',
+      status: 'warning' as const
+    }
+  },
+
+  // Template Messages (TEMPLATE_xxx)
+  TEMPLATE: {
+    // Turkish Template Headers
+    TR_PERSONAL_INFO: {
+      code: 'TEMPLATE_001',
+      message: 'KİŞİSEL BİLGİLER:',
+      status: 'info' as const
+    },
+    TR_PROFESSIONAL_PROFILE: {
+      code: 'TEMPLATE_002',
+      message: 'PROFESYONEL PROFİL:',
+      status: 'info' as const
+    },
+    TR_APPLICATION_INFO: {
+      code: 'TEMPLATE_003',
+      message: 'BAŞVURU BİLGİLERİ:',
+      status: 'info' as const
+    },
+    TR_REQUIREMENTS: {
+      code: 'TEMPLATE_004',
+      message: 'GEREKSINIMLER:',
+      status: 'info' as const
+    },
+    TR_FULL_NAME: {
+      code: 'TEMPLATE_005',
+      message: 'Ad Soyad:',
+      status: 'info' as const
+    },
+    TR_EMAIL: {
+      code: 'TEMPLATE_006',
+      message: 'E-posta:',
+      status: 'info' as const
+    },
+    TR_PHONE: {
+      code: 'TEMPLATE_007',
+      message: 'Telefon:',
+      status: 'info' as const
+    },
+    TR_CITY: {
+      code: 'TEMPLATE_008',
+      message: 'Şehir:',
+      status: 'info' as const
+    },
+    // English Template Headers
+    EN_PERSONAL_INFO: {
+      code: 'TEMPLATE_021',
+      message: 'PERSONAL INFORMATION:',
+      status: 'info' as const
+    },
+    EN_PROFESSIONAL_PROFILE: {
+      code: 'TEMPLATE_022',
+      message: 'PROFESSIONAL PROFILE:',
+      status: 'info' as const
+    },
+    EN_APPLICATION_DETAILS: {
+      code: 'TEMPLATE_023',
+      message: 'APPLICATION DETAILS:',
+      status: 'info' as const
+    },
+    EN_REQUIREMENTS: {
+      code: 'TEMPLATE_024',
+      message: 'REQUIREMENTS:',
+      status: 'info' as const
+    },
+    EN_FULL_NAME: {
+      code: 'TEMPLATE_025',
+      message: 'Full Name:',
+      status: 'info' as const
+    },
+    EN_EMAIL: {
+      code: 'TEMPLATE_026',
+      message: 'Email:',
+      status: 'info' as const
+    }
+  },
+
+  // AI Instructions (AI_INST_xxx)
+  AI_INSTRUCTIONS: {
+    NATURAL_TONE: {
+      code: 'AI_INST_001',
+      message: 'Doğal ve samimi bir dil kullan - sanki gerçek bir kişi yazıyormuş gibi',
+      status: 'info' as const
+    },
+    HUMAN_STYLE: {
+      code: 'AI_INST_002',
+      message: 'Mükemmel olmayan, insan benzeri bir yazım stili benimse',
+      status: 'info' as const
+    },
+    VARIED_SENTENCES: {
+      code: 'AI_INST_003',
+      message: 'Ara sıra kısa cümleler, ara sıra uzun cümleler kullan',
+      status: 'info' as const
+    },
+    AVOID_CLICHES: {
+      code: 'AI_INST_004',
+      message: 'Klişe ifadelerden kaçın, kişisel ve özgün bir ton kullan',
+      status: 'info' as const
+    }
+  },
+
+  // Email Content (EMAIL_CONTENT_xxx)
+  EMAIL_CONTENT: {
+    SENDER_KANBAN: {
+      code: 'EMAIL_CONTENT_001',
+      message: 'Kanban System <noreply@starkon-kanban.com>',
+      status: 'info' as const
+    },
+    SENDER_ATS: {
+      code: 'EMAIL_CONTENT_002',
+      message: 'ATS CV System <noreply@atscv.com>',
+      status: 'info' as const
+    },
+    VERIFY_EMAIL_SUBJECT: {
+      code: 'EMAIL_CONTENT_003',
+      message: 'Email Adresinizi Doğrulayın',
+      status: 'info' as const
+    },
+    PASSWORD_RESET_SUBJECT: {
+      code: 'EMAIL_CONTENT_004',
+      message: 'Şifre Sıfırlama Talebi',
+      status: 'info' as const
+    }
+  },
+
+  // Contact Messages Extended (CONTACT_EXT_xxx)
+  CONTACT_EXT: {
+    MESSAGE_TYPE_CONTACT: {
+      code: 'CONTACT_EXT_001',
+      message: 'İletişim mesajınız',
+      status: 'info' as const
+    },
+    MESSAGE_TYPE_SUPPORT: {
+      code: 'CONTACT_EXT_002',
+      message: 'Destek talebiniz',
+      status: 'info' as const
+    },
+    MESSAGE_SENT_SUCCESS: {
+      code: 'CONTACT_EXT_003',
+      message: 'başarıyla gönderildi. En kısa sürede size dönüş yapacağız.',
+      status: 'success' as const
+    },
+    EMAIL_SEND_FAILED: {
+      code: 'CONTACT_EXT_004',
+      message: 'Email gönderimi başarısız - Lütfen daha sonra tekrar deneyin',
+      status: 'error' as const
+    },
+    SYSTEM_ERROR_MESSAGE: {
+      code: 'CONTACT_EXT_005',
+      message: 'Sistem hatası - Mesaj gönderilemedi',
+      status: 'error' as const
+    },
+    LIMIT_INFO_ERROR: {
+      code: 'CONTACT_EXT_006',
+      message: 'Limit bilgisi alınamadı',
+      status: 'error' as const
+    },
+    MESSAGE_LOAD_ERROR: {
+      code: 'CONTACT_EXT_007',
+      message: 'Sistem hatası - Mesajlar yüklenemedi',
+      status: 'error' as const
+    }
+  },
+
+  // Logger Messages (LOG_xxx)
+  LOGGER: {
+    COVER_LETTER_GET_ERROR: {
+      code: 'LOG_001',
+      message: 'Cover letter getirme hatası:',
+      status: 'error' as const
+    },
+    COVER_LETTER_UPDATE_ERROR: {
+      code: 'LOG_002',
+      message: 'Cover letter güncelleme hatası:',
+      status: 'error' as const
+    },
+    COVER_LETTER_LIST_ERROR: {
+      code: 'LOG_003',
+      message: 'Cover letter listesi getirme hatası:',
+      status: 'error' as const
+    },
+    PDF_DOWNLOAD_ERROR: {
+      code: 'LOG_004',
+      message: 'PDF indirme hatası:',
+      status: 'error' as const
+    }
+  },
+
   // General Messages (GENERAL_xxx)
   GENERAL: {
     SUCCESS: {

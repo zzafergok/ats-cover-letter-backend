@@ -32,14 +32,14 @@ router.post('/', authenticateToken, async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Cover letter oluşturma işlemi başlatıldı',
+      message: SERVICE_MESSAGES.RESPONSE.COVER_LETTER_CREATION_STARTED.message,
       data: coverLetter,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        message: 'Geçersiz veri',
+        message: SERVICE_MESSAGES.RESPONSE.INVALID_DATA.message,
         errors: error.issues.map((issue) => ({
           field: issue.path.join('.'),
           message: issue.message,
@@ -87,10 +87,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
       data: coverLetter,
     });
   } catch (error) {
-    logger.error('Cover letter getirme hatası:', error);
+    logger.error(SERVICE_MESSAGES.LOGGER.COVER_LETTER_GET_ERROR.message, error);
     return res.status(500).json({
       success: false,
-      message: 'Cover letter bilgileri alınırken hata oluştu',
+      message: SERVICE_MESSAGES.RESPONSE.COVER_LETTER_INFO_ERROR.message,
     });
   }
 });
@@ -109,14 +109,14 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'Cover letter başarıyla güncellendi',
+      message: SERVICE_MESSAGES.RESPONSE.COVER_LETTER_UPDATE_SUCCESS.message,
       data: updatedCoverLetter,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         success: false,
-        message: 'Geçersiz veri',
+        message: SERVICE_MESSAGES.RESPONSE.INVALID_DATA.message,
         errors: error.issues.map((issue) => ({
           field: issue.path.join('.'),
           message: issue.message,
@@ -124,12 +124,12 @@ router.put('/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    logger.error('Cover letter güncelleme hatası:', error);
+    logger.error(SERVICE_MESSAGES.LOGGER.COVER_LETTER_UPDATE_ERROR.message, error);
 
     const errorMessage =
       error instanceof Error
         ? error.message
-        : 'Cover letter güncellenirken hata oluştu';
+        : SERVICE_MESSAGES.RESPONSE.COVER_LETTER_UPDATE_ERROR.message;
     return res.status(500).json({
       success: false,
       message: errorMessage,
@@ -149,10 +149,10 @@ router.get('/', authenticateToken, async (req, res) => {
       data: coverLetters,
     });
   } catch (error) {
-    logger.error('Cover letter listesi getirme hatası:', error);
+    logger.error(SERVICE_MESSAGES.LOGGER.COVER_LETTER_LIST_ERROR.message, error);
     return res.status(500).json({
       success: false,
-      message: 'Cover letter listesi alınırken hata oluştu',
+      message: SERVICE_MESSAGES.RESPONSE.COVER_LETTER_LIST_ERROR.message,
     });
   }
 });
@@ -166,7 +166,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'Cover letter başarıyla silindi',
+      message: SERVICE_MESSAGES.COVER_LETTER.DELETE_SUCCESS.message,
     });
   } catch (error) {
     logger.error(
@@ -207,7 +207,7 @@ router.get('/:id/download/pdf', authenticateToken, async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: 'Cover letter henüz hazır değil veya içerik bulunamadı',
+        message: SERVICE_MESSAGES.RESPONSE.COVER_LETTER_NOT_READY.message,
       });
     }
 
@@ -234,10 +234,10 @@ router.get('/:id/download/pdf', authenticateToken, async (req, res) => {
 
     return res.send(pdfBuffer);
   } catch (error) {
-    logger.error('PDF indirme hatası:', error);
+    logger.error(SERVICE_MESSAGES.LOGGER.PDF_DOWNLOAD_ERROR.message, error);
     return res.status(500).json({
       success: false,
-      message: 'PDF oluşturulurken hata oluştu',
+      message: SERVICE_MESSAGES.RESPONSE.PDF_GENERATION_ERROR.message,
     });
   }
 });

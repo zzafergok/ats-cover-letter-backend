@@ -33,9 +33,9 @@ export class EmailService {
       }
 
       await this.resend.emails.send({
-        from: 'Kanban System <noreply@starkon-kanban.com>',
+        from: SERVICE_MESSAGES.EMAIL_CONTENT.SENDER_KANBAN.message,
         to: [email],
-        subject: 'Email Adresinizi Doğrulayın',
+        subject: SERVICE_MESSAGES.EMAIL_CONTENT.VERIFY_EMAIL_SUBJECT.message,
         html: `[Mevcut HTML template aynı kalacak]`,
       });
 
@@ -93,9 +93,9 @@ export class EmailService {
       const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
       await this.resend.emails.send({
-        from: 'ATS CV System <noreply@atscv.com>',
+        from: SERVICE_MESSAGES.EMAIL_CONTENT.SENDER_ATS.message,
         to: [email],
-        subject: 'Şifre Sıfırlama Talebi',
+        subject: SERVICE_MESSAGES.EMAIL_CONTENT.PASSWORD_RESET_SUBJECT.message,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>Şifre Sıfırlama</h2>
@@ -129,7 +129,7 @@ export class EmailService {
       }
 
       await this.resend.emails.send({
-        from: 'ATS CV System <noreply@atscv.com>',
+        from: SERVICE_MESSAGES.EMAIL_CONTENT.SENDER_ATS.message,
         to: [process.env.ADMIN_EMAIL || 'admin@atscv.com'],
         replyTo: data.email,
         subject: `[${data.type}] ${data.subject}`,

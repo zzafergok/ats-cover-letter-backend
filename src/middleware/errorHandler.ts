@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { sendServerError } from '../utils/response';
 
 import logger from '../config/logger';
-import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
+import { SERVICE_MESSAGES, createErrorMessage } from '../constants/messages';
 
 export const errorHandler = (err: any, req: Request, res: Response): void => {
   logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, err), {
@@ -32,7 +32,7 @@ export const errorHandler = (err: any, req: Request, res: Response): void => {
     res.status(409);
     sendServerError(
       res,
-      'ERR_001: Veri çakışması - Bu kayıt zaten mevcut (Unique constraint)'
+      SERVICE_MESSAGES.ERROR.DATA_CONFLICT.message
     );
     return;
   }
@@ -42,7 +42,7 @@ export const errorHandler = (err: any, req: Request, res: Response): void => {
     res.status(400);
     sendServerError(
       res,
-      'ERR_002: İlişki hatası - Bağlantılı kayıt bulunamadı (Foreign key constraint)'
+      SERVICE_MESSAGES.ERROR.RELATIONSHIP_ERROR.message
     );
     return;
   }
@@ -52,7 +52,7 @@ export const errorHandler = (err: any, req: Request, res: Response): void => {
     res.status(404);
     sendServerError(
       res,
-      'ERR_003: Kayıt bulunamadı - İşlem yapılacak veri mevcut değil'
+      SERVICE_MESSAGES.ERROR.RECORD_NOT_FOUND.message
     );
     return;
   }
@@ -62,7 +62,7 @@ export const errorHandler = (err: any, req: Request, res: Response): void => {
     res.status(503);
     sendServerError(
       res,
-      'ERR_004: Veritabanı bağlantı hatası - Lütfen daha sonra tekrar deneyin'
+      SERVICE_MESSAGES.ERROR.DATABASE_CONNECTION_ERROR.message
     );
     return;
   }
@@ -72,7 +72,7 @@ export const errorHandler = (err: any, req: Request, res: Response): void => {
     res.status(504);
     sendServerError(
       res,
-      'ERR_005: İşlem zaman aşımı - Veritabanı yanıt vermiyor'
+      SERVICE_MESSAGES.ERROR.TIMEOUT_ERROR.message
     );
     return;
   }

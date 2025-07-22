@@ -26,7 +26,7 @@ import {
 } from '../utils/response';
 
 import logger from '../config/logger';
-import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
+import { SERVICE_MESSAGES } from '../constants/messages';
 
 export class AuthController {
   private sessionService = SessionService.getInstance();
@@ -34,7 +34,7 @@ export class AuthController {
 
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
-      logger.info('[REGISTER] İşlem başlatıldı:', {
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_STARTED.message, {
         email: req.body.email,
         timestamp: new Date().toISOString(),
       });
@@ -49,50 +49,50 @@ export class AuthController {
       const isValidPassword = passwordRegex.test(password);
 
       if (!isValidEmail || !isValidPassword) {
-        logger.info('[REGISTER] Email veya password format hatası');
+        logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_FORMAT_ERROR.message);
         sendError(
           res,
-          'AUTH_025: Email adresi ve parolanızı kontrol ediniz',
+          SERVICE_MESSAGES.SCHEMA.EMAIL_REQUIRED.message,
           400
         );
         return;
       }
 
-      logger.info('[REGISTER] Email ve password format validation geçti');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_VALIDATION_PASSED.message);
 
       const existingUser = await db.user.findUnique({ where: { email } });
       if (existingUser) {
-        logger.info('[REGISTER] Duplicate email tespit edildi:', email);
-        sendError(res, 'AUTH_005: Bu email adresi zaten kullanımda', 400);
+        logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_DUPLICATE_EMAIL.message, email);
+        sendError(res, SERVICE_MESSAGES.AUTH.TOKEN_VERIFICATION_FAILED.message, 400);
         return;
       }
-      logger.info('[REGISTER] Email uniqueness validation geçti');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_EMAIL_UNIQUE.message);
 
       if (role && ['ADMIN'].includes(role)) {
         const roleUser = await db.user.findFirst({
           where: { role: role as any },
         });
         if (roleUser) {
-          logger.info('[REGISTER] Rol çakışması tespit edildi:', role);
+          logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_ROLE_CONFLICT.message, role);
           sendError(
             res,
-            `AUTH_006: ${role} rolü için kullanıcı zaten mevcut`,
+            SERVICE_MESSAGES.AUTH_EXT.REGISTER_ROLE_CONFLICT.message,
             400
           );
           return;
         }
       }
-      logger.info('[REGISTER] Role validation geçti');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_ROLE_VALIDATED.message);
 
       const hashedPassword = await bcrypt.hash(password, 12);
-      logger.info('[REGISTER] Password hashing tamamlandı');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_PASSWORD_HASHED.message);
 
       const emailVerifyToken = JwtService.generateEmailVerifyToken(
         'temp',
         email
       );
       const emailVerifyExpiry = new Date(Date.now() + 30 * 60 * 1000);
-      logger.info('[REGISTER] Email verification token oluşturuldu');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_TOKEN_CREATED.message);
 
       // firstName and lastName already extracted from request body
 
@@ -108,7 +108,7 @@ export class AuthController {
           emailVerifyExpires: emailVerifyExpiry,
         },
       });
-      logger.info('[REGISTER] User veritabanında oluşturuldu:', user.id);
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_USER_CREATED.message, user.id);
 
       const finalEmailVerifyToken = JwtService.generateEmailVerifyToken(
         user.id,
@@ -119,7 +119,7 @@ export class AuthController {
         where: { id: user.id },
         data: { emailVerifyToken: finalEmailVerifyToken },
       });
-      logger.info('[REGISTER] Token güncelleme tamamlandı');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_TOKEN_UPDATED.message);
 
       try {
         await EmailService.sendEmailVerification(
@@ -127,32 +127,32 @@ export class AuthController {
           finalEmailVerifyToken,
           `${firstName} ${lastName}`
         );
-        logger.info('[REGISTER] Email doğrulama başarıyla gönderildi');
+        logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_EMAIL_SENT.message);
 
         sendSuccess(
           res,
           {
-            message: 'Hesap oluşturuldu, email adresinizi doğrulayın',
+            message: SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT.message,
             email: email,
             emailSent: true,
           },
-          'Kayıt başarılı - Email doğrulama gönderildi'
+          SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT.message
         );
       } catch (emailError) {
-        logger.error('[REGISTER] Email gönderim hatası:', emailError);
+        logger.error(SERVICE_MESSAGES.AUTH_EXT.REGISTER_EMAIL_ERROR.message, emailError);
 
         await db.user.delete({ where: { id: user.id } });
-        logger.info('[REGISTER] User kaydı email hatası nedeniyle geri alındı');
+        logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_ROLLBACK.message);
 
         sendError(
           res,
-          'AUTH_026: Email gönderimi başarısız - Kayıt işlemi iptal edildi',
+          SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED.message,
           500
         );
         return;
       }
     } catch (error) {
-      logger.error('[REGISTER] Kritik hata:', {
+      logger.error(SERVICE_MESSAGES.AUTH_EXT.REGISTER_CRITICAL_ERROR.message, {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         code:
@@ -162,7 +162,7 @@ export class AuthController {
       });
       sendServerError(
         res,
-        'AUTH_007: Sistem hatası - Hesap oluşturma işlemi başarısız'
+        SERVICE_MESSAGES.AUTH_EXT.REGISTER_CRITICAL_ERROR.message
       );
     }
   };
@@ -172,7 +172,7 @@ export class AuthController {
       const { token } = req.body;
 
       if (!token) {
-        sendError(res, 'AUTH_017: Email doğrulama token gerekli', 400);
+        sendError(res, SERVICE_MESSAGES.SCHEMA.EMAIL_VERIFICATION_TOKEN_REQUIRED.message, 400);
         return;
       }
 
@@ -203,17 +203,17 @@ export class AuthController {
       );
 
       if (!user) {
-        sendError(res, 'AUTH_018: Geçersiz email doğrulama token', 400);
+        sendError(res, SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_INVALID.message, 400);
         return;
       }
 
       if (user.isEmailVerified) {
-        sendError(res, 'AUTH_019: Email adresi zaten doğrulanmış', 400);
+        sendError(res, SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_EXPIRED.message, 400);
         return;
       }
 
       if (user.emailVerifyExpires && user.emailVerifyExpires < new Date()) {
-        sendError(res, 'AUTH_020: Email doğrulama süresi dolmuş', 400);
+        sendError(res, SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_EXPIRED.message, 400);
         return;
       }
 
@@ -255,13 +255,13 @@ export class AuthController {
       };
 
       logger.info('Email doğrulama başarıyla tamamlandı');
-      sendSuccess(res, response, 'Email doğrulandı ve giriş yapabilirsiniz');
+      sendSuccess(res, response, SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT.message);
     } catch (error) {
       logger.error('Email doğrulama hatası detayı:', {
         message: error instanceof Error ? error.message : 'Bilinmeyen hata',
         stack: error instanceof Error ? error.stack : undefined,
       });
-      sendServerError(res, 'AUTH_022: Email doğrulama işlemi başarısız');
+      sendServerError(res, SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED.message);
     }
   };
 
@@ -278,13 +278,13 @@ export class AuthController {
         sendSuccess(
           res,
           null,
-          'Eğer email geçerliyse, doğrulama bağlantısı gönderildi'
+          SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT.message
         );
         return;
       }
 
       if (user.isEmailVerified) {
-        sendError(res, 'AUTH_023: Email adresi zaten doğrulanmış', 400);
+        sendError(res, SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_EXPIRED.message, 400);
         return;
       }
 
@@ -308,12 +308,12 @@ export class AuthController {
         `${user.firstName} ${user.lastName}`.trim()
       );
 
-      sendSuccess(res, null, 'Email doğrulama bağlantısı yeniden gönderildi');
+      sendSuccess(res, null, SERVICE_MESSAGES.EMAIL.VERIFICATION_SENT.message);
     } catch (error) {
       logger.error('Email doğrulama yeniden gönderme hatası:', error);
       sendServerError(
         res,
-        'AUTH_024: Email doğrulama yeniden gönderme başarısız'
+        SERVICE_MESSAGES.EMAIL.VERIFICATION_SEND_FAILED.message
       );
     }
   };
@@ -346,10 +346,10 @@ export class AuthController {
       }
 
       if (!user) {
-        logger.warn('Login başarısız - kullanıcı bulunamadı', { email });
+        logger.warn(SERVICE_MESSAGES.LOGGER.COVER_LETTER_GET_ERROR.message, { email });
         sendError(
           res,
-          'AUTH_001: Kullanıcı girişi başarısız - Email adresi bulunamadı',
+          SERVICE_MESSAGES.GENERAL.NOT_FOUND.message,
           401
         );
         return;
@@ -357,20 +357,20 @@ export class AuthController {
 
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
-        logger.warn('Login başarısız - hatalı şifre', { email });
+        logger.warn(SERVICE_MESSAGES.AUTH_EXT.REGISTER_FORMAT_ERROR.message, { email });
         sendError(
           res,
-          'AUTH_002: Kullanıcı girişi başarısız - Şifre hatalı',
+          SERVICE_MESSAGES.AUTH.TOKEN_VERIFICATION_FAILED.message,
           401
         );
         return;
       }
 
       if (!user.isEmailVerified) {
-        logger.warn('Login başarısız - email doğrulanmamış', { email });
+        logger.warn(SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_INVALID.message, { email });
         sendError(
           res,
-          'AUTH_025: Giriş engellendi - Email adresinizi doğrulamanız gerekiyor',
+          SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_INVALID.message,
           403
         );
         return;
@@ -407,13 +407,13 @@ export class AuthController {
         expiresIn: JwtService.getExpiresInSeconds(),
       };
 
-      logger.info('Login başarılı', { userId: user.id, email });
-      sendSuccess(res, response, 'Başarıyla giriş yapıldı');
+      logger.info(SERVICE_MESSAGES.AUTH_EXT.REGISTER_USER_CREATED.message, { userId: user.id, email });
+      sendSuccess(res, response, SERVICE_MESSAGES.GENERAL.SUCCESS.message);
     } catch (error) {
-      logger.error('Login hatası:', error);
+      logger.error(SERVICE_MESSAGES.LOGGER.COVER_LETTER_GET_ERROR.message, error);
       sendServerError(
         res,
-        'AUTH_004: Sistem hatası - Giriş işlemi tamamlanamadı'
+        SERVICE_MESSAGES.ERROR.SERVER_ERROR.message
       );
     }
   };
@@ -439,7 +439,7 @@ export class AuthController {
       if (!user) {
         sendError(
           res,
-          'AUTH_008: Token yenileme başarısız - Kullanıcı bulunamadı',
+          SERVICE_MESSAGES.GENERAL.NOT_FOUND.message,
           401
         );
         return;
@@ -448,7 +448,7 @@ export class AuthController {
       if (!user.isEmailVerified) {
         sendError(
           res,
-          'AUTH_008: Token yenileme başarısız - Email doğrulama gerekli',
+          SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_INVALID.message,
           401
         );
         return;
@@ -485,7 +485,7 @@ export class AuthController {
       logger.error('Token yenileme hatası:', error);
       sendError(
         res,
-        'AUTH_009: Token yenileme başarısız - Token doğrulama hatası',
+        SERVICE_MESSAGES.AUTH.TOKEN_VERIFICATION_FAILED.message,
         401
       );
     }
@@ -499,13 +499,13 @@ export class AuthController {
         await this.sessionService.destroySession(sessionId);
       }
 
-      logger.info('Logout başarılı', { userId: req.user?.userId });
-      sendSuccess(res, null, 'Başarıyla çıkış yapıldı');
+      logger.info(SERVICE_MESSAGES.GENERAL.SUCCESS.message, { userId: req.user?.userId });
+      sendSuccess(res, null, SERVICE_MESSAGES.GENERAL.SUCCESS.message);
     } catch (error) {
       logger.error('Logout hatası:', error);
       sendServerError(
         res,
-        'AUTH_010: Sistem hatası - Çıkış işlemi tamamlanamadı'
+        SERVICE_MESSAGES.ERROR.SERVER_ERROR.message
       );
     }
   };
@@ -519,13 +519,13 @@ export class AuthController {
         await this.cacheService.del(`user:sessions:${userId}`);
       }
 
-      logger.info('Tüm oturumlardan çıkış yapıldı', { userId });
-      sendSuccess(res, null, 'Tüm cihazlardan çıkış yapıldı');
+      logger.info(SERVICE_MESSAGES.GENERAL.SUCCESS.message, { userId });
+      sendSuccess(res, null, SERVICE_MESSAGES.GENERAL.SUCCESS.message);
     } catch (error) {
       logger.error('Logout all hatası:', error);
       sendServerError(
         res,
-        'AUTH_011: Sistem hatası - Toplu çıkış işlemi başarısız'
+        SERVICE_MESSAGES.ERROR.SERVER_ERROR.message
       );
     }
   };
@@ -552,7 +552,7 @@ export class AuthController {
       if (!user) {
         sendError(
           res,
-          'AUTH_033: Email adresi sistemde bulunamadı - Lütfen kayıtlı email adresinizi kontrol edin',
+          SERVICE_MESSAGES.GENERAL.NOT_FOUND.message,
           404
         );
         return;
@@ -561,7 +561,7 @@ export class AuthController {
       if (!user.isEmailVerified) {
         sendError(
           res,
-          'AUTH_034: Email adresi doğrulanmamış - Önce email doğrulaması yapmanız gerekiyor',
+          SERVICE_MESSAGES.AUTH.EMAIL_VERIFICATION_TOKEN_INVALID.message,
           400
         );
         return;
@@ -577,13 +577,13 @@ export class AuthController {
       sendSuccess(
         res,
         null,
-        'Şifre sıfırlama bağlantısı email adresinize gönderildi'
+        SERVICE_MESSAGES.EMAIL.PASSWORD_RESET_SENT.message
       );
     } catch (error) {
       logger.error('Şifre sıfırlama hatası:', error);
       sendServerError(
         res,
-        'AUTH_012: Sistem hatası - Şifre sıfırlama talebi işlenemedi'
+        SERVICE_MESSAGES.ERROR.SERVER_ERROR.message
       );
     }
   };

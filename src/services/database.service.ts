@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 import logger from '../config/logger';
-import { SERVICE_MESSAGES, formatMessage, createErrorMessage } from '../constants/messages';
+import { SERVICE_MESSAGES } from '../constants/messages';
 
 export class DatabaseService {
   private static instance: DatabaseService;
@@ -24,7 +24,7 @@ export class DatabaseService {
       this.setupEventListeners();
     } catch (error) {
       logger.error('DB_001: Prisma client creation error:', error);
-      throw new Error('DB_001: Veritabanı istemci başlatma başarısız');
+      throw new Error(SERVICE_MESSAGES.DATABASE.CLIENT_CREATION_FAILED.message);
     }
   }
 
@@ -44,7 +44,7 @@ export class DatabaseService {
   public getClient(): PrismaClient {
     if (!this.prisma) {
       throw new Error(
-        'DB_025: Prisma client başlatılmamış - Database service düzgün başlatılamadı'
+        SERVICE_MESSAGES.DATABASE.CLIENT_CREATION_FAILED.message
       );
     }
     return this.prisma;
@@ -56,7 +56,7 @@ export class DatabaseService {
       logger.info('Database connection closed successfully');
     } catch (error) {
       logger.error('DB_002: Database connection close error:', error);
-      throw new Error('DB_002: Veritabanı bağlantı kapatma işlemi başarısız');
+      throw new Error(SERVICE_MESSAGES.DATABASE.CONNECTION_CLOSED.message);
     }
   }
 
@@ -64,7 +64,7 @@ export class DatabaseService {
     try {
       if (!process.env.DATABASE_URL) {
         throw new Error(
-          'DB_003: Konfigürasyon hatası - DATABASE_URL ortam değişkeni tanımlanmamış'
+          SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
         );
       }
 
@@ -83,72 +83,72 @@ export class DatabaseService {
         const errorCode = (error as { code: string }).code;
         if (errorCode === 'P1001') {
           throw new Error(
-            'DB_005: Bağlantı hatası - Veritabanı sunucusuna erişilemiyor'
+            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
           );
         }
 
         if (errorCode === 'P1002') {
           throw new Error(
-            'DB_006: Bağlantı zaman aşımı - Veritabanı yanıt vermiyor'
+            SERVICE_MESSAGES.ERROR.TIMEOUT_ERROR.message
           );
         }
 
         if (errorCode === 'P1003') {
           throw new Error(
-            'DB_007: Veritabanı bulunamadı - Belirtilen veritabanı mevcut değil'
+            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
           );
         }
 
         if (errorCode === 'P1008') {
           throw new Error(
-            'DB_008: İşlem zaman aşımı - Veritabanı sorgusu çok uzun sürdü'
+            SERVICE_MESSAGES.ERROR.TIMEOUT_ERROR.message
           );
         }
 
         if (errorCode === 'P1009') {
           throw new Error(
-            'DB_009: Veritabanı zaten mevcut - Oluşturma işlemi başarısız'
+            SERVICE_MESSAGES.ERROR.DATA_CONFLICT.message
           );
         }
 
         if (errorCode === 'P1010') {
           throw new Error(
-            'DB_010: Erişim reddedildi - Veritabanı kullanıcı izinleri yetersiz'
+            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
           );
         }
 
         if (errorCode === 'P1011') {
           throw new Error(
-            'DB_011: TLS bağlantı hatası - Güvenli bağlantı kurulamadı'
+            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
           );
         }
 
         if (errorCode === 'P1012') {
           throw new Error(
-            'DB_012: Şema doğrulama hatası - Veritabanı şeması geçersiz'
+            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
           );
         }
 
         if (errorCode === 'P1013') {
           throw new Error(
-            'DB_013: Geçersiz veritabanı dizesi - DATABASE_URL formatı hatalı'
+            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
           );
         }
 
         if (errorCode === 'P1014') {
           throw new Error(
-            'DB_014: Temel model bulunamadı - Veritabanı şeması eksik'
+            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
           );
         }
 
         if (errorCode === 'P1015') {
           throw new Error(
-            'DB_015: Prisma şeması geçersiz - Schema dosyasında hata'
+            SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message
           );
         }
       }
 
-      throw new Error('DB_016: Veritabanı bağlantı kurma işlemi başarısız');
+      throw new Error(SERVICE_MESSAGES.DATABASE.CONNECTION_FAILED.message);
     }
   }
 
@@ -195,7 +195,7 @@ export class DatabaseService {
       return totalCleaned;
     } catch (error) {
       logger.error('DB_022: Token cleanup error:', error);
-      throw new Error('DB_022: Token temizleme işlemi başarısız');
+      throw new Error(SERVICE_MESSAGES.DATABASE.TOKEN_CLEANUP_FAILED.message);
     }
   }
 
@@ -220,7 +220,7 @@ export class DatabaseService {
     } catch (error) {
       logger.error('DB_024: Unverified user cleanup error:', error);
       throw new Error(
-        'DB_024: Doğrulanmamış kullanıcı temizleme işlemi başarısız'
+        SERVICE_MESSAGES.DATABASE.USER_CLEANUP_FAILED.message
       );
     }
   }
@@ -249,7 +249,7 @@ export class DatabaseService {
     } catch (error) {
       logger.error('DB_027: Password reset token cleanup error:', error);
       throw new Error(
-        'DB_027: Password reset token temizleme işlemi başarısız'
+        SERVICE_MESSAGES.DATABASE.PASSWORD_RESET_CLEANUP_FAILED.message
       );
     }
   }

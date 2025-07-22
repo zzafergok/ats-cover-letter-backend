@@ -81,7 +81,7 @@ export const authenticateToken = async (
     return;
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      logger.warn('Invalid token attempt', { error: error.message });
+      logger.warn(SERVICE_MESSAGES.AUTH_EXT.INVALID_TOKEN_ATTEMPT.message, { error: error.message });
       res.status(401).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.AUTH.TOKEN_VERIFICATION_FAILED),
@@ -92,7 +92,7 @@ export const authenticateToken = async (
     logger.error(createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error));
     res.status(500).json({
       success: false,
-      message: 'Sunucu hatası',
+      message: SERVICE_MESSAGES.ERROR.SERVER_ERROR.message,
     });
     return;
   }
