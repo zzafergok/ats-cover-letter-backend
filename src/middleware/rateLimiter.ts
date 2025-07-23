@@ -10,6 +10,7 @@ export const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: isProduction ? undefined : () => 'development-key',
+  skip: () => !isProduction,
 });
 
 export const authLimiter = rateLimit({
@@ -18,6 +19,7 @@ export const authLimiter = rateLimit({
   message: SERVICE_MESSAGES.RATE_LIMIT.AUTH_EXCEEDED.message,
   skipSuccessfulRequests: true,
   keyGenerator: isProduction ? undefined : () => 'development-auth-key',
+  skip: () => !isProduction,
 });
 
 export const uploadLimiter = rateLimit({
@@ -25,6 +27,7 @@ export const uploadLimiter = rateLimit({
   max: 10,
   message: SERVICE_MESSAGES.RATE_LIMIT.UPLOAD_EXCEEDED.message,
   keyGenerator: isProduction ? undefined : () => 'development-upload-key',
+  skip: () => !isProduction,
 });
 
 export const apiLimiter = rateLimit({
@@ -32,4 +35,5 @@ export const apiLimiter = rateLimit({
   max: 30,
   message: SERVICE_MESSAGES.RATE_LIMIT.API_EXCEEDED.message,
   keyGenerator: isProduction ? undefined : () => 'development-api-key',
+  skip: () => !isProduction,
 });

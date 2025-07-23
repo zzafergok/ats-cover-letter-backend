@@ -29,6 +29,7 @@ export interface EducationData {
   fieldOfStudy?: string;
   grade?: number;
   gradeSystem: 'PERCENTAGE' | 'GPA_4';
+  educationType?: 'LISE' | 'ONLISANS' | 'LISANS' | 'YUKSEKLISANS';
   startYear: number;
   endYear?: number;
   isCurrent: boolean;

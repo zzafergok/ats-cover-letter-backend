@@ -331,6 +331,7 @@ export const updateUserDetailedProfileSchema = z.object({
   portfolioWebsite: z.string().url().optional().or(z.literal('')),
   portfolioTitle: z.string().max(100).optional(),
   aboutMe: z.string().max(1000).optional(),
+  avatarColor: z.string().optional(),
 });
 
 export const educationSchema = z.object({
@@ -339,6 +340,7 @@ export const educationSchema = z.object({
   fieldOfStudy: z.string().optional(),
   grade: z.number().optional(),
   gradeSystem: z.enum(['PERCENTAGE', 'GPA_4']),
+  educationType: z.enum(['LISE', 'ONLISANS', 'LISANS', 'YUKSEKLISANS']).optional(),
   startYear: z.number().int().min(1950).max(new Date().getFullYear() + 10),
   endYear: z.number().int().min(1950).max(new Date().getFullYear() + 10).optional(),
   isCurrent: z.boolean().default(false),

@@ -163,6 +163,7 @@ model Education {
   fieldOfStudy  String?     @map("field_of_study")
   grade         Float?      
   gradeSystem   GradeSystem @map("grade_system")
+  educationType EducationType? @map("education_type")
   startYear     Int         @map("start_year")
   endYear       Int?        @map("end_year")
   isCurrent     Boolean     @default(false) @map("is_current")
@@ -324,6 +325,13 @@ enum SkillLevel {
   INTERMEDIATE
   ADVANCED
   EXPERT
+}
+
+enum EducationType {
+  LISE
+  ONLISANS
+  LISANS
+  YUKSEKLISANS
 }
 
 
