@@ -32,6 +32,7 @@ model User {
   portfolioTitle    String?  @map("portfolio_title")
   aboutMe           String?  @map("about_me")
   profileCompleted  Boolean  @default(false) @map("profile_completed")
+  avatarColor       String?  @default("#3B82F6") @map("avatar_color")
 
   refreshTokens         RefreshToken[]
   cvUploads            CvUpload[]

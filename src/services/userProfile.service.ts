@@ -19,6 +19,7 @@ export interface UserProfileData {
   portfolioWebsite?: string;
   portfolioTitle?: string;
   aboutMe?: string;
+  avatarColor?: string;
 }
 
 export interface EducationData {
@@ -38,7 +39,13 @@ export interface ExperienceData {
   id?: string;
   companyName: string;
   position: string;
-  employmentType: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'FREELANCE' | 'INTERNSHIP' | 'TEMPORARY';
+  employmentType:
+    | 'FULL_TIME'
+    | 'PART_TIME'
+    | 'CONTRACT'
+    | 'FREELANCE'
+    | 'INTERNSHIP'
+    | 'TEMPORARY';
   workMode: 'ONSITE' | 'REMOTE' | 'HYBRID';
   location?: string;
   startMonth: number;
@@ -84,7 +91,13 @@ export interface HobbyData {
 export interface SkillData {
   id?: string;
   name: string;
-  category?: 'TECHNICAL' | 'SOFT_SKILL' | 'LANGUAGE' | 'TOOL' | 'FRAMEWORK' | 'OTHER';
+  category?:
+    | 'TECHNICAL'
+    | 'SOFT_SKILL'
+    | 'LANGUAGE'
+    | 'TOOL'
+    | 'FRAMEWORK'
+    | 'OTHER';
   level?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
   yearsOfExperience?: number;
   description?: string;
@@ -123,13 +136,21 @@ export class UserProfileService {
           portfolioTitle: true,
           aboutMe: true,
           profileCompleted: true,
+          avatarColor: true,
         },
       });
 
-      logger.info(formatMessage(SERVICE_MESSAGES.USER.PROFILE_UPDATED), { userId });
+      logger.info(formatMessage(SERVICE_MESSAGES.USER.PROFILE_UPDATED), {
+        userId,
+      });
       return updatedUser;
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.USER.PROFILE_UPDATE_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.USER.PROFILE_UPDATE_ERROR,
+          error as Error
+        )
+      );
       throw error;
     }
   }
@@ -152,23 +173,28 @@ export class UserProfileService {
           portfolioTitle: true,
           aboutMe: true,
           profileCompleted: true,
+          avatarColor: true,
           educations: {
-            orderBy: { startYear: 'desc' }
+            orderBy: { startYear: 'desc' },
           },
           experiences: {
-            orderBy: [{ isCurrent: 'desc' }, { startYear: 'desc' }, { startMonth: 'desc' }]
+            orderBy: [
+              { isCurrent: 'desc' },
+              { startYear: 'desc' },
+              { startMonth: 'desc' },
+            ],
           },
           courses: {
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
           },
           certificates: {
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
           },
           hobbies: {
-            orderBy: { name: 'asc' }
+            orderBy: { name: 'asc' },
           },
           skills: {
-            orderBy: { name: 'asc' }
+            orderBy: { name: 'asc' },
           },
         },
       });
@@ -179,7 +205,12 @@ export class UserProfileService {
 
       return user;
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.USER.PROFILE_GET_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.USER.PROFILE_GET_ERROR,
+          error as Error
+        )
+      );
       throw error;
     }
   }
@@ -194,7 +225,10 @@ export class UserProfileService {
         },
       });
 
-      logger.info('Education added successfully', { userId, educationId: education.id });
+      logger.info('Education added successfully', {
+        userId,
+        educationId: education.id,
+      });
       return education;
     } catch (error) {
       logger.error('Failed to add education', error);
@@ -202,7 +236,11 @@ export class UserProfileService {
     }
   }
 
-  async updateEducation(userId: string, educationId: string, educationData: Partial<EducationData>) {
+  async updateEducation(
+    userId: string,
+    educationId: string,
+    educationData: Partial<EducationData>
+  ) {
     try {
       const education = await prisma.education.updateMany({
         where: { id: educationId, userId },
@@ -249,7 +287,10 @@ export class UserProfileService {
         },
       });
 
-      logger.info('Experience added successfully', { userId, experienceId: experience.id });
+      logger.info('Experience added successfully', {
+        userId,
+        experienceId: experience.id,
+      });
       return experience;
     } catch (error) {
       logger.error('Failed to add experience', error);
@@ -257,7 +298,11 @@ export class UserProfileService {
     }
   }
 
-  async updateExperience(userId: string, experienceId: string, experienceData: Partial<ExperienceData>) {
+  async updateExperience(
+    userId: string,
+    experienceId: string,
+    experienceData: Partial<ExperienceData>
+  ) {
     try {
       const experience = await prisma.experience.updateMany({
         where: { id: experienceId, userId },
@@ -312,7 +357,11 @@ export class UserProfileService {
     }
   }
 
-  async updateCourse(userId: string, courseId: string, courseData: Partial<CourseData>) {
+  async updateCourse(
+    userId: string,
+    courseId: string,
+    courseData: Partial<CourseData>
+  ) {
     try {
       const course = await prisma.course.updateMany({
         where: { id: courseId, userId },
@@ -359,7 +408,10 @@ export class UserProfileService {
         },
       });
 
-      logger.info('Certificate added successfully', { userId, certificateId: certificate.id });
+      logger.info('Certificate added successfully', {
+        userId,
+        certificateId: certificate.id,
+      });
       return certificate;
     } catch (error) {
       logger.error('Failed to add certificate', error);
@@ -367,7 +419,11 @@ export class UserProfileService {
     }
   }
 
-  async updateCertificate(userId: string, certificateId: string, certificateData: Partial<CertificateData>) {
+  async updateCertificate(
+    userId: string,
+    certificateId: string,
+    certificateData: Partial<CertificateData>
+  ) {
     try {
       const certificate = await prisma.certificate.updateMany({
         where: { id: certificateId, userId },
@@ -378,7 +434,10 @@ export class UserProfileService {
         throw new Error('Certificate not found or unauthorized');
       }
 
-      logger.info('Certificate updated successfully', { userId, certificateId });
+      logger.info('Certificate updated successfully', {
+        userId,
+        certificateId,
+      });
       return { success: true };
     } catch (error) {
       logger.error('Failed to update certificate', error);
@@ -396,7 +455,10 @@ export class UserProfileService {
         throw new Error('Certificate not found or unauthorized');
       }
 
-      logger.info('Certificate deleted successfully', { userId, certificateId });
+      logger.info('Certificate deleted successfully', {
+        userId,
+        certificateId,
+      });
       return { success: true };
     } catch (error) {
       logger.error('Failed to delete certificate', error);
@@ -422,7 +484,11 @@ export class UserProfileService {
     }
   }
 
-  async updateHobby(userId: string, hobbyId: string, hobbyData: Partial<HobbyData>) {
+  async updateHobby(
+    userId: string,
+    hobbyId: string,
+    hobbyData: Partial<HobbyData>
+  ) {
     try {
       const hobby = await prisma.hobby.updateMany({
         where: { id: hobbyId, userId },
@@ -477,7 +543,11 @@ export class UserProfileService {
     }
   }
 
-  async updateSkill(userId: string, skillId: string, skillData: Partial<SkillData>) {
+  async updateSkill(
+    userId: string,
+    skillId: string,
+    skillData: Partial<SkillData>
+  ) {
     try {
       const skill = await prisma.skill.updateMany({
         where: { id: skillId, userId },
