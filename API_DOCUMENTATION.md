@@ -8,8 +8,9 @@
 4. [CV Management](#cv-management)
 5. [Cover Letter Services](#cover-letter-services)
 6. [Contact Services](#contact-services)
-7. [Error Handling](#error-handling)
-8. [Data Models](#data-models)
+7. [Data Services](#data-services)
+8. [Error Handling](#error-handling)
+9. [Data Models](#data-models)
 
 ## Base Information
 
@@ -940,6 +941,274 @@ cvFile: <PDF file>
 
 ---
 
+## Data Services
+
+### High Schools Service
+
+#### 1. Get All High Schools
+
+**Endpoint**: `GET /high-schools`  
+**Authentication**: None  
+
+**Query Parameters**:
+- `limit` (optional): Number of results to return
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "1",
+      "name": "Akören Çok Programlı Lisesi",
+      "city": "ADANA",
+      "district": "ALADAĞ",
+      "type": ""
+    }
+  ],
+  "message": "Liseler başarıyla getirildi"
+}
+```
+
+#### 2. Search High Schools
+
+**Endpoint**: `GET /high-schools/search`  
+**Authentication**: None
+
+**Query Parameters**:
+- `q` (required): Search term
+- `limit` (optional): Number of results to return (default: 50)
+
+**Example**: `GET /high-schools/search?q=İstanbul&limit=10`
+
+#### 3. Get High Schools by City
+
+**Endpoint**: `GET /high-schools/city/:city`  
+**Authentication**: None
+
+**Example**: `GET /high-schools/city/ADANA`
+
+#### 4. Get High School by ID
+
+**Endpoint**: `GET /high-schools/:id`  
+**Authentication**: None
+
+#### 5. Get High Schools Statistics
+
+**Endpoint**: `GET /high-schools/stats`  
+**Authentication**: None
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "total": 3250,
+    "cities": 81,
+    "isLoaded": true
+  },
+  "message": "İstatistikler başarıyla getirildi"
+}
+```
+
+#### 6. Reload High Schools Data
+
+**Endpoint**: `POST /high-schools/reload`  
+**Authentication**: None
+
+### Universities Service
+
+#### 1. Get All Universities
+
+**Endpoint**: `GET /universities`  
+**Authentication**: None
+
+**Query Parameters**:
+- `limit` (optional): Number of results to return
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "1",
+      "name": "Adana Alparslan Türkeş Bilim ve Teknoloji Üniversitesi",
+      "city": "Adana",
+      "type": "STATE"
+    }
+  ],
+  "message": "Üniversiteler başarıyla getirildi"
+}
+```
+
+**University Types**: `STATE`, `FOUNDATION`, `PRIVATE`
+
+#### 2. Search Universities
+
+**Endpoint**: `GET /universities/search`  
+**Authentication**: None
+
+**Query Parameters**:
+- `q` (required): Search term
+- `limit` (optional): Number of results to return (default: 50)
+
+**Example**: `GET /universities/search?q=İstanbul&limit=5`
+
+#### 3. Get Universities by City
+
+**Endpoint**: `GET /universities/city/:city`  
+**Authentication**: None
+
+**Example**: `GET /universities/city/İstanbul`
+
+#### 4. Get Universities by Type
+
+**Endpoint**: `GET /universities/type/:type`  
+**Authentication**: None
+
+**Available Types**: `STATE`, `FOUNDATION`, `PRIVATE`
+
+**Example**: `GET /universities/type/STATE`
+
+#### 5. Get University by ID
+
+**Endpoint**: `GET /universities/:id`  
+**Authentication**: None
+
+#### 6. Get Universities Statistics
+
+**Endpoint**: `GET /universities/stats`  
+**Authentication**: None
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "total": 160,
+    "state": 112,
+    "foundation": 48,
+    "private": 0,
+    "cities": 14,
+    "isLoaded": true,
+    "lastUpdated": "2025-07-23T14:53:23.673Z"
+  },
+  "message": "İstatistikler başarıyla getirildi"
+}
+```
+
+#### 7. Force Refresh Universities Data
+
+**Endpoint**: `POST /universities/refresh`  
+**Authentication**: None
+
+### Locations Service (Provinces & Districts)
+
+#### 1. Get All Provinces
+
+**Endpoint**: `GET /locations/provinces`  
+**Authentication**: None
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "1",
+      "code": "01",
+      "name": "Adana",
+      "districts": [
+        {
+          "id": "01-1",
+          "name": "Aladağ",
+          "provinceCode": "01"
+        }
+      ]
+    }
+  ],
+  "message": "İller başarıyla getirildi"
+}
+```
+
+#### 2. Search Provinces
+
+**Endpoint**: `GET /locations/provinces/search`  
+**Authentication**: None
+
+**Query Parameters**:
+- `q` (required): Search term
+
+**Example**: `GET /locations/provinces/search?q=istan`
+
+#### 3. Get Province by Code
+
+**Endpoint**: `GET /locations/provinces/code/:code`  
+**Authentication**: None
+
+**Example**: `GET /locations/provinces/code/34`
+
+#### 4. Get Province by Name
+
+**Endpoint**: `GET /locations/provinces/name/:name`  
+**Authentication**: None
+
+**Example**: `GET /locations/provinces/name/İstanbul`
+
+#### 5. Get Districts by Province Code
+
+**Endpoint**: `GET /locations/districts/province-code/:code`  
+**Authentication**: None
+
+**Example**: `GET /locations/districts/province-code/34`
+
+#### 6. Get Districts by Province Name
+
+**Endpoint**: `GET /locations/districts/province-name/:name`  
+**Authentication**: None
+
+**Example**: `GET /locations/districts/province-name/İstanbul`
+
+#### 7. Search Districts
+
+**Endpoint**: `GET /locations/districts/search`  
+**Authentication**: None
+
+**Query Parameters**:
+- `q` (required): Search term
+- `provinceCode` (optional): Filter by province code
+
+**Examples**:
+- `GET /locations/districts/search?q=merkez`
+- `GET /locations/districts/search?q=merkez&provinceCode=06`
+
+#### 8. Get Locations Statistics
+
+**Endpoint**: `GET /locations/stats`  
+**Authentication**: None
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "totalProvinces": 81,
+    "totalDistricts": 972,
+    "isLoaded": true
+  },
+  "message": "İstatistikler başarıyla getirildi"
+}
+```
+
+---
+
 ## Error Handling
 
 ### Standard Error Response Format
@@ -1185,6 +1454,51 @@ interface ContactMessage {
   message: string;
   createdAt: string;
   isRead: boolean;
+}
+```
+
+### High School Model
+
+```typescript
+interface HighSchool {
+  id: string;
+  name: string;
+  city?: string;
+  district?: string;
+  type?: string;
+}
+```
+
+### University Model
+
+```typescript
+interface University {
+  id: string;
+  name: string;
+  city?: string;
+  type: 'STATE' | 'PRIVATE' | 'FOUNDATION';
+  website?: string;
+}
+```
+
+### Province Model
+
+```typescript
+interface Province {
+  id: string;
+  code: string;
+  name: string;
+  districts: District[];
+}
+```
+
+### District Model
+
+```typescript
+interface District {
+  id: string;
+  name: string;
+  provinceCode: string;
 }
 ```
 
