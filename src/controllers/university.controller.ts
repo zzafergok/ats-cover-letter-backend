@@ -6,13 +6,9 @@ import logger from '../config/logger';
 export class UniversityController {
   public static async getAllUniversities(req: Request, res: Response): Promise<void> {
     try {
-      const { limit } = req.query;
-      const limitNum = limit ? parseInt(limit as string, 10) : undefined;
-      
       const universities = await UniversityService.getAllUniversities();
-      const result = limitNum ? universities.slice(0, limitNum) : universities;
       
-      sendSuccess(res, result, 'Üniversiteler başarıyla getirildi');
+      sendSuccess(res, universities, 'Üniversiteler başarıyla getirildi');
     } catch (error) {
       logger.error('Error fetching all universities:', error);
       sendError(res, 'Üniversiteler getirilirken hata oluştu', 500);
@@ -21,15 +17,14 @@ export class UniversityController {
 
   public static async searchUniversities(req: Request, res: Response): Promise<void> {
     try {
-      const { q, limit } = req.query;
+      const { q } = req.query;
       
       if (!q || typeof q !== 'string') {
         sendError(res, 'Arama terimi gereklidir', 400);
         return;
       }
 
-      const limitNum = limit ? parseInt(limit as string, 10) : 50;
-      const universities = await UniversityService.searchUniversities(q, limitNum);
+      const universities = await UniversityService.searchUniversities(q);
       
       sendSuccess(res, universities, 'Arama başarıyla tamamlandı');
     } catch (error) {

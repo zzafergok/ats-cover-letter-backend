@@ -6,13 +6,9 @@ import logger from '../config/logger';
 export class HighSchoolController {
   public static async getAllHighSchools(req: Request, res: Response): Promise<void> {
     try {
-      const { limit } = req.query;
-      const limitNum = limit ? parseInt(limit as string, 10) : undefined;
-      
       const highSchools = HighSchoolService.getAllHighSchools();
-      const result = limitNum ? highSchools.slice(0, limitNum) : highSchools;
       
-      sendSuccess(res, result, 'Liseler başarıyla getirildi');
+      sendSuccess(res, highSchools, 'Liseler başarıyla getirildi');
     } catch (error) {
       logger.error('Error fetching all high schools:', error);
       sendError(res, 'Liseler getirilirken hata oluştu', 500);
@@ -21,15 +17,14 @@ export class HighSchoolController {
 
   public static async searchHighSchools(req: Request, res: Response): Promise<void> {
     try {
-      const { q, limit } = req.query;
+      const { q } = req.query;
       
       if (!q || typeof q !== 'string') {
         sendError(res, 'Arama terimi gereklidir', 400);
         return;
       }
 
-      const limitNum = limit ? parseInt(limit as string, 10) : 50;
-      const highSchools = HighSchoolService.searchHighSchools(q, limitNum);
+      const highSchools = HighSchoolService.searchHighSchools(q);
       
       sendSuccess(res, highSchools, 'Arama başarıyla tamamlandı');
     } catch (error) {

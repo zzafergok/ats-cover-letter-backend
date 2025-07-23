@@ -245,11 +245,11 @@ export class UniversityService {
     }
   }
 
-  public static async searchUniversities(query: string, limit: number = 50): Promise<University[]> {
+  public static async searchUniversities(query: string): Promise<University[]> {
     const universities = await this.getAllUniversities();
     
     if (!query || query.trim().length < 2) {
-      return universities.slice(0, limit);
+      return universities;
     }
 
     const searchTerm = query.toLowerCase().trim();
@@ -258,7 +258,7 @@ export class UniversityService {
       university.city?.toLowerCase().includes(searchTerm)
     );
 
-    return filtered.slice(0, limit);
+    return filtered;
   }
 
   public static async getUniversitiesByCity(city: string): Promise<University[]> {

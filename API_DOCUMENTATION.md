@@ -950,10 +950,6 @@ cvFile: <PDF file>
 **Endpoint**: `GET /high-schools`  
 **Authentication**: None
 
-**Query Parameters**:
-
-- `limit` (optional): Number of results to return
-
 **Success Response** (200):
 
 ```json
@@ -980,9 +976,8 @@ cvFile: <PDF file>
 **Query Parameters**:
 
 - `q` (required): Search term
-- `limit` (optional): Number of results to return (default: 50)
 
-**Example**: `GET /high-schools/search?q=İstanbul&limit=10`
+**Example**: `GET /high-schools/search?q=İstanbul`
 
 #### 3. Get High Schools by City
 
@@ -1027,10 +1022,6 @@ cvFile: <PDF file>
 **Endpoint**: `GET /universities`  
 **Authentication**: None
 
-**Query Parameters**:
-
-- `limit` (optional): Number of results to return
-
 **Success Response** (200):
 
 ```json
@@ -1058,9 +1049,8 @@ cvFile: <PDF file>
 **Query Parameters**:
 
 - `q` (required): Search term
-- `limit` (optional): Number of results to return (default: 50)
 
-**Example**: `GET /universities/search?q=İstanbul&limit=5`
+**Example**: `GET /universities/search?q=İstanbul`
 
 #### 3. Get Universities by City
 

@@ -65,16 +65,13 @@ export class HighSchoolService {
     return this.highSchools;
   }
 
-  public static searchHighSchools(
-    query: string,
-    limit: number = 50
-  ): HighSchool[] {
+  public static searchHighSchools(query: string): HighSchool[] {
     if (!this.isLoaded) {
       this.loadHighSchools();
     }
 
     if (!query || query.trim().length < 2) {
-      return this.highSchools.slice(0, limit);
+      return this.highSchools;
     }
 
     const searchTerm = query.toLowerCase().trim();
@@ -85,7 +82,7 @@ export class HighSchoolService {
         school.district?.toLowerCase().includes(searchTerm)
     );
 
-    return filtered.slice(0, limit);
+    return filtered;
   }
 
   public static getHighSchoolsByCity(city: string): HighSchool[] {
