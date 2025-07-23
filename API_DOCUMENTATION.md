@@ -948,9 +948,10 @@ cvFile: <PDF file>
 #### 1. Get All High Schools
 
 **Endpoint**: `GET /high-schools`  
-**Authentication**: None  
+**Authentication**: None
 
 **Query Parameters**:
+
 - `limit` (optional): Number of results to return
 
 **Success Response** (200):
@@ -977,6 +978,7 @@ cvFile: <PDF file>
 **Authentication**: None
 
 **Query Parameters**:
+
 - `q` (required): Search term
 - `limit` (optional): Number of results to return (default: 50)
 
@@ -1026,6 +1028,7 @@ cvFile: <PDF file>
 **Authentication**: None
 
 **Query Parameters**:
+
 - `limit` (optional): Number of results to return
 
 **Success Response** (200):
@@ -1053,6 +1056,7 @@ cvFile: <PDF file>
 **Authentication**: None
 
 **Query Parameters**:
+
 - `q` (required): Search term
 - `limit` (optional): Number of results to return (default: 50)
 
@@ -1143,6 +1147,7 @@ cvFile: <PDF file>
 **Authentication**: None
 
 **Query Parameters**:
+
 - `q` (required): Search term
 
 **Example**: `GET /locations/provinces/search?q=istan`
@@ -1181,10 +1186,12 @@ cvFile: <PDF file>
 **Authentication**: None
 
 **Query Parameters**:
+
 - `q` (required): Search term
 - `provinceCode` (optional): Filter by province code
 
 **Examples**:
+
 - `GET /locations/districts/search?q=merkez`
 - `GET /locations/districts/search?q=merkez&provinceCode=06`
 
