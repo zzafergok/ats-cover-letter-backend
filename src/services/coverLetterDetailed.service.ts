@@ -73,7 +73,7 @@ export class CoverLetterDetailedService {
         throw new Error(formatMessage(SERVICE_MESSAGES.USER.NOT_FOUND));
       }
 
-      // Cover letter kaydını oluştur (başlangıçta PENDING durumda)
+      // Cover letter kaydını oluştur (başlangıçta PROCESSING durumda)
       const coverLetter = await prisma.coverLetterDetailed.create({
         data: {
           userId,
@@ -84,29 +84,38 @@ export class CoverLetterDetailedService {
           whyPosition: request.whyPosition,
           whyCompany: request.whyCompany,
           workMotivation: request.workMotivation,
-          generationStatus: 'PENDING',
+          generationStatus: 'PROCESSING',
         },
       });
 
-      // Arka planda cover letter oluştur
-      this.generateDetailedCoverLetterAsync(
-        coverLetter.id,
+      // Synchronous olarak cover letter oluştur
+      const generatedContent = await this.generateDetailedCoverLetterSync(
         userProfile,
         request
       );
 
+      // Database'i güncelle
+      const updatedCoverLetter = await prisma.coverLetterDetailed.update({
+        where: { id: coverLetter.id },
+        data: {
+          generatedContent,
+          generationStatus: 'COMPLETED',
+          updatedAt: new Date(),
+        },
+      });
+
       return {
-        id: coverLetter.id,
-        generatedContent: '',
-        positionTitle: coverLetter.positionTitle,
-        companyName: coverLetter.companyName,
-        language: coverLetter.language,
-        generationStatus: coverLetter.generationStatus,
-        whyPosition: coverLetter.whyPosition || undefined,
-        whyCompany: coverLetter.whyCompany || undefined,
-        workMotivation: coverLetter.workMotivation || undefined,
-        createdAt: coverLetter.createdAt,
-        updatedAt: coverLetter.updatedAt,
+        id: updatedCoverLetter.id,
+        generatedContent: updatedCoverLetter.generatedContent || '',
+        positionTitle: updatedCoverLetter.positionTitle,
+        companyName: updatedCoverLetter.companyName,
+        language: updatedCoverLetter.language,
+        generationStatus: updatedCoverLetter.generationStatus,
+        whyPosition: updatedCoverLetter.whyPosition || undefined,
+        whyCompany: updatedCoverLetter.whyCompany || undefined,
+        workMotivation: updatedCoverLetter.workMotivation || undefined,
+        createdAt: updatedCoverLetter.createdAt,
+        updatedAt: updatedCoverLetter.updatedAt,
       };
     } catch (error) {
       logger.error(
@@ -239,64 +248,31 @@ export class CoverLetterDetailedService {
     });
   }
 
-  private async generateDetailedCoverLetterAsync(
-    coverLetterId: string,
+  private async generateDetailedCoverLetterSync(
     userProfile: any,
     request: DetailedCoverLetterRequest
-  ): Promise<void> {
-    try {
-      // Kullanıcı profil verisinden detaylı CV bilgilerini çıkar
-      const detailedProfile = this.buildDetailedProfileData(userProfile);
+  ): Promise<string> {
+    // Kullanıcı profil verisinden detaylı CV bilgilerini çıkar
+    const detailedProfile = this.buildDetailedProfileData(userProfile);
 
-      // Claude ile cover letter oluştur
-      const coverLetterPrompt = this.buildDetailedCoverLetterPrompt(
-        detailedProfile,
-        request.positionTitle,
-        request.companyName,
-        request.jobDescription,
-        request.language,
-        request.whyPosition,
-        request.whyCompany,
-        request.workMotivation
-      );
+    // Claude ile cover letter oluştur
+    const coverLetterPrompt = this.buildDetailedCoverLetterPrompt(
+      detailedProfile,
+      request.positionTitle,
+      request.companyName,
+      request.jobDescription,
+      request.language,
+      request.whyPosition,
+      request.whyCompany,
+      request.workMotivation
+    );
 
-      let generatedContent = await generateCoverLetterWithClaude(coverLetterPrompt);
+    let generatedContent = await generateCoverLetterWithClaude(coverLetterPrompt);
 
-      // Post-processing için human-like düzenlemeler
-      generatedContent = this.humanizeCoverLetter(generatedContent, request.language);
+    // Post-processing için human-like düzenlemeler
+    generatedContent = this.humanizeCoverLetter(generatedContent, request.language);
 
-      // Veritabanını güncelle
-      await prisma.coverLetterDetailed.update({
-        where: { id: coverLetterId },
-        data: {
-          generatedContent,
-          generationStatus: 'COMPLETED',
-          updatedAt: new Date(),
-        },
-      });
-
-      logger.info(
-        formatMessage(SERVICE_MESSAGES.COVER_LETTER.GENERATION_SUCCESS),
-        { coverLetterId }
-      );
-    } catch (error) {
-      logger.error(
-        createErrorMessage(
-          SERVICE_MESSAGES.COVER_LETTER.GENERATION_FAILED,
-          error as Error
-        ),
-        { coverLetterId }
-      );
-
-      // Hata durumunu kaydet
-      await prisma.coverLetterDetailed.update({
-        where: { id: coverLetterId },
-        data: {
-          generationStatus: 'FAILED',
-          updatedAt: new Date(),
-        },
-      });
-    }
+    return generatedContent;
   }
 
   private buildDetailedProfileData(userProfile: any) {

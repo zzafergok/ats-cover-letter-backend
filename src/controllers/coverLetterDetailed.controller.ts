@@ -31,7 +31,7 @@ export class CoverLetterDetailedController {
 
       res.status(201).json({
         success: true,
-        message: 'Detaylı cover letter oluşturma başlatıldı',
+        message: 'Detaylı cover letter başarıyla oluşturuldu',
         data: coverLetter,
       });
     } catch (error) {
