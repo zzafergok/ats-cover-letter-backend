@@ -73,6 +73,10 @@ All API responses follow this structure:
 - Password: Minimum 8 characters, at least one letter and one number
 - Name: 2-50 characters
 
+### Education Type Values
+
+**Education Types**: `LISE` (High School), `ONLISANS` (Associate Degree), `LISANS` (Bachelor's Degree), `YUKSEKLISANS` (Master's/PhD)
+
 ### 2. User Login
 
 **Endpoint**: `POST /auth/login`  
@@ -354,6 +358,7 @@ Authorization: Bearer <access-token>
   "schoolName": "Stanford University",
   "degree": "Bachelor of Science",
   "fieldOfStudy": "Computer Science",
+  "educationType": "LISANS",
   "grade": 3.8,
   "gradeSystem": "GPA_4",
   "startYear": 2018,
@@ -675,6 +680,8 @@ cvFile: <PDF file>
 **Endpoint**: `POST /cv/generate-detailed`  
 **Authentication**: Bearer Token Required
 
+**Note**: Detailed CVs are stored using the same SavedCv model as regular saved CVs, with enhanced content generation based on user profile data.
+
 **Request Body**:
 
 ```json
@@ -952,6 +959,8 @@ cvFile: <PDF file>
 **Endpoint**: `GET /high-schools`  
 **Authentication**: None
 
+**Note**: This service contains hardcoded Turkish high school data with caching mechanism for optimal performance.
+
 **Success Response** (200):
 
 ```json
@@ -1023,6 +1032,8 @@ cvFile: <PDF file>
 
 **Endpoint**: `GET /universities`  
 **Authentication**: None
+
+**Note**: This service contains hardcoded Turkish university data with caching mechanism for optimal performance.
 
 **Success Response** (200):
 
@@ -1317,6 +1328,7 @@ interface Education {
   schoolName: string;
   degree?: string;
   fieldOfStudy?: string;
+  educationType?: 'LISE' | 'ONLISANS' | 'LISANS' | 'YUKSEKLISANS';
   grade?: number;
   gradeSystem: 'PERCENTAGE' | 'GPA_4';
   startYear: number;
