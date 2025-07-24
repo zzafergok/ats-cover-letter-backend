@@ -9,6 +9,7 @@ import userProfileRoutes from './userProfile';
 import highSchoolRoutes from './highSchool';
 import universityRoutes from './university';
 import locationRoutes from './location';
+import pdfTestRoutes from './pdfTest';
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/contact', contactRoutes);
 router.use('/high-schools', highSchoolRoutes);
 router.use('/universities', universityRoutes);
 router.use('/locations', locationRoutes);
+router.use('/pdf-test', pdfTestRoutes);
 
 export default router;

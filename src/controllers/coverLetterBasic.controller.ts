@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { PdfService } from '../services/pdf.service';
 import { CoverLetterBasicService } from '../services/coverLetterBasic.service';
+import { UserProfileService } from '../services/userProfile.service';
 
 import logger from '../config/logger';
 import {
@@ -15,6 +16,7 @@ import { createCoverLetterSchema, updateCoverLetterSchema } from '../schemas';
 export class CoverLetterBasicController {
   private coverLetterService = CoverLetterBasicService.getInstance();
   private pdfService = PdfService.getInstance();
+  private userProfileService = UserProfileService.getInstance();
 
   public createCoverLetter = async (
     req: Request,
@@ -31,8 +33,7 @@ export class CoverLetterBasicController {
 
       res.status(201).json({
         success: true,
-        message:
-          SERVICE_MESSAGES.RESPONSE.COVER_LETTER_CREATION_STARTED.message,
+        message: 'Cover letter başarıyla oluşturuldu',
         data: coverLetter,
       });
     } catch (error) {
@@ -235,12 +236,18 @@ export class CoverLetterBasicController {
         return;
       }
 
+      // User bilgilerini al
+      const userProfile = await this.userProfileService.getUserProfile(req.user!.userId);
+      const fullName = userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : undefined;
+
       // PDF oluştur
       const pdfBuffer =
         await this.pdfService.generateCoverLetterPdfWithCustomFormat(
           coverLetter.generatedContent,
           coverLetter.positionTitle,
-          coverLetter.companyName
+          coverLetter.companyName,
+          fullName,
+          coverLetter.language as 'TURKISH' | 'ENGLISH'
         );
 
       // PDF dosya adı oluştur

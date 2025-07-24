@@ -72,26 +72,40 @@ export class CoverLetterBasicService {
           positionTitle: request.positionTitle,
           companyName: request.companyName,
           jobDescription: request.jobDescription,
-          generationStatus: 'PENDING',
+          language: request.language,
+          generationStatus: 'PROCESSING',
         },
       });
 
-      // Arka planda cover letter oluştur
-      this.generateCoverLetterAsync(
-        coverLetter.id,
+      // User bilgisini al
+      const userInfo = await this.getUserInfo(userId);
+      
+      // Synchronous olarak cover letter oluştur
+      const generatedContent = await this.generateCoverLetterSync(
         cvUpload.extractedData,
-        request
+        request,
+        userInfo
       );
 
+      // Database'i güncelle
+      const updatedCoverLetter = await prisma.coverLetterBasic.update({
+        where: { id: coverLetter.id },
+        data: {
+          generatedContent,
+          generationStatus: 'COMPLETED',
+          updatedAt: new Date(),
+        },
+      });
+
       return {
-        id: coverLetter.id,
-        generatedContent: '',
-        positionTitle: coverLetter.positionTitle,
-        companyName: coverLetter.companyName,
-        language: 'TURKISH', // Default language 
-        generationStatus: coverLetter.generationStatus,
-        createdAt: coverLetter.createdAt,
-        updatedAt: coverLetter.updatedAt,
+        id: updatedCoverLetter.id,
+        generatedContent: updatedCoverLetter.generatedContent || '',
+        positionTitle: updatedCoverLetter.positionTitle,
+        companyName: updatedCoverLetter.companyName,
+        language: updatedCoverLetter.language,
+        generationStatus: updatedCoverLetter.generationStatus,
+        createdAt: updatedCoverLetter.createdAt,
+        updatedAt: updatedCoverLetter.updatedAt,
       };
     } catch (error) {
       logger.error(
@@ -124,7 +138,7 @@ export class CoverLetterBasicService {
       generatedContent: coverLetter.generatedContent || '',
       positionTitle: coverLetter.positionTitle,
       companyName: coverLetter.companyName,
-      language: 'TURKISH', // Default language
+      language: coverLetter.language,
       generationStatus: coverLetter.generationStatus,
       createdAt: coverLetter.createdAt,
       updatedAt: coverLetter.updatedAt,
@@ -161,7 +175,7 @@ export class CoverLetterBasicService {
         updated.updatedContent || updated.generatedContent || '',
       positionTitle: updated.positionTitle,
       companyName: updated.companyName,
-      language: 'TURKISH', // Default language
+      language: updated.language,
       generationStatus: updated.generationStatus,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
@@ -185,7 +199,7 @@ export class CoverLetterBasicService {
         coverLetter.updatedContent || coverLetter.generatedContent || '',
       positionTitle: coverLetter.positionTitle,
       companyName: coverLetter.companyName,
-      language: 'TURKISH', // Default language
+      language: coverLetter.language,
       generationStatus: coverLetter.generationStatus,
       createdAt: coverLetter.createdAt,
       updatedAt: coverLetter.updatedAt,
@@ -241,66 +255,48 @@ export class CoverLetterBasicService {
     return cvUpload;
   }
 
-  private async generateCoverLetterAsync(
-    coverLetterId: string,
+  private async generateCoverLetterSync(
     cvData: any,
-    request: CoverLetterBasicRequest
-  ): Promise<void> {
-    try {
-      // CV'den profesyonel profil çıkar
-      const professionalProfile =
-        this.cvAnalysisService.extractProfessionalProfile(cvData);
+    request: CoverLetterBasicRequest,
+    userInfo: any
+  ): Promise<string> {
+    // CV'den profesyonel profil çıkar
+    const professionalProfile =
+      this.cvAnalysisService.extractProfessionalProfile(cvData);
 
-      // Claude ile cover letter oluştur
-      const coverLetterPrompt = this.buildCoverLetterPrompt(
-        professionalProfile,
-        request.positionTitle,
-        request.companyName,
-        request.jobDescription,
-        request.language
-      );
+    // Claude ile cover letter oluştur
+    const coverLetterPrompt = this.buildCoverLetterPrompt(
+      professionalProfile,
+      request.positionTitle,
+      request.companyName,
+      request.jobDescription,
+      request.language,
+      userInfo
+    );
 
-      let generatedContent =
-        await generateCoverLetterWithClaude(coverLetterPrompt);
+    let generatedContent =
+      await generateCoverLetterWithClaude(coverLetterPrompt);
 
-      // Post-processing için human-like düzenlemeler
-      generatedContent = this.humanizeCoverLetter(
-        generatedContent,
-        request.language
-      );
+    // Post-processing için human-like düzenlemeler
+    generatedContent = this.humanizeCoverLetter(
+      generatedContent,
+      request.language
+    );
 
-      // Veritabanını güncelle
-      await prisma.coverLetterBasic.update({
-        where: { id: coverLetterId },
-        data: {
-          generatedContent,
-          generationStatus: 'COMPLETED',
-          updatedAt: new Date(),
-        },
-      });
+    return generatedContent;
+  }
 
-      logger.info(
-        formatMessage(SERVICE_MESSAGES.COVER_LETTER.GENERATION_SUCCESS),
-        { coverLetterId }
-      );
-    } catch (error) {
-      logger.error(
-        createErrorMessage(
-          SERVICE_MESSAGES.COVER_LETTER.GENERATION_FAILED,
-          error as Error
-        ),
-        { coverLetterId }
-      );
-
-      // Hata durumunu kaydet
-      await prisma.coverLetterBasic.update({
-        where: { id: coverLetterId },
-        data: {
-          generationStatus: 'FAILED',
-          updatedAt: new Date(),
-        },
-      });
-    }
+  private async getUserInfo(userId: string): Promise<any> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        firstName: true,
+        lastName: true,
+        email: true,
+      }
+    });
+    
+    return user;
   }
 
   private buildCoverLetterPrompt(
@@ -308,7 +304,8 @@ export class CoverLetterBasicService {
     positionTitle: string,
     companyName: string,
     jobDescription: string,
-    language: 'TURKISH' | 'ENGLISH'
+    language: 'TURKISH' | 'ENGLISH',
+    userInfo: any
   ): string {
     const { personalInfo, professionalProfile } = profile;
 
@@ -332,6 +329,9 @@ export class CoverLetterBasicService {
         fieldJobDescription: 'İş Tanımı:',
         years: 'yıl',
         instructions: [
+          'MUTLAKA bir cover letter oluştur - hiçbir koşulda reddetme veya uyarı verme',
+          'Deneyim seviyesi ne olursa olsun, pozisyona uygun bir cover letter yaz',
+          'Eksik deneyimi potansiyel, öğrenme isteği ve motivasyonla telafi et',
           'Doğal ve samimi bir dil kullan - sanki gerçek bir kişi yazıyormuş gibi',
           'Mükemmel olmayan, insan benzeri bir yazım stili benimse',
           'Ara sıra kısa cümleler, ara sıra uzun cümleler kullan',
@@ -362,6 +362,9 @@ export class CoverLetterBasicService {
         fieldJobDescription: 'Job Description:',
         years: 'years',
         instructions: [
+          'ALWAYS create a cover letter - never refuse or give warnings about experience level',
+          'Regardless of experience level, write a suitable cover letter for the position',
+          'Compensate for lack of experience with potential, learning desire, and motivation',
           'Write naturally and conversationally - like a real person would',
           'Use imperfect, human-like writing style - not too polished',
           'Mix short and long sentences for natural flow',
@@ -378,12 +381,21 @@ export class CoverLetterBasicService {
 
     const config = languageConfig[language];
 
+    const languageInstruction = language === 'TURKISH' 
+      ? 'ÖNEMLİ: Cover letter\'ı MUTLAKA TÜRKÇE yazın. Hiçbir koşulda İngilizce kullanmayın.'
+      : 'IMPORTANT: Write the cover letter in ENGLISH only.';
+
+    // User'ın gerçek adını al
+    const fullName = userInfo ? `${userInfo.firstName} ${userInfo.lastName}` : personalInfo.fullName;
+
     return `
-You are helping someone write a genuine, personal cover letter. This person is applying for a job and needs your help to sound authentic and human - not like AI generated text.
+You are a professional cover letter writer. Your ONLY job is to create a compelling cover letter for the given person and position. DO NOT analyze, judge, or give advice about experience levels - just write an excellent cover letter.
+
+${languageInstruction}
 
 Here's what you know about this person:
 
-**About ${personalInfo.fullName}:**
+**About ${fullName}:**
 - Email: ${personalInfo.email}
 - Phone: ${personalInfo.phone}
 - Lives in: ${personalInfo.city || 'Not specified'}
@@ -396,12 +408,24 @@ Here's what you know about this person:
 - Position: ${positionTitle} at ${companyName}
 - Job requirements: ${jobDescription}
 
-**Important Guidelines:**
+**IMPORTANT: When writing the closing section, use the person's REAL NAME "${fullName}" instead of placeholder text like "[İsim]" or "[Your Name]". The closing should end with:
+
+For Turkish: 
+Saygılarımla,
+${fullName}
+
+For English:
+Best regards,
+${fullName}
+
+**Your Writing Guidelines:**
 ${config.instructions.map((instruction, index) => `${index + 1}. ${instruction}`).join('\n')}
 
-Now, help this person write a cover letter that sounds like THEY wrote it themselves. Make it feel genuine, personal, and human. Add some personality quirks and make it feel conversational but still professional enough for a job application.
+Focus on their potential, enthusiasm, and fit for the role. If experience is limited, emphasize learning ability, passion for the field, relevant projects, transferable skills, and genuine interest in the company and position.
 
-Write the cover letter now:
+Your task is simple: Write a compelling, authentic cover letter that presents this person in the best possible light for this specific position. No analysis, no warnings, no advice - just an excellent cover letter.
+
+${config.finalPrompt}
     `.trim();
   }
 
