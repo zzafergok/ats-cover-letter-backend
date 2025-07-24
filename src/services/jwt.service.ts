@@ -31,7 +31,7 @@ export class JwtService {
   }
 
   private static getAccessExpiresIn(): string {
-    return process.env.JWT_EXPIRES_IN || '1h';
+    return process.env.JWT_EXPIRES_IN || '4h';
   }
 
   private static getRefreshExpiresIn(): string {

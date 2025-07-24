@@ -11,7 +11,7 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32),
   JWT_REFRESH_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('1h'),
+  JWT_EXPIRES_IN: z.string().default('4h'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   RESEND_API_KEY: z.string().min(1),
   ANTHROPIC_API_KEY: z.string().min(1),
@@ -339,9 +339,20 @@ export const educationSchema = z.object({
   fieldOfStudy: z.string().optional(),
   grade: z.number().optional(),
   gradeSystem: z.enum(['PERCENTAGE', 'GPA_4']),
-  educationType: z.enum(['LISE', 'ONLISANS', 'LISANS', 'YUKSEKLISANS']).optional(),
-  startYear: z.number().int().min(1950).max(new Date().getFullYear() + 10),
-  endYear: z.number().int().min(1950).max(new Date().getFullYear() + 10).optional(),
+  educationType: z
+    .enum(['LISE', 'ONLISANS', 'LISANS', 'YUKSEKLISANS'])
+    .optional(),
+  startYear: z
+    .number()
+    .int()
+    .min(1950)
+    .max(new Date().getFullYear() + 10),
+  endYear: z
+    .number()
+    .int()
+    .min(1950)
+    .max(new Date().getFullYear() + 10)
+    .optional(),
   isCurrent: z.boolean().default(false),
   description: z.string().optional(),
 });
@@ -349,7 +360,14 @@ export const educationSchema = z.object({
 export const experienceSchema = z.object({
   companyName: z.string().min(1, 'Şirket adı gereklidir'),
   position: z.string().min(1, 'Pozisyon gereklidir'),
-  employmentType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'FREELANCE', 'INTERNSHIP', 'TEMPORARY']),
+  employmentType: z.enum([
+    'FULL_TIME',
+    'PART_TIME',
+    'CONTRACT',
+    'FREELANCE',
+    'INTERNSHIP',
+    'TEMPORARY',
+  ]),
   workMode: z.enum(['ONSITE', 'REMOTE', 'HYBRID']),
   location: z.string().optional(),
   startMonth: z.number().int().min(1).max(12),
@@ -365,7 +383,12 @@ export const courseSchema = z.object({
   courseName: z.string().min(1, 'Kurs adı gereklidir'),
   provider: z.string().optional(),
   startMonth: z.number().int().min(1).max(12).optional(),
-  startYear: z.number().int().min(1950).max(new Date().getFullYear()).optional(),
+  startYear: z
+    .number()
+    .int()
+    .min(1950)
+    .max(new Date().getFullYear())
+    .optional(),
   endMonth: z.number().int().min(1).max(12).optional(),
   endYear: z.number().int().min(1950).max(new Date().getFullYear()).optional(),
   duration: z.string().optional(),
@@ -376,9 +399,19 @@ export const certificateSchema = z.object({
   certificateName: z.string().min(1, 'Sertifika adı gereklidir'),
   issuer: z.string().optional(),
   issueMonth: z.number().int().min(1).max(12).optional(),
-  issueYear: z.number().int().min(1950).max(new Date().getFullYear()).optional(),
+  issueYear: z
+    .number()
+    .int()
+    .min(1950)
+    .max(new Date().getFullYear())
+    .optional(),
   expiryMonth: z.number().int().min(1).max(12).optional(),
-  expiryYear: z.number().int().min(1950).max(new Date().getFullYear() + 50).optional(),
+  expiryYear: z
+    .number()
+    .int()
+    .min(1950)
+    .max(new Date().getFullYear() + 50)
+    .optional(),
   credentialId: z.string().optional(),
   credentialUrl: z.string().url().optional().or(z.literal('')),
   description: z.string().optional(),
@@ -391,7 +424,9 @@ export const hobbySchema = z.object({
 
 export const skillSchema = z.object({
   name: z.string().min(1, 'Yetenek adı gereklidir'),
-  category: z.enum(['TECHNICAL', 'SOFT_SKILL', 'LANGUAGE', 'TOOL', 'FRAMEWORK', 'OTHER']).optional(),
+  category: z
+    .enum(['TECHNICAL', 'SOFT_SKILL', 'LANGUAGE', 'TOOL', 'FRAMEWORK', 'OTHER'])
+    .optional(),
   level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']).optional(),
   yearsOfExperience: z.number().int().min(0).max(50).optional(),
   description: z.string().optional(),
@@ -404,12 +439,14 @@ export const createDetailedCoverLetterSchema = z.object({
   jobDescription: z.string().min(10, 'İş tanımı en az 10 karakter olmalıdır'),
   language: z.enum(['TURKISH', 'ENGLISH']).default('TURKISH'),
   whyPosition: z.string().optional(),
-  whyCompany: z.string().optional(), 
+  whyCompany: z.string().optional(),
   workMotivation: z.string().optional(),
 });
 
 export const updateDetailedCoverLetterSchema = z.object({
-  updatedContent: z.string().min(50, 'Cover letter en az 50 karakter olmalıdır'),
+  updatedContent: z
+    .string()
+    .min(50, 'Cover letter en az 50 karakter olmalıdır'),
 });
 
 // Detailed CV generation schema
