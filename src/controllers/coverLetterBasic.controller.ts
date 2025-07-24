@@ -276,4 +276,56 @@ export class CoverLetterBasicController {
       });
     }
   };
+
+  public downloadCustomPdf = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { content, positionTitle, companyName, language = 'TURKISH' } = req.body;
+
+      if (!content || !positionTitle || !companyName) {
+        res.status(400).json({
+          success: false,
+          message: 'Content, position title ve company name alanları zorunludur',
+        });
+        return;
+      }
+
+      // User bilgilerini al
+      const userProfile = await this.userProfileService.getUserProfile(req.user!.userId);
+      const fullName = userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : undefined;
+
+      // PDF oluştur
+      const pdfBuffer = await this.pdfService.generateCoverLetterPdfWithCustomFormat(
+        content,
+        positionTitle,
+        companyName,
+        fullName,
+        language as 'TURKISH' | 'ENGLISH'
+      );
+
+      // PDF dosya adı oluştur
+      const sanitizedCompany = companyName
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .replace(/\s+/g, '_');
+      const sanitizedPosition = positionTitle
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .replace(/\s+/g, '_');
+      const fileName = `${sanitizedCompany}_${sanitizedPosition}_Edited_Cover_Letter.pdf`;
+
+      // HTTP headers ayarla
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${fileName}"`
+      );
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      res.send(pdfBuffer);
+    } catch (error) {
+      logger.error(SERVICE_MESSAGES.LOGGER.PDF_DOWNLOAD_ERROR.message, error);
+      res.status(500).json({
+        success: false,
+        message: SERVICE_MESSAGES.RESPONSE.PDF_GENERATION_ERROR.message,
+      });
+    }
+  };
 }

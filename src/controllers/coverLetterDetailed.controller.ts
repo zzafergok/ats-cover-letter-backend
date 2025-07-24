@@ -239,4 +239,44 @@ export class CoverLetterDetailedController {
       });
     }
   };
+
+  public downloadCustomCoverLetterPdf = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { content, positionTitle, companyName, language = 'TURKISH' } = req.body;
+
+      if (!content || !positionTitle || !companyName) {
+        res.status(400).json({
+          success: false,
+          message: 'Content, position title ve company name alanları zorunludur',
+        });
+        return;
+      }
+
+      const pdfBuffer = await this.pdfService.generateCoverLetterPdfWithCustomFormat(
+        content,
+        positionTitle,
+        companyName,
+        undefined,
+        language as 'TURKISH' | 'ENGLISH'
+      );
+
+      const fileName = `${companyName}_${positionTitle}_Edited_Cover_Letter.pdf`
+        .replace(/[^a-zA-Z0-9_-]/g, '_');
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      logger.error(
+        createErrorMessage(SERVICE_MESSAGES.PDF.GENERATION_ERROR, error as Error)
+      );
+      res.status(500).json({
+        success: false,
+        message: formatMessage(SERVICE_MESSAGES.PDF.GENERATION_ERROR),
+      });
+    }
+  };
 }

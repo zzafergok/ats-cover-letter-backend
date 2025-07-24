@@ -42,4 +42,10 @@ router.get(
   coverLetterDetailedController.downloadDetailedCoverLetterPdf
 );
 
+router.post(
+  '/download/custom-pdf',
+  authenticateToken,
+  coverLetterDetailedController.downloadCustomCoverLetterPdf
+);
+
 export default router;
