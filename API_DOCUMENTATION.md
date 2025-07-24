@@ -310,7 +310,6 @@ Authorization: Bearer <access-token>
     "github": "https://github.com/johndoe",
     "linkedin": "https://linkedin.com/in/johndoe",
     "portfolioWebsite": "https://johndoe.dev",
-    "portfolioTitle": "Full Stack Developer",
     "aboutMe": "Experienced developer...",
     "avatarColor": "#3B82F6",
     "education": [],
@@ -340,7 +339,6 @@ Authorization: Bearer <access-token>
   "github": "https://github.com/johndoe",
   "linkedin": "https://linkedin.com/in/johndoe",
   "portfolioWebsite": "https://johndoe.dev",
-  "portfolioTitle": "Full Stack Developer",
   "aboutMe": "Experienced developer with 5 years...",
   "avatarColor": "#FF5733"
 }
@@ -1308,7 +1306,6 @@ interface UserProfile {
   github?: string;
   linkedin?: string;
   portfolioWebsite?: string;
-  portfolioTitle?: string;
   aboutMe?: string;
   avatarColor?: string;
   education: Education[];

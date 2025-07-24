@@ -310,7 +310,6 @@ export class CoverLetterDetailedService {
         github: userProfile.github,
         linkedin: userProfile.linkedin,
         portfolioWebsite: userProfile.portfolioWebsite,
-        portfolioTitle: userProfile.portfolioTitle,
         aboutMe: userProfile.aboutMe,
       },
       education: userProfile.educations?.map((edu: any) => ({
@@ -402,7 +401,7 @@ You are helping ${personalInfo.fullName} write a highly detailed and personalize
       prompt += `\n- GitHub: ${personalInfo.github}`;
     }
     if (personalInfo.portfolioWebsite) {
-      prompt += `\n- Portfolio: ${personalInfo.portfolioWebsite} (${personalInfo.portfolioTitle || 'Personal Website'})`;
+      prompt += `\n- Portfolio: ${personalInfo.portfolioWebsite}`;
     }
 
     // Education

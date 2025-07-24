@@ -329,7 +329,6 @@ export const updateUserDetailedProfileSchema = z.object({
   github: z.string().url().optional().or(z.literal('')),
   linkedin: z.string().url().optional().or(z.literal('')),
   portfolioWebsite: z.string().url().optional().or(z.literal('')),
-  portfolioTitle: z.string().max(100).optional(),
   aboutMe: z.string().max(1000).optional(),
   avatarColor: z.string().optional(),
 });

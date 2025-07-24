@@ -428,7 +428,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"firstName\": \"Ahmet\",\n  \"lastName\": \"Yılmaz\",\n  \"phone\": \"+90 555 123 4567\",\n  \"address\": \"Kadıköy, İstanbul\",\n  \"city\": \"İstanbul\",\n  \"github\": \"https://github.com/ahmetyilmaz\",\n  \"linkedin\": \"https://linkedin.com/in/ahmetyilmaz\",\n  \"portfolioWebsite\": \"https://ahmetyilmaz.dev\",\n  \"portfolioTitle\": \"Full Stack Developer Portfolio\",\n  \"aboutMe\": \"5 yıllık deneyime sahip full stack developer. React, Node.js ve TypeScript konularında uzmanım.\"\n}"
+							"raw": "{\n  \"firstName\": \"Ahmet\",\n  \"lastName\": \"Yılmaz\",\n  \"phone\": \"+90 555 123 4567\",\n  \"address\": \"Kadıköy, İstanbul\",\n  \"city\": \"İstanbul\",\n  \"github\": \"https://github.com/ahmetyilmaz\",\n  \"linkedin\": \"https://linkedin.com/in/ahmetyilmaz\",\n  \"portfolioWebsite\": \"https://ahmetyilmaz.dev\",\n  \"aboutMe\": \"5 yıllık deneyime sahip full stack developer. React, Node.js ve TypeScript konularında uzmanım.\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/user-profile",

@@ -184,7 +184,6 @@ export class CvDetailedService {
         github: userProfile.github,
         linkedin: userProfile.linkedin,
         portfolioWebsite: userProfile.portfolioWebsite,
-        portfolioTitle: userProfile.portfolioTitle,
         aboutMe: userProfile.aboutMe,
       },
       education: userProfile.educations?.map((edu: any) => ({
@@ -297,7 +296,7 @@ You are creating a professional ${cvType} CV for ${personalInfo.fullName} applyi
       prompt += `\n- GitHub: ${personalInfo.github}`;
     }
     if (personalInfo.portfolioWebsite) {
-      prompt += `\n- Portfolio: ${personalInfo.portfolioWebsite} (${personalInfo.portfolioTitle || 'Personal Website'})`;
+      prompt += `\n- Portfolio: ${personalInfo.portfolioWebsite}`;
     }
 
     // Education

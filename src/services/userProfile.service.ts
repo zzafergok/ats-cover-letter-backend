@@ -17,7 +17,6 @@ export interface UserProfileData {
   github?: string;
   linkedin?: string;
   portfolioWebsite?: string;
-  portfolioTitle?: string;
   aboutMe?: string;
   avatarColor?: string;
 }
@@ -134,7 +133,6 @@ export class UserProfileService {
           github: true,
           linkedin: true,
           portfolioWebsite: true,
-          portfolioTitle: true,
           aboutMe: true,
           profileCompleted: true,
           avatarColor: true,
@@ -171,7 +169,6 @@ export class UserProfileService {
           github: true,
           linkedin: true,
           portfolioWebsite: true,
-          portfolioTitle: true,
           aboutMe: true,
           profileCompleted: true,
           avatarColor: true,

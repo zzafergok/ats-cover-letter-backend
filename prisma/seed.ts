@@ -26,7 +26,6 @@ async function main() {
       github: 'https://github.com/zzafergok',
       linkedin: 'https://www.linkedin.com/in/zafergok',
       portfolioWebsite: 'https://www.zafergok.dev',
-      portfolioTitle: 'Portfolyo',
       aboutMe:
         'System administrator and full-stack developer with 5+ years of experience.',
       profileCompleted: true,
@@ -57,7 +56,6 @@ async function main() {
         github: 'https://github.com/ahmetyilmaz',
         linkedin: 'https://www.linkedin.com/in/ahmetyilmaz',
         portfolioWebsite: 'https://ahmetyilmaz.dev',
-        portfolioTitle: 'Full Stack Developer Portfolio',
         aboutMe:
           'Passionate full-stack developer with expertise in modern web technologies. Love building scalable applications and contributing to open source projects.',
         profileCompleted: true,
@@ -79,7 +77,6 @@ async function main() {
         address: 'Beşiktaş',
         city: 'İstanbul',
         linkedin: 'https://www.linkedin.com/in/aysekaya',
-        portfolioTitle: 'Digital Marketing Portfolio',
         aboutMe:
           'Creative digital marketing professional with a passion for data-driven campaigns and brand storytelling. 4+ years experience in various industries.',
         profileCompleted: true,
