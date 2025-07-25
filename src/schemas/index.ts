@@ -454,3 +454,32 @@ export const createDetailedCvSchema = z.object({
   jobDescription: z.string().min(10, 'İş tanımı en az 10 karakter olmalıdır'),
   language: z.enum(['TURKISH', 'ENGLISH']).default('TURKISH'),
 });
+
+// Template schemas
+export const getTemplatesSchema = z.object({
+  industry: z.enum(['TECHNOLOGY', 'FINANCE']).optional(),
+  category: z.enum([
+    'SOFTWARE_DEVELOPER',
+    'FRONTEND_DEVELOPER', 
+    'BACKEND_DEVELOPER',
+    'FULLSTACK_DEVELOPER',
+    'DATA_SCIENTIST',
+    'FINANCIAL_ANALYST',
+    'INVESTMENT_BANKER',
+    'FINANCIAL_ADVISOR',
+    'ACCOUNTING_SPECIALIST',
+    'RISK_ANALYST'
+  ]).optional(),
+  language: z.enum(['TURKISH', 'ENGLISH']).optional(),
+});
+
+export const createCoverLetterFromTemplateSchema = z.object({
+  templateId: z.string().min(1, 'Template ID gereklidir'),
+  positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
+  companyName: z.string().min(1, 'Şirket adı gereklidir'),
+  personalizations: z.object({
+    whyPosition: z.string().optional(),
+    whyCompany: z.string().optional(),
+    additionalSkills: z.string().optional(),
+  }).optional(),
+});

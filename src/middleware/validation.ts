@@ -9,10 +9,11 @@ import {
   createDynamicMessage,
 } from '../constants/messages';
 
-export const validate = (schema: ZodSchema) => {
+export const validate = (schema: ZodSchema, source: 'body' | 'query' | 'params' = 'body') => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      schema.parse(req.body);
+      const dataToValidate = source === 'body' ? req.body : source === 'query' ? req.query : req.params;
+      schema.parse(dataToValidate);
       next();
     } catch (error) {
       if (error instanceof ZodError) {

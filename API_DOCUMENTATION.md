@@ -7,10 +7,12 @@
 3. [User Profile Management](#user-profile-management)
 4. [CV Management](#cv-management)
 5. [Cover Letter Services](#cover-letter-services)
-6. [Contact Services](#contact-services)
-7. [Data Services](#data-services)
-8. [Error Handling](#error-handling)
-9. [Data Models](#data-models)
+6. [Template Services](#template-services)
+7. [Contact Services](#contact-services)
+8. [Data Services](#data-services)
+9. [PDF Test Services](#pdf-test-services)
+10. [Error Handling](#error-handling)
+11. [Data Models](#data-models)
 
 ## Base Information
 
@@ -47,8 +49,7 @@ All API responses follow this structure:
 {
   "email": "user@example.com",
   "password": "StrongPass123",
-  "firstName": "John",
-  "lastName": "Doe",
+  "name": "John Doe",
   "role": "USER" // Optional, defaults to USER
 }
 ```
@@ -71,7 +72,7 @@ All API responses follow this structure:
 
 - Email: Valid email format
 - Password: Minimum 8 characters, at least one letter and one number
-- Name: 2-50 characters
+- Name: 2-50 characters (full name)
 
 ### Education Type Values
 
@@ -108,7 +109,7 @@ All API responses follow this structure:
     },
     "accessToken": "eyJhbGciOiJIUzI1NiIs...",
     "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
-    "expiresIn": 3600
+    "expiresIn": 14400
   }
 }
 ```
@@ -170,7 +171,7 @@ All API responses follow this structure:
   "data": {
     "accessToken": "eyJhbGciOiJIUzI1NiIs...",
     "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
-    "expiresIn": 3600
+    "expiresIn": 14400
   }
 }
 ```
@@ -261,8 +262,8 @@ Authorization: Bearer <access-token>
 
 ```json
 {
-  "firstName": "John",
-  "lastName": "Doe"
+  "name": "John Doe",
+  "email": "john.doe@example.com"
 }
 ```
 
@@ -866,6 +867,181 @@ cvFile: <PDF file>
 
 ---
 
+## Template Services
+
+### 1. Get All Templates
+
+**Endpoint**: `GET /templates`  
+**Authentication**: None  
+**Rate Limit**: Applied
+
+**Query Parameters**:
+
+- `industry` (optional): Filter by industry (`TECHNOLOGY` | `FINANCE`)
+- `category` (optional): Filter by category
+- `language` (optional): Filter by language (`TURKISH` | `ENGLISH`)
+
+**Example**: `GET /templates?industry=TECHNOLOGY&language=ENGLISH`
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "title": "Software Developer Template",
+      "content": "Dear Hiring Manager,\n\nI am writing to express my interest...",
+      "category": "SOFTWARE_DEVELOPER",
+      "language": "ENGLISH", 
+      "industry": "TECHNOLOGY",
+      "description": "General software developer position template"
+    }
+  ],
+  "message": "Templates retrieved successfully"
+}
+```
+
+### 2. Get Template Categories
+
+**Endpoint**: `GET /templates/categories`  
+**Authentication**: None
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "TECHNOLOGY": [
+      "SOFTWARE_DEVELOPER",
+      "FRONTEND_DEVELOPER", 
+      "BACKEND_DEVELOPER",
+      "FULLSTACK_DEVELOPER",
+      "DATA_SCIENTIST"
+    ],
+    "FINANCE": [
+      "FINANCIAL_ANALYST",
+      "INVESTMENT_BANKER",
+      "FINANCIAL_ADVISOR", 
+      "ACCOUNTING_SPECIALIST",
+      "RISK_ANALYST"
+    ]
+  },
+  "message": "Template categories retrieved successfully"
+}
+```
+
+### 3. Get Templates by Industry
+
+**Endpoint**: `GET /templates/industry/:industry`  
+**Authentication**: None
+
+**Path Parameters**:
+
+- `industry`: `TECHNOLOGY` | `FINANCE`
+
+**Example**: `GET /templates/industry/TECHNOLOGY`
+
+### 4. Get Template by ID
+
+**Endpoint**: `GET /templates/:templateId`  
+**Authentication**: None
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "title": "Software Developer Template",
+    "content": "Dear Hiring Manager,\n\nI am writing to express my interest in the [POSITION_TITLE] position at [COMPANY_NAME]...",
+    "category": "SOFTWARE_DEVELOPER",
+    "language": "ENGLISH",
+    "industry": "TECHNOLOGY", 
+    "description": "General software developer position template"
+  },
+  "message": "Template retrieved successfully"
+}
+```
+
+### 5. Create Cover Letter from Template
+
+**Endpoint**: `POST /templates/create-cover-letter`  
+**Authentication**: Bearer Token Required
+
+**Request Body**:
+
+```json
+{
+  "templateId": "uuid-of-template",
+  "positionTitle": "Senior Software Engineer",
+  "companyName": "TechCorp Inc.",
+  "personalizations": {
+    "whyPosition": "I am passionate about software engineering...",
+    "whyCompany": "TechCorp's innovative approach aligns with my goals...",
+    "additionalSkills": "React, Node.js, AWS, Docker"
+  }
+}
+```
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "content": "Dear Hiring Manager,\n\nI am writing to express my interest in the Senior Software Engineer position at TechCorp Inc...",
+    "templateId": "uuid-of-template",
+    "positionTitle": "Senior Software Engineer",
+    "companyName": "TechCorp Inc."
+  },
+  "message": "Cover letter created from template successfully"
+}
+```
+
+**Template Placeholders**:
+
+- `[POSITION_TITLE]` - Replaced with positionTitle
+- `[COMPANY_NAME]` - Replaced with companyName  
+- `[WHY_POSITION]` - Replaced with personalizations.whyPosition
+- `[WHY_COMPANY]` - Replaced with personalizations.whyCompany
+- `[ADDITIONAL_SKILLS]` - Replaced with personalizations.additionalSkills
+
+### 6. Initialize Templates (Admin Only)
+
+**Endpoint**: `POST /templates/initialize`  
+**Authentication**: Bearer Token Required (Admin Role)
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "message": "Templates initialized successfully"
+}
+```
+
+**Template Categories**:
+
+**Technology Industry:**
+- `SOFTWARE_DEVELOPER` - General software development positions
+- `FRONTEND_DEVELOPER` - Frontend/React specialized positions  
+- `BACKEND_DEVELOPER` - Backend/API development positions
+- `FULLSTACK_DEVELOPER` - Full-stack development positions
+- `DATA_SCIENTIST` - Data science and analytics positions
+
+**Finance Industry:**
+- `FINANCIAL_ANALYST` - Financial analysis and reporting positions
+- `INVESTMENT_BANKER` - Investment banking and M&A positions
+- `FINANCIAL_ADVISOR` - Financial advisory and planning positions
+- `ACCOUNTING_SPECIALIST` - Accounting and bookkeeping positions  
+- `RISK_ANALYST` - Risk management and compliance positions
+
+---
+
 ## Contact Services
 
 ### 1. Send Message
@@ -1217,6 +1393,22 @@ cvFile: <PDF file>
 
 ---
 
+## PDF Test Services
+
+### 1. Test Turkish Character PDF
+
+**Endpoint**: `GET /pdf-test/turkish-characters`  
+**Authentication**: None  
+**Response**: PDF file download
+
+**Description**: Generates a test PDF with Turkish characters to verify font rendering and encoding support.
+
+**Success Response**: Direct PDF file download with proper Turkish character encoding.
+
+**Use Case**: Testing and validation of PDF generation with Turkish language support for cover letters and CVs.
+
+---
+
 ## Error Handling
 
 ### Standard Error Response Format
@@ -1511,6 +1703,34 @@ interface District {
 }
 ```
 
+### Cover Letter Template Model
+
+```typescript
+interface CoverLetterTemplate {
+  id: string;
+  title: string;
+  content: string;
+  category: 
+    | 'SOFTWARE_DEVELOPER'
+    | 'FRONTEND_DEVELOPER'
+    | 'BACKEND_DEVELOPER'
+    | 'FULLSTACK_DEVELOPER'
+    | 'DATA_SCIENTIST'
+    | 'FINANCIAL_ANALYST'
+    | 'INVESTMENT_BANKER'
+    | 'FINANCIAL_ADVISOR'
+    | 'ACCOUNTING_SPECIALIST'
+    | 'RISK_ANALYST';
+  language: 'TURKISH' | 'ENGLISH';
+  industry: 'TECHNOLOGY' | 'FINANCE';
+  description?: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
 ---
 
 ## Development Notes
@@ -1520,8 +1740,15 @@ interface District {
 1. User registers → Email verification required
 2. User verifies email → Account activated
 3. User logs in → Receives access token and refresh token
-4. Access token expires → Use refresh token to get new access token
-5. Refresh token expires → User must log in again
+4. Access token expires (4 hours) → Use refresh token to get new access token
+5. Refresh token expires (7 days) → User must log in again
+
+### Token Expiration Times
+
+- **Access Token**: 4 hours (14400 seconds)
+- **Refresh Token**: 7 days
+- **Email Verification Token**: 24 hours
+- **Password Reset Token**: 1 hour
 
 ### Session Management
 
@@ -1543,6 +1770,16 @@ interface District {
 - Upload endpoints have special file-based limits
 - Contact form has per-IP rate limits
 - General API endpoints have standard rate limits
+
+### Template System
+
+- 30 pre-written professional templates (no AI dependency)
+- 10 categories: 5 technology + 5 finance industries
+- 3 templates per category for variety
+- Multi-language support (Turkish & English)
+- Dynamic placeholder replacement system
+- Template initialization via admin endpoint
+- Public access for browsing templates
 
 ### Security Features
 

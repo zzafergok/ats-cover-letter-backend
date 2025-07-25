@@ -266,6 +266,39 @@ model Skill {
   @@map("skills")
 }
 
+model CoverLetterTemplate {
+  id          String              @id @default(cuid())
+  title       String
+  content     String
+  category    TemplateCategory
+  language    CoverLetterLanguage @default(TURKISH)
+  industry    TemplateIndustry
+  description String?
+  isActive    Boolean             @default(true) @map("is_active")
+  sortOrder   Int                 @default(0) @map("sort_order")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  @@map("cover_letter_templates")
+}
+
+enum TemplateCategory {
+  SOFTWARE_DEVELOPER
+  FRONTEND_DEVELOPER
+  BACKEND_DEVELOPER
+  FULLSTACK_DEVELOPER
+  DATA_SCIENTIST
+  FINANCIAL_ANALYST
+  INVESTMENT_BANKER
+  FINANCIAL_ADVISOR
+  ACCOUNTING_SPECIALIST
+  RISK_ANALYST
+}
+
+enum TemplateIndustry {
+  TECHNOLOGY
+  FINANCE
+}
 
 enum UserRole {
   USER
