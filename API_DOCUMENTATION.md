@@ -6,13 +6,17 @@
 2. [Authentication](#authentication)
 3. [User Profile Management](#user-profile-management)
 4. [CV Management](#cv-management)
-5. [Cover Letter Services](#cover-letter-services)
-6. [Template Services](#template-services)
-7. [Contact Services](#contact-services)
-8. [Data Services](#data-services)
-9. [PDF Test Services](#pdf-test-services)
-10. [Error Handling](#error-handling)
-11. [Data Models](#data-models)
+5. [ATS CV Services](#ats-cv-services)
+6. [ATS Validation Services](#ats-validation-services)
+7. [CV Optimization Services](#cv-optimization-services)
+8. [DOCX Export Services](#docx-export-services)
+9. [Cover Letter Services](#cover-letter-services)
+10. [Template Services](#template-services)
+11. [Contact Services](#contact-services)
+12. [Data Services](#data-services)
+13. [PDF Test Services](#pdf-test-services)
+14. [Error Handling](#error-handling)
+15. [Data Models](#data-models)
 
 ## Base Information
 
@@ -674,7 +678,52 @@ cvFile: <PDF file>
 **Authentication**: Bearer Token Required  
 **Response**: PDF file download
 
-### 10. Generate Detailed CV (Profile-based)
+### 10. Upload CV (Updated Route)
+
+**Endpoint**: `POST /cv-upload/upload`  
+**Authentication**: Bearer Token Required  
+**Content-Type**: `multipart/form-data`  
+**Rate Limit**: Upload limiter applied
+
+**Form Data**:
+
+```
+cvFile: <PDF file>
+```
+
+**Success Response** (201):
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "originalName": "john_doe_cv.pdf",
+    "fileName": "processed_filename.pdf",
+    "size": 1024567,
+    "uploadedAt": "2024-01-01T00:00:00.000Z",
+    "status": "PROCESSING"
+  },
+  "message": "CV başarıyla yüklendi"
+}
+```
+
+### 11. Get CV Uploads (Updated Route)
+
+**Endpoint**: `GET /cv-upload/uploads`  
+**Authentication**: Bearer Token Required
+
+### 12. Get CV Upload Status (Updated Route)
+
+**Endpoint**: `GET /cv-upload/upload/status/:id`  
+**Authentication**: Bearer Token Required
+
+### 13. Delete CV Upload (Updated Route)
+
+**Endpoint**: `DELETE /cv-upload/uploads/:id`  
+**Authentication**: Bearer Token Required
+
+### 14. Generate Detailed CV (Profile-based)
 
 **Endpoint**: `POST /cv/generate-detailed`  
 **Authentication**: Bearer Token Required
@@ -692,26 +741,462 @@ cvFile: <PDF file>
 
 **Languages**: `TURKISH`, `ENGLISH`
 
-### 11. Get User Detailed CVs
+### 15. Get User Detailed CVs
 
 **Endpoint**: `GET /cv/detailed`  
 **Authentication**: Bearer Token Required
 
-### 12. Get Detailed CV
+### 16. Get Detailed CV
 
 **Endpoint**: `GET /cv/detailed/:id`  
 **Authentication**: Bearer Token Required
 
-### 13. Delete Detailed CV
+### 17. Delete Detailed CV
 
 **Endpoint**: `DELETE /cv/detailed/:id`  
 **Authentication**: Bearer Token Required
 
-### 14. Download Detailed CV PDF
+### 18. Download Detailed CV PDF
 
 **Endpoint**: `GET /cv/detailed/:id/download/pdf`  
 **Authentication**: Bearer Token Required  
 **Response**: PDF file download
+
+---
+
+## ATS CV Services
+
+### 1. Generate ATS CV
+
+**Endpoint**: `POST /ats-cv/generate`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: ATS Generation limiter applied
+
+**Request Body**:
+
+```json
+{
+  "personalInfo": {
+    "fullName": "John Doe",
+    "email": "john.doe@example.com",
+    "phone": "+1-555-0123",
+    "location": "New York, NY",
+    "linkedin": "https://linkedin.com/in/johndoe",
+    "portfolio": "https://johndoe.dev"
+  },
+  "professionalSummary": "Experienced software engineer with 5+ years...",
+  "workExperience": [
+    {
+      "title": "Senior Software Engineer",
+      "company": "Tech Corp",
+      "location": "New York, NY",
+      "startDate": "2020-01",
+      "endDate": "2023-12",
+      "current": false,
+      "achievements": [
+        "Led development of microservices architecture",
+        "Improved system performance by 40%"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Science",
+      "field": "Computer Science",
+      "school": "University of Technology",
+      "graduationDate": "2018-05",
+      "gpa": "3.8"
+    }
+  ],
+  "skills": {
+    "technical": ["JavaScript", "React", "Node.js", "Python"],
+    "soft": ["Team Leadership", "Problem Solving"]
+  },
+  "certifications": [
+    {
+      "name": "AWS Certified Solutions Architect",
+      "issuer": "Amazon Web Services",
+      "date": "2023-06",
+      "credentialId": "AWS-123456789"
+    }
+  ]
+}
+```
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "cvId": "uuid",
+    "pdfUrl": "/api/ats-cv/download/uuid",
+    "atsScore": 95,
+    "generatedAt": "2024-01-01T00:00:00.000Z",
+    "recommendations": [
+      "Consider adding more quantified achievements",
+      "Include industry-specific keywords"
+    ]
+  },
+  "message": "ATS CV başarıyla oluşturuldu"
+}
+```
+
+### 2. Generate Test ATS CV
+
+**Endpoint**: `GET /ats-cv/test`  
+**Authentication**: Bearer Token Required
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "pdfUrl": "/api/ats-cv/download/test-uuid",
+    "sampleData": {
+      "personalInfo": {...},
+      "professionalSummary": "...",
+      "workExperience": [...]
+    }
+  },
+  "message": "Test ATS CV oluşturuldu"
+}
+```
+
+### 3. Get ATS Schema
+
+**Endpoint**: `GET /ats-cv/schema`  
+**Authentication**: None
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "schema": {
+      "personalInfo": {
+        "required": ["fullName", "email", "phone"],
+        "optional": ["location", "linkedin", "portfolio"]
+      },
+      "professionalSummary": {
+        "maxLength": 300,
+        "recommendations": ["Include key skills", "Quantify achievements"]
+      }
+    }
+  }
+}
+```
+
+### 4. Get ATS Validation Tips
+
+**Endpoint**: `GET /ats-cv/validation-tips`  
+**Authentication**: None
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "tips": [
+      {
+        "category": "Formatting",
+        "tip": "Use standard section headers",
+        "importance": "high"
+      },
+      {
+        "category": "Keywords",
+        "tip": "Include job-relevant keywords naturally",
+        "importance": "critical"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## ATS Validation Services
+
+### 1. Validate CV for ATS Compliance
+
+**Endpoint**: `POST /ats-validation/validate`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: API limiter applied
+
+**Request Body**:
+
+```json
+{
+  "cvData": {
+    "personalInfo": {...},
+    "professionalSummary": "...",
+    "workExperience": [...],
+    "education": [...],
+    "skills": {...}
+  },
+  "jobDescription": "We are looking for a senior software engineer with 5+ years of experience..."
+}
+```
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "overallScore": 85,
+    "sectionScores": {
+      "formatting": 90,
+      "keywords": 80,
+      "structure": 95,
+      "content": 75
+    },
+    "recommendations": [
+      {
+        "section": "professionalSummary",
+        "issue": "Missing relevant keywords",
+        "suggestion": "Include 'microservices', 'cloud architecture'",
+        "priority": "high"
+      }
+    ],
+    "matchedKeywords": ["JavaScript", "React", "Node.js"],
+    "missingKeywords": ["AWS", "Docker", "Kubernetes"]
+  }
+}
+```
+
+### 2. Get Validation Analysis
+
+**Endpoint**: `GET /ats-validation/analysis/:score`  
+**Authentication**: Bearer Token Required
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "scoreRange": "80-89",
+    "level": "Good",
+    "description": "Your CV has strong ATS compatibility with room for improvement",
+    "commonIssues": [
+      "Keyword density could be improved",
+      "Consider adding more quantified results"
+    ],
+    "nextSteps": [
+      "Review job description for missing keywords",
+      "Add specific metrics to achievements"
+    ]
+  }
+}
+```
+
+### 3. Get ATS Best Practices
+
+**Endpoint**: `GET /ats-validation/best-practices`  
+**Authentication**: None
+
+### 4. Get Common ATS Issues
+
+**Endpoint**: `GET /ats-validation/common-issues`  
+**Authentication**: None
+
+---
+
+## CV Optimization Services
+
+### 1. Optimize CV
+
+**Endpoint**: `POST /cv-optimization/optimize`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: ATS Generation limiter applied
+
+**Request Body**:
+
+```json
+{
+  "cvData": {
+    "personalInfo": {...},
+    "professionalSummary": "...",
+    "workExperience": [...],
+    "skills": {...}
+  },
+  "jobDescription": "We are seeking a senior software engineer..."
+}
+```
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "optimizedCV": {
+      "personalInfo": {...},
+      "professionalSummary": "Optimized summary with relevant keywords...",
+      "workExperience": [...]
+    },
+    "optimizationReport": {
+      "improvementScore": 15,
+      "keywordMatchImprovement": 25,
+      "changes": [
+        {
+          "section": "professionalSummary",
+          "change": "Added 'cloud architecture' keyword",
+          "impact": "high"
+        }
+      ]
+    }
+  }
+}
+```
+
+### 2. Get Keyword Suggestions
+
+**Endpoint**: `POST /cv-optimization/keyword-suggestions`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: API limiter applied
+
+**Request Body**:
+
+```json
+{
+  "jobDescription": "We are looking for a senior software engineer...",
+  "targetPosition": "Senior Software Engineer"
+}
+```
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "keywords": {
+      "critical": ["JavaScript", "React", "Node.js"],
+      "important": ["AWS", "Docker", "Kubernetes"],
+      "recommended": ["Agile", "Scrum", "CI/CD"]
+    },
+    "phrases": [
+      "full-stack development",
+      "microservices architecture",
+      "cloud deployment"
+    ]
+  }
+}
+```
+
+### 3. Get Section Optimization Tips
+
+**Endpoint**: `GET /cv-optimization/section-tips/:section`  
+**Authentication**: None
+
+### 4. Analyze Keywords
+
+**Endpoint**: `POST /cv-optimization/analyze-keywords`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: API limiter applied
+
+**Request Body**:
+
+```json
+{
+  "content": "Experienced software engineer with React and Node.js expertise...",
+  "jobDescription": "We need a senior developer with React, Node.js, and AWS experience..."
+}
+```
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "matchScore": 70,
+    "matchedKeywords": ["React", "Node.js"],
+    "missingKeywords": ["AWS", "senior"],
+    "keywordDensity": {
+      "React": 2,
+      "Node.js": 1
+    },
+    "suggestions": [
+      "Include 'AWS' in your experience description",
+      "Use 'senior' to match the job level"
+    ]
+  }
+}
+```
+
+---
+
+## DOCX Export Services
+
+### 1. Generate DOCX CV
+
+**Endpoint**: `POST /docx/generate`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: General limiter applied
+
+**Request Body**:
+
+```json
+{
+  "cvData": {
+    "personalInfo": {...},
+    "professionalSummary": "...",
+    "workExperience": [...]
+  },
+  "options": {
+    "template": "professional",
+    "fontSize": 11,
+    "fontFamily": "Calibri",
+    "margins": "normal",
+    "includePhoto": false
+  }
+}
+```
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "downloadUrl": "/api/docx/download/uuid",
+    "fileName": "john_doe_cv.docx",
+    "fileSize": 45678,
+    "generatedAt": "2024-01-01T00:00:00.000Z"
+  },
+  "message": "DOCX CV başarıyla oluşturuldu"
+}
+```
+
+### 2. Preview DOCX Generation
+
+**Endpoint**: `POST /docx/preview`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: General limiter applied
+
+### 3. Validate DOCX Options
+
+**Endpoint**: `POST /docx/validate-options`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: General limiter applied
+
+### 4. Get DOCX Best Practices
+
+**Endpoint**: `GET /docx/best-practices`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: General limiter applied
+
+### 5. Get DOCX vs PDF Comparison
+
+**Endpoint**: `GET /docx/vs-pdf`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: General limiter applied
 
 ---
 
