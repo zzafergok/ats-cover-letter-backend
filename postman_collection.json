@@ -1306,6 +1306,149 @@
 			]
 		},
 		{
+			"name": "Templates",
+			"item": [
+				{
+					"name": "Get All Templates",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/templates",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/templates/categories",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"templates",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Templates by Industry",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/templates/industry/:industry",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"templates",
+								"industry",
+								":industry"
+							],
+							"variable": [
+								{
+									"key": "industry",
+									"value": "technology"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Template by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/templates/:templateId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"templates",
+								":templateId"
+							],
+							"variable": [
+								{
+									"key": "templateId",
+									"value": "template_id_here"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Cover Letter from Template",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"templateId\": \"template_id_here\",\n  \"positionTitle\": \"Software Developer\",\n  \"companyName\": \"Tech Company\",\n  \"jobDescription\": \"Looking for experienced React developer\",\n  \"language\": \"ENGLISH\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/templates/create-cover-letter",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"templates",
+								"create-cover-letter"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Initialize Templates (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/templates/initialize",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"templates",
+								"initialize"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Cover Letter - Basic (CV Upload)",
 			"item": [
 				{
@@ -1481,6 +1624,38 @@
 									"key": "id",
 									"value": "cover_letter_basic_id_here"
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Download Custom Basic Cover Letter PDF",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Custom cover letter content\",\n  \"positionTitle\": \"Frontend Developer\",\n  \"companyName\": \"Tech Company\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cover-letter-basic/download/custom-pdf",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-basic",
+								"download",
+								"custom-pdf"
 							]
 						}
 					},
@@ -1694,6 +1869,38 @@
 									"key": "id",
 									"value": "cover_letter_detailed_id_here"
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Download Custom Detailed Cover Letter PDF",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Custom detailed cover letter content\",\n  \"positionTitle\": \"Senior Developer\",\n  \"companyName\": \"Innovation Corp\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cover-letter-detailed/download/custom-pdf",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cover-letter-detailed",
+								"download",
+								"custom-pdf"
 							]
 						}
 					},
@@ -1971,12 +2178,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/../health",
+							"raw": "http://localhost:5000/health",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "5000",
 							"path": [
-								"..",
 								"health"
 							]
 						}
