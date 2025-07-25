@@ -24,6 +24,11 @@ export interface CreateCoverLetterFromTemplateRequest {
   };
 }
 
+export interface UserInfo {
+  firstName: string;
+  lastName: string;
+}
+
 export interface TemplateResponse {
   id: string;
   title: string;
@@ -112,7 +117,8 @@ export class TemplateService {
   }
 
   async createCoverLetterFromTemplate(
-    request: CreateCoverLetterFromTemplateRequest
+    request: CreateCoverLetterFromTemplateRequest,
+    userInfo: UserInfo
   ): Promise<string> {
     try {
       const template = await this.getTemplateById(request.templateId);
@@ -126,7 +132,9 @@ export class TemplateService {
       // Replace placeholders with actual values
       customizedContent = customizedContent
         .replace(/\[POSITION_TITLE\]/g, request.positionTitle)
-        .replace(/\[COMPANY_NAME\]/g, request.companyName);
+        .replace(/\[COMPANY_NAME\]/g, request.companyName)
+        .replace(/\[İsim\]/g, `${userInfo.firstName} ${userInfo.lastName}`)
+        .replace(/\[Name\]/g, `${userInfo.firstName} ${userInfo.lastName}`);
 
       // Add personalizations if provided
       if (request.personalizations) {

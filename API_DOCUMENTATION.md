@@ -872,7 +872,7 @@ cvFile: <PDF file>
 ### 1. Get All Templates
 
 **Endpoint**: `GET /templates`  
-**Authentication**: None  
+**Authentication**: Bearer Token Required  
 **Rate Limit**: Applied
 
 **Query Parameters**:
@@ -906,7 +906,7 @@ cvFile: <PDF file>
 ### 2. Get Template Categories
 
 **Endpoint**: `GET /templates/categories`  
-**Authentication**: None
+**Authentication**: Bearer Token Required
 
 **Success Response** (200):
 
@@ -948,7 +948,7 @@ cvFile: <PDF file>
 ### 3. Get Templates by Industry
 
 **Endpoint**: `GET /templates/industry/:industry`  
-**Authentication**: None
+**Authentication**: Bearer Token Required
 
 **Path Parameters**:
 
@@ -959,7 +959,7 @@ cvFile: <PDF file>
 ### 4. Get Template by ID
 
 **Endpoint**: `GET /templates/:templateId`  
-**Authentication**: None
+**Authentication**: Bearer Token Required
 
 **Success Response** (200):
 
@@ -1021,6 +1021,7 @@ cvFile: <PDF file>
 - `[WHY_POSITION]` - Replaced with personalizations.whyPosition
 - `[WHY_COMPANY]` - Replaced with personalizations.whyCompany
 - `[ADDITIONAL_SKILLS]` - Replaced with personalizations.additionalSkills
+- `[İsim]` / `[Name]` - Replaced with user's first and last name (from authenticated user)
 
 ### 6. Initialize Templates (Admin Only)
 

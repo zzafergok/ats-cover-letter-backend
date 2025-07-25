@@ -13,10 +13,11 @@ const templateController = new TemplateController();
 /**
  * @route GET /api/templates
  * @description Get all templates with optional filters
- * @access Public
+ * @access Private
  */
 router.get(
   '/',
+  authenticateToken,
   validate(getTemplatesSchema, 'query'),
   templateController.getTemplates.bind(templateController)
 );
@@ -24,30 +25,33 @@ router.get(
 /**
  * @route GET /api/templates/categories
  * @description Get template categories
- * @access Public
+ * @access Private
  */
 router.get(
   '/categories',
+  authenticateToken,
   templateController.getTemplateCategories.bind(templateController)
 );
 
 /**
  * @route GET /api/templates/industry/:industry
  * @description Get templates by industry
- * @access Public
+ * @access Private
  */
 router.get(
   '/industry/:industry',
+  authenticateToken,
   templateController.getTemplatesByIndustry.bind(templateController)
 );
 
 /**
  * @route GET /api/templates/:templateId
  * @description Get template by ID
- * @access Public
+ * @access Private
  */
 router.get(
   '/:templateId',
+  authenticateToken,
   templateController.getTemplateById.bind(templateController)
 );
 

@@ -1312,7 +1312,12 @@
 					"name": "Get All Templates",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/templates",
 							"host": [
@@ -1329,7 +1334,12 @@
 					"name": "Get Templates with Filters",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/templates?industry=HEALTHCARE&language=ENGLISH",
 							"host": [
@@ -1356,7 +1366,12 @@
 					"name": "Get Template Categories",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/templates/categories",
 							"host": [
@@ -1374,7 +1389,12 @@
 					"name": "Get Templates by Industry - Technology",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/templates/industry/TECHNOLOGY",
 							"host": [
@@ -1393,7 +1413,12 @@
 					"name": "Get Templates by Industry - Healthcare",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/templates/industry/HEALTHCARE",
 							"host": [
@@ -1412,7 +1437,12 @@
 					"name": "Get Templates by Industry - Education",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/templates/industry/EDUCATION",
 							"host": [
@@ -1431,7 +1461,12 @@
 					"name": "Get Templates by Industry - Marketing",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/templates/industry/MARKETING",
 							"host": [
@@ -1450,7 +1485,12 @@
 					"name": "Get Template by ID",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
 						"url": {
 							"raw": "{{baseUrl}}/templates/:templateId",
 							"host": [

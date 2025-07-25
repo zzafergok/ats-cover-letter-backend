@@ -2,9 +2,9 @@ import { Request, Response } from 'express';
 import { TemplateService } from '../services/template.service';
 import { sendSuccess, sendError } from '../utils/response';
 import logger from '../config/logger';
+import { TemplateIndustry } from '@prisma/client';
 import {
   SERVICE_MESSAGES,
-  formatMessage,
   createErrorMessage,
 } from '../constants/messages';
 
@@ -51,12 +51,20 @@ export class TemplateController {
     try {
       const { industry } = req.params;
 
-      if (!['TECHNOLOGY', 'FINANCE', 'HEALTHCARE', 'EDUCATION', 'MARKETING'].includes(industry)) {
+      if (
+        ![
+          'TECHNOLOGY',
+          'FINANCE',
+          'HEALTHCARE',
+          'EDUCATION',
+          'MARKETING',
+        ].includes(industry)
+      ) {
         return sendError(res, 'Geçersiz endüstri türü', 400);
       }
 
       const templates = await this.templateService.getTemplatesByIndustry(
-        industry as 'TECHNOLOGY' | 'FINANCE' | 'HEALTHCARE' | 'EDUCATION' | 'MARKETING'
+        industry as TemplateIndustry
       );
 
       logger.info('Templates retrieved by industry', {
@@ -64,7 +72,11 @@ export class TemplateController {
         count: templates.length,
       });
 
-      sendSuccess(res, templates, `${industry} templates retrieved successfully`);
+      sendSuccess(
+        res,
+        templates,
+        `${industry} templates retrieved successfully`
+      );
     } catch (error) {
       logger.error(
         createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error)
@@ -104,16 +116,34 @@ export class TemplateController {
   /**
    * Create cover letter from template
    */
-  async createCoverLetterFromTemplate(req: Request, res: Response): Promise<void> {
+  async createCoverLetterFromTemplate(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     try {
-      const { templateId, positionTitle, companyName, personalizations } = req.body;
+      const { templateId, positionTitle, companyName, personalizations } =
+        req.body;
 
-      const coverLetterContent = await this.templateService.createCoverLetterFromTemplate({
-        templateId,
-        positionTitle,
-        companyName,
-        personalizations,
-      });
+      // Get user information from request
+      if (!req.user) {
+        return sendError(res, 'Kullanıcı bilgisi bulunamadı', 401);
+      }
+
+      const userInfo = {
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+      };
+
+      const coverLetterContent =
+        await this.templateService.createCoverLetterFromTemplate(
+          {
+            templateId,
+            positionTitle,
+            companyName,
+            personalizations,
+          },
+          userInfo
+        );
 
       logger.info('Cover letter created from template', {
         templateId,
@@ -136,7 +166,11 @@ export class TemplateController {
       logger.error(
         createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error)
       );
-      sendError(res, (error as Error).message || 'Cover letter oluşturulamadı', 500);
+      sendError(
+        res,
+        (error as Error).message || 'Cover letter oluşturulamadı',
+        500
+      );
     }
   }
 
@@ -160,23 +194,18 @@ export class TemplateController {
           'ACCOUNTING_SPECIALIST',
           'RISK_ANALYST',
         ],
-        HEALTHCARE: [
-          'NURSE',
-          'DOCTOR',
-          'PHARMACIST',
-        ],
-        EDUCATION: [
-          'TEACHER',
-          'ACADEMIC_ADMINISTRATOR',
-        ],
-        MARKETING: [
-          'MARKETING_SPECIALIST',
-        ],
+        HEALTHCARE: ['NURSE', 'DOCTOR', 'PHARMACIST'],
+        EDUCATION: ['TEACHER', 'ACADEMIC_ADMINISTRATOR'],
+        MARKETING: ['MARKETING_SPECIALIST'],
       };
 
       logger.info('Template categories retrieved');
 
-      sendSuccess(res, categories, 'Template categories retrieved successfully');
+      sendSuccess(
+        res,
+        categories,
+        'Template categories retrieved successfully'
+      );
     } catch (error) {
       logger.error(
         createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error)
@@ -206,7 +235,11 @@ export class TemplateController {
       logger.error(
         createErrorMessage(SERVICE_MESSAGES.GENERAL.FAILED, error as Error)
       );
-      sendError(res, (error as Error).message || 'Template başlatma işlemi başarısız', 500);
+      sendError(
+        res,
+        (error as Error).message || 'Template başlatma işlemi başarısız',
+        500
+      );
     }
   }
 }
