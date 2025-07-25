@@ -877,7 +877,7 @@ cvFile: <PDF file>
 
 **Query Parameters**:
 
-- `industry` (optional): Filter by industry (`TECHNOLOGY` | `FINANCE`)
+- `industry` (optional): Filter by industry (`TECHNOLOGY` | `FINANCE` | `HEALTHCARE` | `EDUCATION` | `MARKETING`)
 - `category` (optional): Filter by category
 - `language` (optional): Filter by language (`TURKISH` | `ENGLISH`)
 
@@ -927,6 +927,18 @@ cvFile: <PDF file>
       "FINANCIAL_ADVISOR", 
       "ACCOUNTING_SPECIALIST",
       "RISK_ANALYST"
+    ],
+    "HEALTHCARE": [
+      "NURSE",
+      "DOCTOR",
+      "PHARMACIST"
+    ],
+    "EDUCATION": [
+      "TEACHER",
+      "ACADEMIC_ADMINISTRATOR"
+    ],
+    "MARKETING": [
+      "MARKETING_SPECIALIST"
     ]
   },
   "message": "Template categories retrieved successfully"
@@ -940,7 +952,7 @@ cvFile: <PDF file>
 
 **Path Parameters**:
 
-- `industry`: `TECHNOLOGY` | `FINANCE`
+- `industry`: `TECHNOLOGY` | `FINANCE` | `HEALTHCARE` | `EDUCATION` | `MARKETING`
 
 **Example**: `GET /templates/industry/TECHNOLOGY`
 
@@ -1039,6 +1051,18 @@ cvFile: <PDF file>
 - `FINANCIAL_ADVISOR` - Financial advisory and planning positions
 - `ACCOUNTING_SPECIALIST` - Accounting and bookkeeping positions  
 - `RISK_ANALYST` - Risk management and compliance positions
+
+**Healthcare Industry:**
+- `NURSE` - Registered nurse and specialized nursing positions
+- `DOCTOR` - Medical doctor and physician positions
+- `PHARMACIST` - Pharmacy and pharmaceutical positions
+
+**Education Industry:**
+- `TEACHER` - Teaching and educational positions
+- `ACADEMIC_ADMINISTRATOR` - Academic management positions
+
+**Marketing Industry:**
+- `MARKETING_SPECIALIST` - Digital marketing and content marketing positions
 
 ---
 
@@ -1720,9 +1744,15 @@ interface CoverLetterTemplate {
     | 'INVESTMENT_BANKER'
     | 'FINANCIAL_ADVISOR'
     | 'ACCOUNTING_SPECIALIST'
-    | 'RISK_ANALYST';
+    | 'RISK_ANALYST'
+    | 'NURSE'
+    | 'DOCTOR'
+    | 'PHARMACIST'
+    | 'TEACHER'
+    | 'ACADEMIC_ADMINISTRATOR'
+    | 'MARKETING_SPECIALIST';
   language: 'TURKISH' | 'ENGLISH';
-  industry: 'TECHNOLOGY' | 'FINANCE';
+  industry: 'TECHNOLOGY' | 'FINANCE' | 'HEALTHCARE' | 'EDUCATION' | 'MARKETING';
   description?: string;
   isActive: boolean;
   sortOrder: number;
@@ -1773,9 +1803,8 @@ interface CoverLetterTemplate {
 
 ### Template System
 
-- 30 pre-written professional templates (no AI dependency)
-- 10 categories: 5 technology + 5 finance industries
-- 3 templates per category for variety
+- 31 pre-written professional templates (no AI dependency)
+- 16 categories across 5 industries: Technology, Finance, Healthcare, Education, Marketing
 - Multi-language support (Turkish & English)
 - Dynamic placeholder replacement system
 - Template initialization via admin endpoint

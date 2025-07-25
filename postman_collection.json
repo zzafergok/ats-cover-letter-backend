@@ -1326,6 +1326,33 @@
 					"response": []
 				},
 				{
+					"name": "Get Templates with Filters",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/templates?industry=HEALTHCARE&language=ENGLISH",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"templates"
+							],
+							"query": [
+								{
+									"key": "industry",
+									"value": "HEALTHCARE"
+								},
+								{
+									"key": "language",
+									"value": "ENGLISH"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Get Template Categories",
 					"request": {
 						"method": "GET",
@@ -1344,25 +1371,76 @@
 					"response": []
 				},
 				{
-					"name": "Get Templates by Industry",
+					"name": "Get Templates by Industry - Technology",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/templates/industry/:industry",
+							"raw": "{{baseUrl}}/templates/industry/TECHNOLOGY",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"templates",
 								"industry",
-								":industry"
+								"TECHNOLOGY"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Templates by Industry - Healthcare",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/templates/industry/HEALTHCARE",
+							"host": [
+								"{{baseUrl}}"
 							],
-							"variable": [
-								{
-									"key": "industry",
-									"value": "technology"
-								}
+							"path": [
+								"templates",
+								"industry",
+								"HEALTHCARE"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Templates by Industry - Education",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/templates/industry/EDUCATION",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"templates",
+								"industry",
+								"EDUCATION"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Templates by Industry - Marketing",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/templates/industry/MARKETING",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"templates",
+								"industry",
+								"MARKETING"
 							]
 						}
 					},
@@ -1393,7 +1471,7 @@
 					"response": []
 				},
 				{
-					"name": "Create Cover Letter from Template",
+					"name": "Create Cover Letter from Template - Technology",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -1408,7 +1486,69 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"templateId\": \"template_id_here\",\n  \"positionTitle\": \"Software Developer\",\n  \"companyName\": \"Tech Company\",\n  \"jobDescription\": \"Looking for experienced React developer\",\n  \"language\": \"ENGLISH\"\n}"
+							"raw": "{\n  \"templateId\": \"template_id_here\",\n  \"positionTitle\": \"Senior Software Engineer\",\n  \"companyName\": \"TechCorp Inc.\",\n  \"personalizations\": {\n    \"whyPosition\": \"I am passionate about software engineering and have 5+ years of experience in full-stack development.\",\n    \"whyCompany\": \"TechCorp's innovative approach to solving complex problems and commitment to open-source projects aligns with my career goals.\",\n    \"additionalSkills\": \"React, Node.js, TypeScript, AWS, Docker, Kubernetes\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/templates/create-cover-letter",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"templates",
+								"create-cover-letter"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Cover Letter from Template - Healthcare",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"templateId\": \"healthcare_template_id_here\",\n  \"positionTitle\": \"Registered Nurse\",\n  \"companyName\": \"City General Hospital\",\n  \"personalizations\": {\n    \"whyPosition\": \"I am dedicated to providing exceptional patient care and have 3+ years of experience in medical-surgical nursing.\",\n    \"whyCompany\": \"City General Hospital's commitment to patient-centered care and continuous improvement aligns with my nursing philosophy.\",\n    \"additionalSkills\": \"Patient assessment, medication administration, electronic health records, team collaboration\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/templates/create-cover-letter",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"templates",
+								"create-cover-letter"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Cover Letter from Template - Education",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"templateId\": \"education_template_id_here\",\n  \"positionTitle\": \"Elementary Teacher\",\n  \"companyName\": \"Springfield Elementary School\",\n  \"personalizations\": {\n    \"whyPosition\": \"I am passionate about elementary education and creating engaging learning environments that inspire young minds to learn.\",\n    \"whyCompany\": \"Springfield Elementary's innovative teaching methods and commitment to student success make it an ideal place for my teaching career.\",\n    \"additionalSkills\": \"Curriculum development, classroom management, technology integration, parent communication\"\n  }\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/templates/create-cover-letter",
