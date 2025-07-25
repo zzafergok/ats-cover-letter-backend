@@ -28,7 +28,15 @@ export class PdfService {
       // Build zamanında src path'i değişebilir, bu yüzden birkaç alternatif deneyelim
       const possiblePaths = [
         path.join(__dirname, '..', 'assets', 'fonts', `${fontName}.ttf`),
-        path.join(__dirname, '..', '..', 'src', 'assets', 'fonts', `${fontName}.ttf`),
+        path.join(
+          __dirname,
+          '..',
+          '..',
+          'src',
+          'assets',
+          'fonts',
+          `${fontName}.ttf`
+        ),
         path.join(process.cwd(), 'src', 'assets', 'fonts', `${fontName}.ttf`),
       ];
 
@@ -41,14 +49,16 @@ export class PdfService {
       }
 
       if (!fontPath) {
-        logger.warn(`Font not found in any of these paths: ${possiblePaths.join(', ')}`);
+        logger.warn(
+          `Font not found in any of these paths: ${possiblePaths.join(', ')}`
+        );
         throw new Error(`Font file not found: ${fontName}`);
       }
 
       PdfService.cachedFonts[fontName] = fs.readFileSync(fontPath);
       logger.info(`Font loaded and cached: ${fontName} from ${fontPath}`);
     }
-    
+
     return PdfService.cachedFonts[fontName];
   }
 
@@ -57,14 +67,16 @@ export class PdfService {
    */
   private async ensureFontsExist(): Promise<void> {
     const requiredFonts = ['Roboto-Regular', 'Roboto-Bold'];
-    
+
     for (const font of requiredFonts) {
       try {
         await this.loadFont(font);
         logger.info(`Font verification successful: ${font}`);
       } catch (error) {
         logger.error(`Required font missing: ${font}`, error);
-        throw new Error(`Required font file missing: ${font}.ttf. Please ensure fonts are installed.`);
+        throw new Error(
+          `Required font file missing: ${font}.ttf. Please ensure fonts are installed.`
+        );
       }
     }
   }
@@ -85,8 +97,8 @@ export class PdfService {
         Subject: 'Job Application Cover Letter',
         Keywords: 'cover letter, job application, ATS',
         Creator: 'ATS Cover Letter Backend',
-        Producer: 'PDFKit with Turkish Support'
-      }
+        Producer: 'PDFKit with Turkish Support',
+      },
     });
 
     try {
@@ -99,7 +111,7 @@ export class PdfService {
 
       // Varsayılan fontu ayarla
       doc.font('Roboto');
-      
+
       logger.info('PDF document created with Turkish font support');
     } catch (error) {
       logger.error('Font loading failed, using fallback fonts', error);
@@ -116,17 +128,19 @@ export class PdfService {
   private sanitizeText(text: string): string {
     // Null, undefined kontrolü
     if (!text) return '';
-    
+
     // String'e çevir ve trim yap
     const sanitized = String(text).trim();
-    
+
     // UTF-8 encoding kontrolü
     try {
       // Eğer string zaten UTF-8 değilse, Buffer üzerinden UTF-8'e çevir
       const buffer = Buffer.from(sanitized, 'utf8');
       return buffer.toString('utf8');
     } catch (error) {
-      logger.warn('Text encoding issue detected, using fallback', { originalText: text });
+      logger.warn('Text encoding issue detected, using fallback', {
+        originalText: text,
+      });
       return sanitized;
     }
   }
@@ -134,7 +148,11 @@ export class PdfService {
   /**
    * Sayfa sonu kontrolü ve yeni sayfa ekleme
    */
-  private checkPageBreak(doc: InstanceType<typeof PDFDocument>, currentY: number, requiredHeight: number): number {
+  private checkPageBreak(
+    doc: InstanceType<typeof PDFDocument>,
+    currentY: number,
+    requiredHeight: number
+  ): number {
     const pageHeight = doc.page.height;
     const bottomMargin = 50;
 
@@ -142,7 +160,7 @@ export class PdfService {
       doc.addPage();
       return 50; // Top margin for new page
     }
-    
+
     return currentY;
   }
 
@@ -156,14 +174,14 @@ export class PdfService {
     language?: 'TURKISH' | 'ENGLISH';
   }): Promise<Buffer> {
     const { content, positionTitle, companyName, language = 'TURKISH' } = data;
-    
+
     try {
       const doc = await this.createDocument();
-      
+
       // Content stream'i bir buffer'a yazma
       const chunks: Buffer[] = [];
       doc.on('data', (chunk: Buffer) => chunks.push(chunk));
-      
+
       const pdfPromise = new Promise<Buffer>((resolve, reject) => {
         doc.on('end', () => {
           const pdfBuffer = Buffer.concat(chunks);
@@ -176,40 +194,157 @@ export class PdfService {
 
       // Başlık
       doc.font('Roboto-Bold').fontSize(16);
-      const title = language === 'TURKISH' 
-        ? `${this.sanitizeText(companyName)} - ${this.sanitizeText(positionTitle)} Pozisyonu İçin Başvuru Mektubu`
-        : `Cover Letter for ${this.sanitizeText(positionTitle)} Position at ${this.sanitizeText(companyName)}`;
-      
+      const title =
+        language === 'TURKISH'
+          ? `${this.sanitizeText(companyName)} - ${this.sanitizeText(positionTitle)} Pozisyonu İçin Başvuru Mektubu`
+          : `Cover Letter for ${this.sanitizeText(positionTitle)} Position at ${this.sanitizeText(companyName)}`;
+
       doc.text(title, 50, yPosition, { width: 500, align: 'center' });
       yPosition += 40;
 
       // Tarih
       doc.font('Roboto').fontSize(10);
       const currentDate = TurkeyTime.formatDateLong();
-      doc.text(this.sanitizeText(currentDate), 450, yPosition, { align: 'right' });
+      doc.text(this.sanitizeText(currentDate), 450, yPosition, {
+        align: 'right',
+      });
       yPosition += 30;
 
       // İçerik
       doc.font('Roboto').fontSize(11);
       const sanitizedContent = this.sanitizeText(content);
-      const paragraphs = sanitizedContent.split('\n').filter(p => p.trim().length > 0);
 
-      paragraphs.forEach((paragraph, index) => {
+      // Contact bilgilerini tespit et - daha güçlü pattern
+      const contactSectionMatch = sanitizedContent.match(
+        /((?:Saygılarımla|Best regards|Sincerely|En iyi dileklerimle|Teşekkürler)[,.]?\s*[\s\S]*?)$/
+      );
+      const mainContent = contactSectionMatch
+        ? sanitizedContent.replace(contactSectionMatch[0], '').trim()
+        : sanitizedContent;
+
+      // Contact section'ı parse et ve düzenle
+      let contactSection = '';
+      if (contactSectionMatch) {
+        const rawContact = contactSectionMatch[0].trim();
+        const lines = rawContact
+          .split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+
+        // İlk satır kapanış (Saygılarımla, Best regards, etc.)
+        const closingLine = lines[0];
+
+        // Kullanıcı bilgilerini bul (email, telefon, link içerenler)
+        const nameLines = [];
+        const contactLines = [];
+        const linkLines = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i];
+          if (
+            line.includes('@') ||
+            /^\d+$/.test(line.replace(/[\s\-()]/g, ''))
+          ) {
+            contactLines.push(line);
+          } else if (
+            line.includes('http') ||
+            line.includes('www.') ||
+            line.includes('.com')
+          ) {
+            linkLines.push(line);
+          } else if (
+            !line.includes('Saygılarımla') &&
+            !line.includes('Best regards') &&
+            !line.includes('Sincerely')
+          ) {
+            nameLines.push(line);
+          }
+        }
+
+        // Doğru formatı oluştur
+        contactSection = closingLine.replace(/[,.]$/, ',');
+        if (nameLines.length > 0) {
+          contactSection += '\n' + nameLines.join(' ');
+        }
+        if (contactLines.length > 0) {
+          contactSection += '\n\n' + contactLines.join('\n');
+        }
+        if (linkLines.length > 0) {
+          // Linkleri uzunluğa göre sırala
+          const sortedLinks = linkLines.sort((a, b) => a.length - b.length);
+          contactSection += '\n\n' + sortedLinks.join('\n');
+        }
+      }
+
+      // Ana içeriği işle
+      const mainParagraphs = mainContent
+        .split('\n')
+        .filter((p) => p.trim().length > 0);
+
+      // Contact section'ın toplam yüksekliğini hesapla
+      let contactSectionHeight = 0;
+      if (contactSection) {
+        const contactLines = contactSection.split('\n');
+        contactSectionHeight = 20; // Ana içerik ile contact arasında boşluk
+        contactLines.forEach((line) => {
+          if (line.trim().length > 0) {
+            const lineHeight = doc.heightOfString(line, { width: 500 });
+            contactSectionHeight += lineHeight + 3;
+          } else {
+            contactSectionHeight += 7;
+          }
+        });
+      }
+
+      mainParagraphs.forEach((paragraph, index) => {
         const paragraphHeight = doc.heightOfString(paragraph, { width: 500 });
-        yPosition = this.checkPageBreak(doc, yPosition, paragraphHeight + 15);
+        const isLastParagraph = index === mainParagraphs.length - 1;
+
+        // Son paragrafsa ve contact section varsa, birlikte kontrol et
+        if (isLastParagraph && contactSection) {
+          const totalHeightNeeded = paragraphHeight + 15 + contactSectionHeight;
+          yPosition = this.checkPageBreak(doc, yPosition, totalHeightNeeded);
+        } else {
+          yPosition = this.checkPageBreak(doc, yPosition, paragraphHeight + 15);
+        }
 
         doc.text(paragraph.trim(), 50, yPosition, {
           width: 500,
           align: 'justify',
-          lineGap: 2
+          lineGap: 2,
+          continued: false,
         });
 
-        yPosition += paragraphHeight + (index < paragraphs.length - 1 ? 15 : 10);
+        yPosition +=
+          paragraphHeight + (index < mainParagraphs.length - 1 ? 15 : 10);
       });
 
-      // Kapanış
-      yPosition = this.checkPageBreak(doc, yPosition, 40);
-      doc.text('Saygılarımla,', 50, yPosition);
+      // Contact section'ı özel olarak işle
+      if (contactSection) {
+        yPosition += 20; // Ana içerik ile contact arasında boşluk
+        const contactLines = contactSection.split('\n');
+
+        contactLines.forEach((line) => {
+          if (line.trim().length > 0) {
+            const lineHeight = doc.heightOfString(line, { width: 500 });
+            // Contact kısmında sayfa kontrolü yapmıyoruz çünkü zaten yukarıda kontrol edildi
+
+            doc.text(line, 50, yPosition, {
+              width: 500,
+              align: 'left',
+              lineGap: 1,
+              continued: false,
+            });
+
+            yPosition += lineHeight + 3;
+          } else {
+            // Boş satır için ekstra spacing
+            yPosition += 7;
+          }
+        });
+      }
+
+      // Kapanış - artık content içinde mevcut, tekrar eklemeye gerek yok
 
       // PDF'i sonlandır
       doc.end();
@@ -225,7 +360,6 @@ export class PdfService {
       });
 
       return pdfBuffer;
-
     } catch (error) {
       logger.error(
         createErrorMessage(
@@ -245,14 +379,14 @@ export class PdfService {
     positionTitle: string,
     companyName: string,
     applicantName?: string,
-    language: 'TURKISH' | 'ENGLISH' = 'TURKISH'
+    _language: 'TURKISH' | 'ENGLISH' = 'TURKISH'
   ): Promise<Buffer> {
     try {
       const doc = await this.createDocument();
-      
+
       const chunks: Buffer[] = [];
       doc.on('data', (chunk: Buffer) => chunks.push(chunk));
-      
+
       const pdfPromise = new Promise<Buffer>((resolve, reject) => {
         doc.on('end', () => {
           const pdfBuffer = Buffer.concat(chunks);
@@ -267,7 +401,7 @@ export class PdfService {
       doc.font('Roboto-Bold').fontSize(12);
       doc.text(this.sanitizeText(companyName), 50, yPosition);
       yPosition += 15;
-      
+
       doc.font('Roboto').fontSize(11);
       doc.text(`${this.sanitizeText(positionTitle)} Pozisyonu`, 50, yPosition);
       yPosition += 30;
@@ -275,22 +409,25 @@ export class PdfService {
       // İçerik
       doc.font('Roboto').fontSize(11);
       const sanitizedContent = this.sanitizeText(content);
-      const paragraphs = sanitizedContent.split('\n').filter(p => p.trim().length > 0);
+      const paragraphs = sanitizedContent
+        .split('\n')
+        .filter((p) => p.trim().length > 0);
 
       paragraphs.forEach((paragraph, index) => {
         const paragraphHeight = doc.heightOfString(paragraph, { width: 500 });
-        
+
         // Son 3 paragraf için özel kontrol (son paragraf + "Best regards," + "Name")
         const isOneOfLastThree = index >= paragraphs.length - 3;
-        
+
         if (isOneOfLastThree) {
           // İlk kez son 3 paragraftan birine geldiğimizde, hepsinin yüksekliğini hesapla
           if (index === paragraphs.length - 3) {
             let totalClosingHeight = 0;
             for (let i = index; i < paragraphs.length; i++) {
-              totalClosingHeight += doc.heightOfString(paragraphs[i], { width: 500 }) + 15;
+              totalClosingHeight +=
+                doc.heightOfString(paragraphs[i], { width: 500 }) + 15;
             }
-            
+
             // Eğer son 3 paragraf sayfa sonuna sığmayacaksa, yeni sayfaya geç
             if (yPosition + totalClosingHeight > doc.page.height - 50) {
               doc.addPage();
@@ -306,10 +443,12 @@ export class PdfService {
         doc.text(paragraph.trim(), 50, yPosition, {
           width: 500,
           align: 'justify',
-          lineGap: 2
+          lineGap: 2,
+          continued: false,
         });
 
-        yPosition += paragraphHeight + (index < paragraphs.length - 1 ? 15 : 10);
+        yPosition +=
+          paragraphHeight + (index < paragraphs.length - 1 ? 15 : 10);
       });
 
       doc.end();
@@ -323,7 +462,6 @@ export class PdfService {
       });
 
       return pdfBuffer;
-
     } catch (error) {
       logger.error(
         createErrorMessage(
@@ -345,14 +483,20 @@ export class PdfService {
     language?: 'TURKISH' | 'ENGLISH';
     cvType?: string;
   }): Promise<Buffer> {
-    const { content, positionTitle, companyName, language = 'TURKISH', cvType = 'ATS_OPTIMIZED' } = data;
-    
+    const {
+      content,
+      positionTitle,
+      companyName,
+      language = 'TURKISH',
+      cvType = 'ATS_OPTIMIZED',
+    } = data;
+
     try {
       const doc = await this.createDocument();
-      
+
       const chunks: Buffer[] = [];
       doc.on('data', (chunk: Buffer) => chunks.push(chunk));
-      
+
       const pdfPromise = new Promise<Buffer>((resolve, reject) => {
         doc.on('end', () => {
           const pdfBuffer = Buffer.concat(chunks);
@@ -365,18 +509,20 @@ export class PdfService {
 
       // Başlık
       doc.font('Roboto-Bold').fontSize(16);
-      const title = language === 'TURKISH' 
-        ? `${this.sanitizeText(companyName)} - ${this.sanitizeText(positionTitle)} Pozisyonu İçin CV`
-        : `CV for ${this.sanitizeText(positionTitle)} Position at ${this.sanitizeText(companyName)}`;
-      
+      const title =
+        language === 'TURKISH'
+          ? `${this.sanitizeText(companyName)} - ${this.sanitizeText(positionTitle)} Pozisyonu İçin CV`
+          : `CV for ${this.sanitizeText(positionTitle)} Position at ${this.sanitizeText(companyName)}`;
+
       doc.text(title, 50, yPosition, { width: 500, align: 'center' });
       yPosition += 30;
 
       // CV Tipi
       doc.font('Roboto').fontSize(10);
-      const typeText = language === 'TURKISH' 
-        ? `CV Tipi: ${cvType === 'ATS_OPTIMIZED' ? 'ATS Uyumlu' : cvType === 'CREATIVE' ? 'Yaratıcı' : 'Teknik'}`
-        : `CV Type: ${cvType}`;
+      const typeText =
+        language === 'TURKISH'
+          ? `CV Tipi: ${cvType === 'ATS_OPTIMIZED' ? 'ATS Uyumlu' : cvType === 'CREATIVE' ? 'Yaratıcı' : 'Teknik'}`
+          : `CV Type: ${cvType}`;
       doc.text(this.sanitizeText(typeText), 50, yPosition);
       yPosition += 20;
 
@@ -387,15 +533,20 @@ export class PdfService {
 
       // İçerik
       const sanitizedContent = this.sanitizeText(content);
-      const sections = sanitizedContent.split('\n\n').filter(section => section.trim().length > 0);
+      const sections = sanitizedContent
+        .split('\n\n')
+        .filter((section) => section.trim().length > 0);
 
       sections.forEach((section) => {
-        const lines = section.split('\n').filter(line => line.trim().length > 0);
-        
+        const lines = section
+          .split('\n')
+          .filter((line) => line.trim().length > 0);
+
         lines.forEach((line) => {
           // Başlık kontrolü (# ile başlayan veya büyük harfle başlayan satırlar)
-          const isHeader = line.match(/^#+\s/) || line.match(/^[A-ZÜÖÇĞIŞ][A-ZÜÖÇĞIŞ\s]+$/);
-          
+          const isHeader =
+            line.match(/^#+\s/) || line.match(/^[A-ZÜÖÇĞIŞ][A-ZÜÖÇĞIŞ\s]+$/);
+
           if (isHeader) {
             yPosition = this.checkPageBreak(doc, yPosition, 25);
             doc.font('Roboto-Bold').fontSize(12);
@@ -404,7 +555,7 @@ export class PdfService {
           } else {
             const lineHeight = doc.heightOfString(line, { width: 500 });
             yPosition = this.checkPageBreak(doc, yPosition, lineHeight + 5);
-            
+
             doc.font('Roboto').fontSize(11);
             doc.text(line.trim(), 50, yPosition, { width: 500 });
             yPosition += lineHeight + 5;
@@ -427,7 +578,6 @@ export class PdfService {
       });
 
       return pdfBuffer;
-
     } catch (error) {
       logger.error('CV PDF generation failed:', error);
       throw new Error('CV PDF oluşturulamadı');
@@ -466,7 +616,6 @@ Ahmet Yılmaz`;
         'Ahmet Yılmaz', // Test name
         'TURKISH'
       );
-
     } catch (error) {
       logger.error('Turkish character test PDF generation failed:', error);
       throw new Error('Test PDF oluşturulamadı');
