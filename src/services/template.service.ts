@@ -1,15 +1,14 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, TemplateIndustry } from '@prisma/client';
 import logger from '../config/logger';
 import {
   SERVICE_MESSAGES,
-  formatMessage,
   createErrorMessage,
 } from '../constants/messages';
 
 const prisma = new PrismaClient();
 
 export interface TemplateRequest {
-  industry?: 'TECHNOLOGY' | 'FINANCE' | 'HEALTHCARE' | 'EDUCATION' | 'MARKETING';
+  industry?: TemplateIndustry;
   category?: string;
   language?: 'TURKISH' | 'ENGLISH';
 }
@@ -176,7 +175,7 @@ export class TemplateService {
     }
   }
 
-  async getTemplatesByIndustry(industry: 'TECHNOLOGY' | 'FINANCE' | 'HEALTHCARE' | 'EDUCATION' | 'MARKETING'): Promise<TemplateResponse[]> {
+  async getTemplatesByIndustry(industry: TemplateIndustry): Promise<TemplateResponse[]> {
     return this.getTemplates({ industry });
   }
 
