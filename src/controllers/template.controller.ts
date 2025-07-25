@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { TemplateService } from '../services/template.service';
+import { PdfService } from '../services/pdf.service';
+import { UserProfileService } from '../services/userProfile.service';
 import { sendSuccess, sendError } from '../utils/response';
 import logger from '../config/logger';
 import { TemplateIndustry } from '@prisma/client';
@@ -10,9 +12,13 @@ import {
 
 export class TemplateController {
   private templateService: TemplateService;
+  private pdfService: PdfService;
+  private userProfileService: UserProfileService;
 
   constructor() {
     this.templateService = TemplateService.getInstance();
+    this.pdfService = PdfService.getInstance();
+    this.userProfileService = UserProfileService.getInstance();
   }
 
   /**
@@ -177,7 +183,7 @@ export class TemplateController {
   /**
    * Get template categories
    */
-  async getTemplateCategories(req: Request, res: Response): Promise<void> {
+  async getTemplateCategories(_req: Request, res: Response): Promise<void> {
     try {
       const categories = {
         TECHNOLOGY: [
@@ -240,6 +246,69 @@ export class TemplateController {
         (error as Error).message || 'Template başlatma işlemi başarısız',
         500
       );
+    }
+  }
+
+  /**
+   * Download custom PDF from template content
+   */
+  async downloadCustomPdf(req: Request, res: Response): Promise<void> {
+    try {
+      const { content, positionTitle, companyName, templateTitle, language = 'TURKISH' } = req.body;
+
+      if (!content || !positionTitle || !companyName) {
+        res.status(400).json({
+          success: false,
+          message: 'Content, position title ve company name alanları zorunludur',
+        });
+        return;
+      }
+
+      // User bilgilerini al
+      const userProfile = await this.userProfileService.getUserProfile(req.user!.userId);
+      const fullName = userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : undefined;
+
+      // PDF oluştur
+      const pdfBuffer = await this.pdfService.generateCoverLetterPdfWithCustomFormat(
+        content,
+        positionTitle,
+        companyName,
+        fullName,
+        language as 'TURKISH' | 'ENGLISH'
+      );
+
+      // PDF dosya adı oluştur
+      const sanitizedCompany = companyName
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .replace(/\s+/g, '_');
+      const sanitizedPosition = positionTitle
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .replace(/\s+/g, '_');
+      const fileName = `${sanitizedCompany}_${sanitizedPosition}_Cover_Letter.pdf`;
+
+      // HTTP headers ayarla
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${fileName}"`
+      );
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      logger.info('Custom PDF generated from template', {
+        positionTitle,
+        companyName,
+        templateTitle,
+        userId: req.user?.userId,
+        fileSize: pdfBuffer.length,
+      });
+
+      res.send(pdfBuffer);
+    } catch (error) {
+      logger.error('Custom PDF generation failed:', error);
+      res.status(500).json({
+        success: false,
+        message: 'PDF oluşturma işlemi başarısız oldu',
+      });
     }
   }
 }

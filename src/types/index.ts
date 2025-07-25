@@ -77,29 +77,15 @@ export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
+  errors?: any[];
 }
 
-// CV Types
-export interface CVUploadRequest {
-  file: File;
-}
-
-export interface CVGenerateRequest {
-  positionTitle: string;
-  companyName: string;
-  cvType: 'ATS_OPTIMIZED' | 'CREATIVE' | 'TECHNICAL';
-  jobDescription?: string;
-  additionalRequirements?: string;
-  targetKeywords?: string[];
-  cvUploadId: string;
-}
 
 // Cover Letter Types
 export interface CoverLetterGenerateRequest {
   positionTitle: string;
   companyName: string;
   jobDescription?: string;
-  cvUploadId: string;
   additionalInfo?: string;
 }
 

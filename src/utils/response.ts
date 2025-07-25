@@ -40,3 +40,26 @@ export const sendServerError = (
 ): void => {
   sendError(res, message, 500);
 };
+
+// Generic response creator for standalone usage
+export const createResponse = <T = any>(
+  success: boolean,
+  message?: string,
+  data?: T,
+  errors?: any[]
+): ApiResponse<T> => {
+  if (success) {
+    return {
+      success: true,
+      message,
+      data,
+    };
+  } else {
+    return {
+      success: false,
+      message,
+      error: message,
+      errors,
+    };
+  }
+};

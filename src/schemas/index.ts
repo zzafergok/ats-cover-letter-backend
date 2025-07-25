@@ -297,27 +297,6 @@ export const updateCoverLetterSchema = z.object({
     .min(50, SERVICE_MESSAGES.SCHEMA.COVER_LETTER_MIN_LENGTH.message),
 });
 
-// CV schemas
-export const createCvSchema = z.object({
-  positionTitle: z
-    .string()
-    .min(1, SERVICE_MESSAGES.SCHEMA.POSITION_TITLE_REQUIRED.message),
-  companyName: z
-    .string()
-    .min(1, SERVICE_MESSAGES.SCHEMA.COMPANY_NAME_REQUIRED.message),
-  cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']),
-  jobDescription: z.string().optional(),
-  additionalRequirements: z.string().optional(),
-  targetKeywords: z.array(z.string()).optional(),
-});
-
-export const saveCvSchema = z.object({
-  title: z.string().min(1, SERVICE_MESSAGES.SCHEMA.CV_TITLE_REQUIRED.message),
-  content: z
-    .string()
-    .min(1, SERVICE_MESSAGES.SCHEMA.CV_CONTENT_REQUIRED.message),
-  cvType: z.enum(['ATS_OPTIMIZED', 'CREATIVE', 'TECHNICAL']),
-});
 
 // User detailed profile schemas
 export const updateUserDetailedProfileSchema = z.object({
@@ -449,11 +428,6 @@ export const updateDetailedCoverLetterSchema = z.object({
     .min(50, 'Cover letter en az 50 karakter olmalıdır'),
 });
 
-// Detailed CV generation schema
-export const createDetailedCvSchema = z.object({
-  jobDescription: z.string().min(10, 'İş tanımı en az 10 karakter olmalıdır'),
-  language: z.enum(['TURKISH', 'ENGLISH']).default('TURKISH'),
-});
 
 // Template schemas
 export const getTemplatesSchema = z.object({

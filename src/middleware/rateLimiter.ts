@@ -37,3 +37,19 @@ export const apiLimiter = rateLimit({
   keyGenerator: isProduction ? undefined : () => 'development-api-key',
   skip: () => !isProduction,
 });
+
+export const atsGenerationLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 5, // Maximum 5 CV generations per 10 minutes
+  message: 'Too many ATS CV generation requests. Please try again later.',
+  keyGenerator: isProduction ? undefined : () => 'development-ats-key',
+  skip: () => !isProduction,
+});
+
+export const rateLimiter = {
+  general: generalLimiter,
+  auth: authLimiter,
+  upload: uploadLimiter,
+  api: apiLimiter,
+  atsGeneration: atsGenerationLimiter,
+};

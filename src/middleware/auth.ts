@@ -120,3 +120,6 @@ export const requireAdmin = (
   }
   next();
 };
+
+// Export as authMiddleware for backward compatibility
+export const authMiddleware = authenticateToken;

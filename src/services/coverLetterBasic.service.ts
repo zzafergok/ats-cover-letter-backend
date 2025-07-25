@@ -262,7 +262,7 @@ export class CoverLetterBasicService {
   ): Promise<string> {
     // CV'den profesyonel profil çıkar
     const professionalProfile =
-      this.cvAnalysisService.extractProfessionalProfile(cvData);
+      await this.cvAnalysisService.extractProfessionalProfile(cvData);
 
     // Claude ile cover letter oluştur
     const coverLetterPrompt = this.buildCoverLetterPrompt(

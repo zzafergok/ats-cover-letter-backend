@@ -78,4 +78,15 @@ router.post(
   templateController.initializeTemplates.bind(templateController)
 );
 
+/**
+ * @route POST /api/templates/download/custom-pdf
+ * @description Download custom PDF from template content
+ * @access Private
+ */
+router.post(
+  '/download/custom-pdf',
+  authenticateToken,
+  templateController.downloadCustomPdf.bind(templateController)
+);
+
 export default router;

@@ -5,6 +5,16 @@ export interface UserLimits {
 }
 
 export class UserLimitService {
+  private static instance: UserLimitService;
+
+  private constructor() {}
+
+  public static getInstance(): UserLimitService {
+    if (!UserLimitService.instance) {
+      UserLimitService.instance = new UserLimitService();
+    }
+    return UserLimitService.instance;
+  }
   private static readonly USER_LIMITS: UserLimits = {
     cvUploads: 3,
     savedCvs: 3, 
@@ -22,6 +32,14 @@ export class UserLimitService {
    */
   static getLimitsForUser(userRole: string): UserLimits {
     return userRole === 'ADMIN' ? this.ADMIN_LIMITS : this.USER_LIMITS;
+  }
+
+  /**
+   * Check CV upload limit
+   */
+  async checkCvUploadLimit(userId: string): Promise<{ allowed: boolean; message: string }> {
+    // For now, allow all uploads (you can implement actual limit checking here)
+    return { allowed: true, message: 'Upload allowed' };
   }
 
   /**
