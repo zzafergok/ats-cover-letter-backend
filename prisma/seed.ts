@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 
 import logger from '../src/config/logger';
+import { TemplateService } from '../src/services/template.service';
 
 const prisma = new PrismaClient();
 
@@ -119,7 +120,7 @@ async function main() {
         fieldOfStudy: 'Bilgisayar Mühendisliği',
         grade: 3.45,
         gradeSystem: 'GPA_4',
-        // educationType: 'LISANS',
+        educationType: 'LISANS',
         startYear: 2015,
         endYear: 2019,
         isCurrent: false,
@@ -133,7 +134,7 @@ async function main() {
         fieldOfStudy: 'Sayısal',
         grade: 89,
         gradeSystem: 'PERCENTAGE',
-        // educationType: 'LISE',
+        educationType: 'LISE',
         startYear: 2011,
         endYear: 2015,
         isCurrent: false,
@@ -146,7 +147,7 @@ async function main() {
         fieldOfStudy: 'İşletme',
         grade: 3.65,
         gradeSystem: 'GPA_4',
-        // educationType: 'LISANS',
+        educationType: 'LISANS',
         startYear: 2016,
         endYear: 2020,
         isCurrent: false,
@@ -160,7 +161,7 @@ async function main() {
         fieldOfStudy: 'Eşit Ağırlık',
         grade: 92,
         gradeSystem: 'PERCENTAGE',
-        // educationType: 'LISE',
+        educationType: 'LISE',
         startYear: 2012,
         endYear: 2016,
         isCurrent: false,
@@ -173,7 +174,7 @@ async function main() {
         fieldOfStudy: 'Bilgisayar Mühendisliği',
         grade: 3.23,
         gradeSystem: 'GPA_4',
-        // educationType: 'LISANS',
+        educationType: 'LISANS',
         startYear: 2019,
         endYear: 2023,
         isCurrent: false,
@@ -187,7 +188,7 @@ async function main() {
         fieldOfStudy: 'Fen',
         grade: 94,
         gradeSystem: 'PERCENTAGE',
-        // educationType: 'LISE',
+        educationType: 'LISE',
         startYear: 2015,
         endYear: 2019,
         isCurrent: false,
@@ -992,6 +993,12 @@ async function main() {
 
   logger.info("✅ Kayıtlı CV'ler oluşturuldu");
 
+  // Cover Letter Templates initialization
+  logger.info('🌱 Cover Letter Template\'leri başlatılıyor...');
+  const templateService = TemplateService.getInstance();
+  await templateService.initializeTemplates();
+  logger.info('✅ Cover Letter Template\'leri oluşturuldu');
+
   // Cover Letter Basic örnekleri - Requires cvUploadId so skipping for now
   /*
   await prisma.coverLetterBasic.createMany({
@@ -1071,6 +1078,7 @@ async function main() {
   const hobbyCount = await prisma.hobby.count();
   const cvUploadCount = await prisma.cvUpload.count();
   const savedCvCount = await prisma.savedCv.count();
+  const templateCount = await prisma.coverLetterTemplate.count();
   // const coverLetterBasicCount = await prisma.coverLetterBasic.count();
   // const coverLetterDetailedCount = await prisma.coverLetterDetailed.count();
 
@@ -1084,6 +1092,7 @@ async function main() {
   logger.info(`🎯 Hobiler: ${hobbyCount}`);
   logger.info(`📄 CV Yüklemeleri: ${cvUploadCount}`);
   logger.info(`💾 Kayıtlı CV'ler: ${savedCvCount}`);
+  logger.info(`📋 Cover Letter Templates: ${templateCount}`);
   // logger.info(`✉️ Basic Cover Letters: ${coverLetterBasicCount}`);
   // logger.info(`📝 Detailed Cover Letters: ${coverLetterDetailedCount}`);
 
