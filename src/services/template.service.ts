@@ -9,7 +9,7 @@ import {
 const prisma = new PrismaClient();
 
 export interface TemplateRequest {
-  industry?: 'TECHNOLOGY' | 'FINANCE';
+  industry?: 'TECHNOLOGY' | 'FINANCE' | 'HEALTHCARE' | 'EDUCATION' | 'MARKETING';
   category?: string;
   language?: 'TURKISH' | 'ENGLISH';
 }
@@ -176,7 +176,7 @@ export class TemplateService {
     }
   }
 
-  async getTemplatesByIndustry(industry: 'TECHNOLOGY' | 'FINANCE'): Promise<TemplateResponse[]> {
+  async getTemplatesByIndustry(industry: 'TECHNOLOGY' | 'FINANCE' | 'HEALTHCARE' | 'EDUCATION' | 'MARKETING'): Promise<TemplateResponse[]> {
     return this.getTemplates({ industry });
   }
 
@@ -194,13 +194,20 @@ export class TemplateService {
         return;
       }
 
-      // Create templates for Technology industry
+      // Create templates for all industries
       const technologyTemplates = this.getTechnologyTemplates();
-      
-      // Create templates for Finance industry  
       const financeTemplates = this.getFinanceTemplates();
+      const healthcareTemplates = this.getHealthcareTemplates();
+      const educationTemplates = this.getEducationTemplates();
+      const marketingTemplates = this.getMarketingTemplates();
 
-      const allTemplates = [...technologyTemplates, ...financeTemplates];
+      const allTemplates = [
+        ...technologyTemplates, 
+        ...financeTemplates,
+        ...healthcareTemplates,
+        ...educationTemplates,
+        ...marketingTemplates
+      ];
 
       // Insert templates into database
       await prisma.coverLetterTemplate.createMany({
@@ -373,6 +380,32 @@ Best regards,
         industry: 'TECHNOLOGY',
         description: 'UI/UX focused frontend developer template',
         sortOrder: 6,
+      },
+      {
+        title: 'API Developer',
+        content: `Dear Hiring Manager,
+
+I am writing to apply for the [POSITION_TITLE] position at [COMPANY_NAME]. As an experienced API developer, I specialize in designing and building robust, scalable APIs that power modern applications.
+
+My expertise includes RESTful API design, GraphQL implementation, and microservices architecture. I have worked with Node.js, Python FastAPI, and Go to build high-performance backend services. I am also experienced in API documentation, testing, and security best practices.
+
+[WHY_POSITION]
+
+I am particularly interested in [WHY_COMPANY] and believe my API development expertise would be valuable to your engineering team.
+
+[ADDITIONAL_SKILLS]
+
+I have strong skills in database optimization, caching strategies, and monitoring systems. I also have experience with API gateway implementations and rate limiting.
+
+Thank you for your consideration.
+
+Best regards,
+[Name]`,
+        category: 'BACKEND_DEVELOPER',
+        language: 'ENGLISH',
+        industry: 'TECHNOLOGY',
+        description: 'API developer specialization template',
+        sortOrder: 6.5,
       },
       // Backend Developer Templates
       {
@@ -750,6 +783,287 @@ Saygılarımla,
         industry: 'FINANCE',
         description: 'Risk analisti pozisyonları için şablon',
         sortOrder: 20,
+      },
+    ];
+  }
+
+  private getHealthcareTemplates(): any[] {
+    return [
+      // Nurse Templates
+      {
+        title: 'Registered Nurse',
+        content: `Dear Hiring Manager,
+
+I am writing to express my interest in the [POSITION_TITLE] position at [COMPANY_NAME]. As a dedicated registered nurse with a passion for patient care, I am excited about the opportunity to contribute to your healthcare team.
+
+My experience includes medical-surgical nursing, patient assessment, medication administration, and family education. I am skilled in electronic health records, patient monitoring systems, and emergency response procedures.
+
+[WHY_POSITION]
+
+I am particularly drawn to [WHY_COMPANY] and believe my commitment to quality patient care would be valuable to your organization.
+
+[ADDITIONAL_SKILLS]
+
+I have excellent communication skills, ability to work under pressure, and strong attention to detail. I am also experienced in team collaboration and patient advocacy.
+
+Thank you for considering my application.
+
+Best regards,
+[Name]`,
+        category: 'NURSE',
+        language: 'ENGLISH',
+        industry: 'HEALTHCARE',
+        description: 'Registered nurse position template',
+        sortOrder: 21,
+      },
+      {
+        title: 'Hemşire',
+        content: `Sayın İnsan Kaynakları Müdürü,
+
+[COMPANY_NAME] hastanesindeki [POSITION_TITLE] pozisyonu için başvuruda bulunuyorum. Hasta bakımı konusundaki tutkum ve hemşirelik alanındaki deneyimim ile sağlık ekibinize katkı sağlayabileceğimi düşünüyorum.
+
+Cerrahi hemşireliği, hasta değerlendirmesi, ilaç uygulaması ve hasta eğitimi konularında deneyim sahibiyim. Elektronik hasta kayıtları, hasta monitörizasyonu ve acil müdahale prosedürleri konusunda yetkinliğim bulunmaktadır.
+
+[WHY_POSITION]
+
+Özellikle [WHY_COMPANY] vizyonu benim değerlerimle uyumlu olduğu için bu pozisyonda çalışmak istiyorum.
+
+[ADDITIONAL_SKILLS]
+
+Güçlü iletişim becerilerim, yoğun tempoda çalışabilme kabiliyetim ve detaylara dikkat etme özelliğimle ekibinize değer katacağımı düşünüyorum.
+
+İlginiz için teşekkür ederim.
+
+Saygılarımla,
+[İsim]`,
+        category: 'NURSE',
+        language: 'TURKISH',
+        industry: 'HEALTHCARE',
+        description: 'Hemşire pozisyonları için şablon',
+        sortOrder: 22,
+      },
+      {
+        title: 'ICU Nurse',
+        content: `Dear Hiring Team,
+
+I am excited to apply for the [POSITION_TITLE] position at [COMPANY_NAME]. With my specialized experience in intensive care nursing, I am confident I can provide exceptional care to critically ill patients.
+
+My background includes critical care monitoring, ventilator management, medication titration, and family support during difficult times. I am certified in ACLS, BLS, and have experience with various ICU equipment and protocols.
+
+[WHY_POSITION]
+
+I am particularly interested in [WHY_COMPANY] and believe my critical care expertise would be valuable in this challenging environment.
+
+[ADDITIONAL_SKILLS]
+
+I have strong clinical judgment, emotional resilience, and the ability to remain calm under pressure. I also have experience mentoring new nurses and participating in quality improvement initiatives.
+
+Thank you for your consideration.
+
+Best regards,
+[Name]`,
+        category: 'NURSE',
+        language: 'ENGLISH',
+        industry: 'HEALTHCARE',
+        description: 'ICU nurse specialization template',
+        sortOrder: 23,
+      },
+      // Doctor Templates
+      {
+        title: 'Medical Doctor',
+        content: `Sayın Başhekim,
+
+[COMPANY_NAME] hastanesindeki [POSITION_TITLE] pozisyonu için başvuruda bulunuyorum. Tıp alanındaki eğitimim ve klinik deneyimim ile hasta bakım kalitesinin artırılmasına katkı sağlayabileceğimi düşünüyorum.
+
+Hasta muayenesi, tanı koyma, tedavi planlaması ve hasta takibi konularında deneyim sahibiyim. Modern tıbbi teknolojiler ve evidans-bazlı tıp uygulamaları konusunda da güncel bilgiye sahibim.
+
+[WHY_POSITION]
+
+Özellikle [WHY_COMPANY] misyonu benim mesleki değerlerimle örtüştüğü için bu pozisyonda çalışmak istiyorum.
+
+[ADDITIONAL_SKILLS]
+
+Multidisipliner ekip çalışması, hasta iletişimi ve sürekli mesleki gelişim konularında güçlü bir yaklaşıma sahibim.
+
+Değerlendirmeniz için teşekkür ederim.
+
+Saygılarımla,
+[İsim]`,
+        category: 'DOCTOR',
+        language: 'TURKISH',
+        industry: 'HEALTHCARE',
+        description: 'Doktor pozisyonları için şablon',
+        sortOrder: 24,
+      },
+      // Pharmacist Template
+      {
+        title: 'Pharmacist',
+        content: `Dear Hiring Manager,
+
+I am writing to apply for the [POSITION_TITLE] position at [COMPANY_NAME]. As a licensed pharmacist with expertise in medication management and patient counseling, I am excited about the opportunity to contribute to your pharmacy team.
+
+My experience includes prescription dispensing, drug interaction screening, immunization administration, and medication therapy management. I am knowledgeable about pharmaceutical regulations, insurance processing, and patient safety protocols.
+
+[WHY_POSITION]
+
+I am particularly attracted to [WHY_COMPANY] and believe my commitment to patient safety and pharmaceutical care would be valuable to your organization.
+
+[ADDITIONAL_SKILLS]
+
+I have excellent attention to detail, strong communication skills, and experience with pharmacy management systems. I also stay current with continuing education requirements and new pharmaceutical developments.
+
+Thank you for considering my application.
+
+Best regards,
+[Name]`,
+        category: 'PHARMACIST',
+        language: 'ENGLISH',
+        industry: 'HEALTHCARE',
+        description: 'Pharmacist position template',
+        sortOrder: 25,
+      },
+    ];
+  }
+
+  private getEducationTemplates(): any[] {
+    return [
+      // Teacher Templates
+      {
+        title: 'Elementary Teacher',
+        content: `Dear Principal,
+
+I am excited to apply for the [POSITION_TITLE] position at [COMPANY_NAME]. As a passionate educator with experience in elementary education, I am committed to creating engaging learning environments that inspire young minds.
+
+My background includes curriculum development, classroom management, differentiated instruction, and parent communication. I am skilled in technology integration, assessment strategies, and creating inclusive learning environments for diverse learners.
+
+[WHY_POSITION]
+
+I am particularly drawn to [WHY_COMPANY] and believe my dedication to student success would be valuable to your school community.
+
+[ADDITIONAL_SKILLS]
+
+I have strong organizational skills, creativity in lesson planning, and experience with special needs accommodation. I also participate actively in professional development and educational conferences.
+
+Thank you for your consideration.
+
+Best regards,
+[Name]`,
+        category: 'TEACHER',
+        language: 'ENGLISH',
+        industry: 'EDUCATION',
+        description: 'Elementary teacher position template',
+        sortOrder: 26,
+      },
+      {
+        title: 'Öğretmen',
+        content: `Sayın Okul Müdürü,
+
+[COMPANY_NAME] okulundaki [POSITION_TITLE] pozisyonu için başvuruda bulunuyorum. Eğitim alanındaki tutkum ve öğrenci odaklı yaklaşımım ile okul topluluğunuza katkı sağlayabileceğimi düşünüyorum.
+
+Müfredat geliştirme, sınıf yönetimi, farklılaştırılmış öğretim ve veli iletişimi konularında deneyim sahibiyim. Teknoloji entegrasyonu, değerlendirme stratejileri ve kapsayıcı öğrenme ortamları oluşturma konularında da yetkinliğim bulunmaktadır.
+
+[WHY_POSITION]
+
+Özellikle [WHY_COMPANY] eğitim felsefesi benim değerlerimle uyumlu olduğu için bu pozisyonda çalışmak istiyorum.
+
+[ADDITIONAL_SKILLS]
+
+Güçlü organizasyon becerilerim, ders planlamasındaki yaratıcılığım ve özel gereksinimli öğrencilerle çalışma deneyimim ile eğitim kalitenizin artırılmasına katkı sağlayabilirim.
+
+İlginiz için teşekkür ederim.
+
+Saygılarımla,
+[İsim]`,
+        category: 'TEACHER',
+        language: 'TURKISH',
+        industry: 'EDUCATION',
+        description: 'Öğretmen pozisyonları için şablon',
+        sortOrder: 27,
+      },
+      // Academic Administrator Template
+      {
+        title: 'Academic Administrator',
+        content: `Dear Search Committee,
+
+I am writing to express my interest in the [POSITION_TITLE] position at [COMPANY_NAME]. With my background in educational leadership and academic administration, I am excited about the opportunity to contribute to your institution's mission.
+
+My experience includes program development, faculty management, budget oversight, and strategic planning. I have worked on accreditation processes, curriculum design, and student success initiatives. I am also experienced in data analysis for educational improvement.
+
+[WHY_POSITION]
+
+I am particularly interested in [WHY_COMPANY] and believe my leadership experience would be valuable in advancing your educational goals.
+
+[ADDITIONAL_SKILLS]
+
+I have strong interpersonal skills, experience with educational technology systems, and a track record of successful team leadership. I also have experience in grant writing and community partnerships.
+
+Thank you for your consideration.
+
+Best regards,
+[Name]`,
+        category: 'ACADEMIC_ADMINISTRATOR',
+        language: 'ENGLISH',
+        industry: 'EDUCATION',
+        description: 'Academic administrator template',
+        sortOrder: 28,
+      },
+    ];
+  }
+
+  private getMarketingTemplates(): any[] {
+    return [
+      // Marketing Specialist Templates
+      {
+        title: 'Digital Marketing Specialist',
+        content: `Dear Hiring Manager,
+
+I am excited to apply for the [POSITION_TITLE] position at [COMPANY_NAME]. As a digital marketing specialist with expertise in online campaigns and data-driven strategies, I am confident I can help drive your brand's digital presence.
+
+My experience includes social media marketing, Google Ads management, SEO optimization, and email marketing campaigns. I am skilled in analytics tools like Google Analytics, Facebook Business Manager, and marketing automation platforms.
+
+[WHY_POSITION]
+
+I am particularly interested in [WHY_COMPANY] and believe my digital marketing expertise would be valuable in achieving your growth objectives.
+
+[ADDITIONAL_SKILLS]
+
+I have strong analytical skills, creativity in campaign development, and experience with A/B testing and conversion optimization. I also stay current with the latest digital marketing trends and platform updates.
+
+Thank you for considering my application.
+
+Best regards,
+[Name]`,
+        category: 'MARKETING_SPECIALIST',
+        language: 'ENGLISH',
+        industry: 'MARKETING',
+        description: 'Digital marketing specialist template',
+        sortOrder: 29,
+      },
+      {
+        title: 'Content Marketing Manager',
+        content: `Dear Hiring Team,
+
+I am writing to apply for the [POSITION_TITLE] position at [COMPANY_NAME]. With my passion for storytelling and expertise in content strategy, I am excited about the opportunity to build engaging brand narratives.
+
+My background includes content strategy development, blog writing, video production, and social media content creation. I have experience with content management systems, SEO writing, and measuring content performance through various analytics tools.
+
+[WHY_POSITION]
+
+I am particularly drawn to [WHY_COMPANY] and believe my content creation skills would be valuable in strengthening your brand voice.
+
+[ADDITIONAL_SKILLS]
+
+I have excellent writing skills, creative vision, and experience with content calendar management. I also have knowledge of graphic design tools and basic video editing skills.
+
+Thank you for your consideration.
+
+Best regards,
+[Name]`,
+        category: 'MARKETING_SPECIALIST',
+        language: 'ENGLISH',
+        industry: 'MARKETING',
+        description: 'Content marketing manager template',
+        sortOrder: 30,
       },
     ];
   }

@@ -51,12 +51,12 @@ export class TemplateController {
     try {
       const { industry } = req.params;
 
-      if (!['TECHNOLOGY', 'FINANCE'].includes(industry)) {
+      if (!['TECHNOLOGY', 'FINANCE', 'HEALTHCARE', 'EDUCATION', 'MARKETING'].includes(industry)) {
         return sendError(res, 'Geçersiz endüstri türü', 400);
       }
 
       const templates = await this.templateService.getTemplatesByIndustry(
-        industry as 'TECHNOLOGY' | 'FINANCE'
+        industry as 'TECHNOLOGY' | 'FINANCE' | 'HEALTHCARE' | 'EDUCATION' | 'MARKETING'
       );
 
       logger.info('Templates retrieved by industry', {
@@ -159,6 +159,18 @@ export class TemplateController {
           'FINANCIAL_ADVISOR',
           'ACCOUNTING_SPECIALIST',
           'RISK_ANALYST',
+        ],
+        HEALTHCARE: [
+          'NURSE',
+          'DOCTOR',
+          'PHARMACIST',
+        ],
+        EDUCATION: [
+          'TEACHER',
+          'ACADEMIC_ADMINISTRATOR',
+        ],
+        MARKETING: [
+          'MARKETING_SPECIALIST',
         ],
       };
 
