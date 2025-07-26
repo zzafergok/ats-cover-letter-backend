@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 import { PrismaClient } from '@prisma/client';
 import { generateCoverLetterWithClaude } from './claude.service';
 import { CvAnalysisService } from './cvAnalysis.service';
@@ -56,9 +57,20 @@ export class CoverLetterBasicService {
         where: { userId },
       });
 
-      if (!UserLimitService.canCreateCoverLetter(userRole, currentCoverLetterCount)) {
-        const limitInfo = UserLimitService.formatLimitInfo(userRole, currentCoverLetterCount, 'coverLetters');
-        throw new Error(`Cover letter oluşturma limitine ulaştınız (${limitInfo.current}/${limitInfo.maximum})`);
+      if (
+        !UserLimitService.canCreateCoverLetter(
+          userRole,
+          currentCoverLetterCount
+        )
+      ) {
+        const limitInfo = UserLimitService.formatLimitInfo(
+          userRole,
+          currentCoverLetterCount,
+          'coverLetters'
+        );
+        throw new Error(
+          `Cover letter oluşturma limitine ulaştınız (${limitInfo.current}/${limitInfo.maximum})`
+        );
       }
 
       // CV verilerini al ve doğrula
@@ -79,7 +91,7 @@ export class CoverLetterBasicService {
 
       // User bilgisini al
       const userInfo = await this.getUserInfo(userId);
-      
+
       // Synchronous olarak cover letter oluştur
       const generatedContent = await this.generateCoverLetterSync(
         cvUpload.extractedData,
@@ -185,13 +197,17 @@ export class CoverLetterBasicService {
   async getUserCoverLetters(
     userId: string,
     userRole: string
-  ): Promise<{coverLetters: CoverLetterBasicResponse[], limitInfo: any}> {
+  ): Promise<{ coverLetters: CoverLetterBasicResponse[]; limitInfo: any }> {
     const coverLetters = await prisma.coverLetterBasic.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
 
-    const limitInfo = UserLimitService.formatLimitInfo(userRole, coverLetters.length, 'coverLetters');
+    const limitInfo = UserLimitService.formatLimitInfo(
+      userRole,
+      coverLetters.length,
+      'coverLetters'
+    );
 
     const formattedCoverLetters = coverLetters.map((coverLetter) => ({
       id: coverLetter.id,
@@ -207,7 +223,7 @@ export class CoverLetterBasicService {
 
     return {
       coverLetters: formattedCoverLetters,
-      limitInfo
+      limitInfo,
     };
   }
 
@@ -294,15 +310,15 @@ export class CoverLetterBasicService {
         firstName: true,
         lastName: true,
         email: true,
-      }
+      },
     });
-    
+
     console.log('👤 Found user:', user);
-    
+
     if (!user) {
       throw new Error(`User not found with ID: ${userId}`);
     }
-    
+
     return user;
   }
 
@@ -314,49 +330,107 @@ export class CoverLetterBasicService {
     language: 'TURKISH' | 'ENGLISH',
     userInfo: any
   ): string {
+    // ATS için anahtar kelime çıkarımı
+    const extractKeywords = (jobDesc: string): string[] => {
+      const commonKeywords = jobDesc
+        .toLowerCase()
+        .replace(/[^\w\s]/g, ' ')
+        .split(/\s+/)
+        .filter(
+          (word) =>
+            word.length > 2 &&
+            ![
+              'the',
+              'and',
+              'or',
+              'but',
+              'in',
+              'on',
+              'at',
+              'to',
+              'for',
+              'of',
+              'with',
+              'by',
+              've',
+              'bir',
+              'ile',
+              'için',
+              'olan',
+              'veya',
+              'gibi',
+              'olan',
+              'bu',
+              'şu',
+            ].includes(word)
+        );
+
+      // En sık geçen 10 kelimeyi al
+      const wordCount: { [key: string]: number } = {};
+      commonKeywords.forEach((word) => {
+        wordCount[word] = (wordCount[word] || 0) + 1;
+      });
+
+      return Object.entries(wordCount)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(([word]) => word);
+    };
+
+    const jobKeywords = extractKeywords(jobDescription);
     // extractProfessionalProfile'dan gelen format: { experience, skills, education, summary, keyAchievements }
     // Eski kod personalInfo ve professionalProfile bekliyor, ama artık userInfo'dan alıyoruz
     const fullName = `${userInfo.firstName} ${userInfo.lastName}`;
-    
+
     const personalInfo = {
       email: userInfo.email,
       phone: userInfo.phone || 'Not specified',
       city: userInfo.city || 'Not specified',
-      fullName: fullName
+      fullName: fullName,
     };
-    
+
     // CV verisinden deneyim yılı ve pozisyon çıkar
     const extractExperienceYears = (experience: string): string => {
       if (!experience) return 'Not specified';
       const yearMatches = experience.match(/(\d+)\s*(year|yıl|sene)/i);
       return yearMatches ? `${yearMatches[1]}+` : 'Not specified';
     };
-    
+
     const extractCurrentPosition = (experience: string): string => {
       if (!experience) return 'Not specified';
-      
+
       // 1. "Current" ifadesi geçen satırları ara
       const currentMatches = experience.match(/.*current.*$/gim);
       if (currentMatches && currentMatches.length > 0) {
         // Current kelimesinden önceki kısmı al (genelde pozisyon adı)
         const currentLine = currentMatches[0];
         const beforeCurrent = currentLine.split(/current/i)[0]?.trim();
-        if (beforeCurrent && beforeCurrent.length > 2 && beforeCurrent.length < 100) {
+        if (
+          beforeCurrent &&
+          beforeCurrent.length > 2 &&
+          beforeCurrent.length < 100
+        ) {
           return beforeCurrent.replace(/^[-•*]\s*/, ''); // Başındaki bullet point'leri temizle
         }
       }
-      
+
       // 2. "Present", "güncel", "halen" ifadeleri ara
       const presentPatterns = /.*(?:present|güncel|halen|devam|ongoing).*$/gim;
       const presentMatches = experience.match(presentPatterns);
       if (presentMatches && presentMatches.length > 0) {
         const presentLine = presentMatches[0];
-        const beforePresent = presentLine.split(/(?:present|güncel|halen|devam|ongoing)/i)[0]?.trim();
-        if (beforePresent && beforePresent.length > 2 && beforePresent.length < 100) {
+        const beforePresent = presentLine
+          .split(/(?:present|güncel|halen|devam|ongoing)/i)[0]
+          ?.trim();
+        if (
+          beforePresent &&
+          beforePresent.length > 2 &&
+          beforePresent.length < 100
+        ) {
           return beforePresent.replace(/^[-•*]\s*/, '');
         }
       }
-      
+
       // 3. Bitiş tarihi olmayan deneyim ara (2023-, 2024- gibi)
       const openEndedMatches = experience.match(/.*(\d{4})\s*[-–]\s*$/gim);
       if (openEndedMatches && openEndedMatches.length > 0) {
@@ -367,20 +441,24 @@ export class CoverLetterBasicService {
           if (line.includes('-') && !line.match(/\d{4}\s*[-–]\s*\d{4}/)) {
             // Bu satırda pozisyon adı olabilir
             const beforeDate = line.split(/\d{4}/)[0]?.trim();
-            if (beforeDate && beforeDate.length > 2 && beforeDate.length < 100) {
+            if (
+              beforeDate &&
+              beforeDate.length > 2 &&
+              beforeDate.length < 100
+            ) {
               return beforeDate.replace(/^[-•*]\s*/, '');
             }
           }
         }
       }
-      
+
       // 4. Son çare: İlk satırdan pozisyon adını çıkar
       const lines = experience.split('\n');
       const firstLine = lines[0]?.trim();
       if (firstLine && firstLine.length > 2 && firstLine.length < 100) {
         return firstLine.replace(/^[-•*]\s*/, '');
       }
-      
+
       return 'Not specified';
     };
 
@@ -393,7 +471,7 @@ export class CoverLetterBasicService {
       experienceYears: extractExperienceYears(profile.experience),
       currentPosition: extractCurrentPosition(profile.experience),
       keySkills: profile.skills,
-      achievements: profile.keyAchievements
+      achievements: profile.keyAchievements,
     };
 
     const languageConfig = {
@@ -420,6 +498,12 @@ export class CoverLetterBasicService {
           'Deneyim seviyesi ne olursa olsun, pozisyona uygun bir cover letter yaz',
           'Eksik deneyimi potansiyel, öğrenme isteği ve motivasyonla telafi et',
           'Doğal ve samimi bir dil kullan - sanki gerçek bir kişi yazıyormuş gibi',
+          'ATS SİSTEMLERİ İÇİN OPTİMİZE ET:',
+          '- İş ilanındaki anahtar kelimeleri doğal bir şekilde kullan',
+          '- Standart cover letter formatına uy (başlık, giriş, gövde, sonuç)',
+          '- Önemli kelimeleri 2-3 kez tekrarla ama doğal görünmesini sağla',
+          '- Sektörel terminolojiyi kullan',
+          '- Ölçülebilir başarıları vurgula (sayılar, yüzdeler)',
           'Mükemmel olmayan, insan benzeri bir yazım stili benimse',
           'Ara sıra kısa cümleler, ara sıra uzun cümleler kullan',
           'Klişe ifadelerden kaçın, kişisel ve özgün bir ton kullan',
@@ -453,6 +537,12 @@ export class CoverLetterBasicService {
           'Regardless of experience level, write a suitable cover letter for the position',
           'Compensate for lack of experience with potential, learning desire, and motivation',
           'Write naturally and conversationally - like a real person would',
+          'OPTIMIZE FOR ATS SYSTEMS:',
+          '- Use job posting keywords naturally throughout the letter',
+          '- Follow standard cover letter structure (header, intro, body, conclusion)',
+          '- Repeat important keywords 2-3 times but keep it natural',
+          '- Use industry-specific terminology',
+          '- Highlight quantifiable achievements (numbers, percentages)',
           'Use imperfect, human-like writing style - not too polished',
           'Mix short and long sentences for natural flow',
           'Avoid cliché phrases, be personal and authentic',
@@ -468,16 +558,25 @@ export class CoverLetterBasicService {
 
     const config = languageConfig[language];
 
-    const languageInstruction = language === 'TURKISH' 
-      ? 'ÖNEMLİ: Cover letter\'ı MUTLAKA TÜRKÇE yazın. Hiçbir koşulda İngilizce kullanmayın.'
-      : 'IMPORTANT: Write the cover letter in ENGLISH only.';
+    const languageInstruction =
+      language === 'TURKISH'
+        ? "ÖNEMLİ: Cover letter'ı MUTLAKA TÜRKÇE yazın. Hiçbir koşulda İngilizce kullanmayın."
+        : 'IMPORTANT: Write the cover letter in ENGLISH only.';
 
     // fullName zaten yukarıda tanımlandı
 
     return `
-You are a professional cover letter writer. Your ONLY job is to create a compelling cover letter for the given person and position. DO NOT analyze, judge, or give advice about experience levels - just write an excellent cover letter.
+You are a professional cover letter writer specialized in ATS-optimized content. Your ONLY job is to create a compelling, ATS-friendly cover letter for the given person and position. DO NOT analyze, judge, or give advice about experience levels - just write an excellent cover letter.
 
 ${languageInstruction}
+
+**CRITICAL ATS OPTIMIZATION REQUIREMENTS:**
+- Use these job posting keywords naturally: ${jobKeywords.join(', ')}
+- Incorporate the exact position title "${positionTitle}" at least 2 times
+- Include company name "${companyName}" 2-3 times
+- Use industry-specific terminology from the job description
+- Structure with clear sections: Header, Introduction, Body (2-3 paragraphs), Conclusion
+- Include quantifiable achievements when possible
 
 Here's what you know about this person:
 
@@ -494,6 +593,8 @@ Here's what you know about this person:
 - Position: ${positionTitle} at ${companyName}
 - Job requirements: ${jobDescription}
 
+**KEY JOB POSTING KEYWORDS TO INCLUDE:** ${jobKeywords.join(', ')}
+
 **IMPORTANT: When writing the closing section, use the person's REAL NAME "${fullName}" instead of placeholder text like "[İsim]" or "[Your Name]". The closing should end with:
 
 For Turkish: 
@@ -509,7 +610,14 @@ ${config.instructions.map((instruction, index) => `${index + 1}. ${instruction}`
 
 Focus on their potential, enthusiasm, and fit for the role. If experience is limited, emphasize learning ability, passion for the field, relevant projects, transferable skills, and genuine interest in the company and position.
 
-Your task is simple: Write a compelling, authentic cover letter that presents this person in the best possible light for this specific position. No analysis, no warnings, no advice - just an excellent cover letter.
+**ATS SUCCESS FORMULA:**
+1. Start with a strong opening that mentions the position title
+2. Connect their experience to job requirements using extracted keywords
+3. Provide specific examples with quantifiable results when possible
+4. Show knowledge of the company and enthusiasm for the role
+5. Close with a call to action that reinforces their interest
+
+Your task is simple: Write a compelling, authentic, ATS-optimized cover letter that presents this person in the best possible light for this specific position. No analysis, no warnings, no advice - just an excellent cover letter.
 
 ${config.finalPrompt}
     `.trim();
@@ -520,6 +628,9 @@ ${config.finalPrompt}
     language: 'TURKISH' | 'ENGLISH'
   ): string {
     let humanizedContent = content;
+
+    // ATS-friendly format düzenlemeleri
+    humanizedContent = this.ensureATSFriendlyFormat(humanizedContent, language);
 
     if (language === 'TURKISH') {
       // Türkçe için humanization
@@ -648,5 +759,44 @@ ${config.finalPrompt}
     }
 
     return humanizedContent.trim();
+  }
+
+  private ensureATSFriendlyFormat(
+    content: string,
+    language: 'TURKISH' | 'ENGLISH'
+  ): string {
+    let atsContent = content;
+
+    // Standart ATS format kontrolü
+    const hasProperStructure =
+      atsContent.includes('Saygılarımla,') ||
+      atsContent.includes('Best regards,');
+
+    if (!hasProperStructure) {
+      // Format düzeltmeleri ekle
+      const lines = atsContent.split('\n');
+      const lastLine = lines[lines.length - 1];
+
+      if (
+        !lastLine.includes('Saygılarımla') &&
+        !lastLine.includes('Best regards')
+      ) {
+        if (language === 'TURKISH') {
+          atsContent += '\n\nSaygılarımla,\n[İsim Soyisim]';
+        } else {
+          atsContent += '\n\nBest regards,\n[Full Name]';
+        }
+      }
+    }
+
+    // ATS-friendly spacing düzenlemeleri
+    atsContent = atsContent.replace(/\n{3,}/g, '\n\n'); // Fazla boşlukları temizle
+    atsContent = atsContent.replace(/\t/g, '    '); // Tab'ları space'e çevir
+
+    // Özel karakterleri temizle (ATS sistemleri için)
+    atsContent = atsContent.replace(/[""'']/g, '"'); // Smart quotes'ları düz quotes'a çevir
+    atsContent = atsContent.replace(/[–—]/g, '-'); // Em dash'leri tire'ye çevir
+
+    return atsContent;
   }
 }

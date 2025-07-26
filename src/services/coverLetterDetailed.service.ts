@@ -369,10 +369,64 @@ export class CoverLetterDetailedService {
     whyCompany?: string,
     workMotivation?: string
   ): string {
+    // ATS için anahtar kelime çıkarımı
+    const extractKeywords = (jobDesc: string): string[] => {
+      const commonKeywords = jobDesc
+        .toLowerCase()
+        .replace(/[^\w\s]/g, ' ')
+        .split(/\s+/)
+        .filter(
+          (word) =>
+            word.length > 2 &&
+            ![
+              'the',
+              'and',
+              'or',
+              'but',
+              'in',
+              'on',
+              'at',
+              'to',
+              'for',
+              'of',
+              'with',
+              'by',
+              've',
+              'bir',
+              'ile',
+              'için',
+              'olan',
+              'veya',
+              'gibi',
+              'olan',
+              'bu',
+              'şu',
+            ].includes(word)
+        );
+
+      // En sık geçen 10 kelimeyi al
+      const wordCount: { [key: string]: number } = {};
+      commonKeywords.forEach((word) => {
+        wordCount[word] = (wordCount[word] || 0) + 1;
+      });
+
+      return Object.entries(wordCount)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(([word]) => word);
+    };
+
+    const jobKeywords = extractKeywords(jobDescription);
     const languageConfig = {
       TURKISH: {
         instructions: [
           'Gerçek bir kişi gibi son derece doğal, samimi ve kişisel bir dil kullan - sanki arkadaşına yazıyormuş gibi ama profesyonel',
+          'ATS SİSTEMLERİ İÇİN OPTİMİZE ET:',
+          '- İş ilanındaki anahtar kelimeleri doğal bir şekilde kullan',
+          '- Standart cover letter formatına uy (başlık, giriş, gövde, sonuç)',
+          '- Önemli kelimeleri 2-3 kez tekrarla ama doğal görünmesini sağla',
+          '- Sektörel terminolojiyi kullan',
+          '- Ölçülebilir başarıları vurgula (sayılar, yüzdeler)',
           'Mükemmel olmayan, kusurlu ama çekici insan benzeri yazım stili kullan - bazen uzun cümleler, bazen kısa',
           'Kişisel deneyimleri hikaye anlatır gibi detaylı ve duygusal bir şekilde aktarın - okuyucuyu hikayeye dahil et',
           'Verilen motivasyon cevaplarını çok doğal ve organik bir şekilde mektubun içine serpiştiir - zoraki durmasın',
@@ -384,6 +438,12 @@ export class CoverLetterDetailedService {
       ENGLISH: {
         instructions: [
           'Write extremely naturally and conversationally like a real person - as if writing to a friend but professional',
+          'OPTIMIZE FOR ATS SYSTEMS:',
+          '- Use job posting keywords naturally throughout the letter',
+          '- Follow standard cover letter structure (header, intro, body, conclusion)',
+          '- Repeat important keywords 2-3 times but keep it natural',
+          '- Use industry-specific terminology',
+          '- Highlight quantifiable achievements (numbers, percentages)',
           'Use imperfect, flawed but charming human-like writing style - mix long and short sentences',
           'Tell detailed, emotional stories about experiences and achievements - make the reader part of the story',
           'Naturally weave the provided motivation answers throughout the letter - make it organic, not forced',
@@ -400,7 +460,15 @@ export class CoverLetterDetailedService {
     // Dil-spesifik prompt başlangıcı
     const promptStart =
       language === 'TURKISH'
-        ? `${personalInfo.fullName} için ${companyName} şirketindeki ${positionTitle} pozisyonuna yönelik son derece detaylı ve kişiselleştirilmiş bir cover letter (ön yazı) yazıyorsunuz.
+        ? `${personalInfo.fullName} için ${companyName} şirketindeki ${positionTitle} pozisyonuna yönelik ATS-optimized, son derece detaylı ve kişiselleştirilmiş bir cover letter (ön yazı) yazıyorsunuz.
+
+**KRİTİK ATS OPTİMİZASYON GEREKSİNİMLERİ:**
+- Bu iş ilanı anahtar kelimelerini doğal bir şekilde kullan: ${jobKeywords.join(', ')}
+- Pozisyon title "${positionTitle}" tam olarak en az 2 kez kullan
+- Şirket adı "${companyName}" 2-3 kez kullan
+- İş tanımından sektörel terminolojiyi kullan
+- Net bölümlerle yapılandır: Başlık, Giriş, Gövde (2-3 paragraf), Sonuç
+- Mümkün olduğunda ölçülebilir başarıları ekle
 
 **Kişisel Bilgiler:**
 - İsim: ${personalInfo.fullName}
@@ -408,7 +476,15 @@ export class CoverLetterDetailedService {
 - Telefon: ${personalInfo.phone || 'Belirtilmemiş'}
 - Konum: ${personalInfo.city || 'Belirtilmemiş'}
 - Hakkında: ${personalInfo.aboutMe || 'Belirtilmemiş'}`
-        : `You are helping ${personalInfo.fullName} write a highly detailed and personalized cover letter for a ${positionTitle} position at ${companyName}.
+        : `You are helping ${personalInfo.fullName} write a highly detailed, personalized, and ATS-optimized cover letter for a ${positionTitle} position at ${companyName}.
+
+**CRITICAL ATS OPTIMIZATION REQUIREMENTS:**
+- Use these job posting keywords naturally: ${jobKeywords.join(', ')}
+- Incorporate the exact position title "${positionTitle}" at least 2 times
+- Include company name "${companyName}" 2-3 times
+- Use industry-specific terminology from the job description
+- Structure with clear sections: Header, Introduction, Body (2-3 paragraphs), Conclusion
+- Include quantifiable achievements when possible
 
 **Personal Information:**
 - Name: ${personalInfo.fullName}
@@ -531,11 +607,17 @@ export class CoverLetterDetailedService {
     const compLabel = language === 'TURKISH' ? '- Şirket:' : '- Company:';
     const jobDescLabel =
       language === 'TURKISH' ? '- İş Tanımı:' : '- Job Description:';
+    const keywordsLabel =
+      language === 'TURKISH'
+        ? '- ÖNEMLİ ANAHTAR KELİMELER:'
+        : '- KEY JOB POSTING KEYWORDS:';
 
     prompt += `\n${jobSectionTitle}
 ${posLabel} ${positionTitle}
 ${compLabel} ${companyName}
-${jobDescLabel} ${jobDescription}`;
+${jobDescLabel} ${jobDescription}
+
+${keywordsLabel} ${jobKeywords.join(', ')}`;
 
     // Personal Motivation (if provided)
     if (whyPosition || whyCompany || workMotivation) {
@@ -570,11 +652,18 @@ ${jobDescLabel} ${jobDescription}`;
 
     prompt += `\n\n**Writing Guidelines:**
 ${config.instructions.map((instruction, index) => `${index + 1}. ${instruction}`).join('\n')}
-6. ${languageSpecificContent.guidelines.closing}
-7. ${languageSpecificContent.guidelines.style}
-8. ${languageSpecificContent.guidelines.passion}
-9. ${languageSpecificContent.guidelines.examples}
-10. ${languageSpecificContent.guidelines.language}
+${config.instructions.length + 1}. ${languageSpecificContent.guidelines.closing}
+${config.instructions.length + 2}. ${languageSpecificContent.guidelines.style}
+${config.instructions.length + 3}. ${languageSpecificContent.guidelines.passion}
+${config.instructions.length + 4}. ${languageSpecificContent.guidelines.examples}
+${config.instructions.length + 5}. ${languageSpecificContent.guidelines.language}
+
+**ATS SUCCESS FORMULA:**
+1. Start with a strong opening that mentions the position title
+2. Connect their experience to job requirements using extracted keywords
+3. Provide specific examples with quantifiable results when possible
+4. Show knowledge of the company and enthusiasm for the role
+5. Close with a call to action that reinforces their interest
 
 **Important Format Requirements:**
 - ${languageSpecificContent.formatRequirements.closing}
@@ -648,6 +737,9 @@ ${this.formatContactLinks(personalInfo)}`,
     language: 'TURKISH' | 'ENGLISH'
   ): string {
     let humanizedContent = content;
+
+    // ATS-friendly format düzenlemeleri
+    humanizedContent = this.ensureATSFriendlyFormat(humanizedContent, language);
 
     if (language === 'TURKISH') {
       const turkishHumanizers = [
@@ -871,5 +963,44 @@ ${this.formatContactLinks(personalInfo)}`,
 
     // Contact info'yu ekle
     return cleanContent + contactInfo;
+  }
+
+  private ensureATSFriendlyFormat(
+    content: string,
+    language: 'TURKISH' | 'ENGLISH'
+  ): string {
+    let atsContent = content;
+
+    // Standart ATS format kontrolü
+    const hasProperStructure =
+      atsContent.includes('Saygılarımla,') ||
+      atsContent.includes('Best regards,');
+
+    if (!hasProperStructure) {
+      // Format düzeltmeleri ekle
+      const lines = atsContent.split('\n');
+      const lastLine = lines[lines.length - 1];
+
+      if (
+        !lastLine.includes('Saygılarımla') &&
+        !lastLine.includes('Best regards')
+      ) {
+        if (language === 'TURKISH') {
+          atsContent += '\n\nSaygılarımla,\n[İsim Soyisim]';
+        } else {
+          atsContent += '\n\nBest regards,\n[Full Name]';
+        }
+      }
+    }
+
+    // ATS-friendly spacing düzenlemeleri
+    atsContent = atsContent.replace(/\n{3,}/g, '\n\n'); // Fazla boşlukları temizle
+    atsContent = atsContent.replace(/\t/g, '    '); // Tab'ları space'e çevir
+
+    // Özel karakterleri temizle (ATS sistemleri için)
+    atsContent = atsContent.replace(/[""'']/g, '"'); // Smart quotes'ları düz quotes'a çevir
+    atsContent = atsContent.replace(/[–—]/g, '-'); // Em dash'leri tire'ye çevir
+
+    return atsContent;
   }
 }
