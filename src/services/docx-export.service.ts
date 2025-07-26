@@ -20,6 +20,69 @@ export class DOCXExportService {
 
   private constructor() {}
 
+  /**
+   * Başlık formatlaması - sadece ilk harf büyük, geri kalan küçük (Sentence case)
+   */
+  private formatTitle(text: string, language: 'TURKISH' | 'ENGLISH' = 'TURKISH'): string {
+    if (!text) return '';
+    
+    const sanitized = String(text).trim().toLowerCase();
+    
+    if (language === 'TURKISH') {
+      // Türkçe karakterleri destekleyen sentence case - sadece ilk harf büyük
+      if (sanitized.length === 0) return '';
+      
+      const firstChar = sanitized.charAt(0);
+      const restOfText = sanitized.slice(1);
+      
+      // Türkçe karakter dönüşümleri - sadece ilk harf için
+      const turkishUpperMap: { [key: string]: string } = {
+        'i': 'İ',
+        'ı': 'I',
+        'ğ': 'Ğ',
+        'ü': 'Ü',
+        'ş': 'Ş',
+        'ö': 'Ö',
+        'ç': 'Ç'
+      };
+      
+      const upperFirstChar = turkishUpperMap[firstChar] || firstChar.toUpperCase();
+      return upperFirstChar + restOfText;
+    } else {
+      // İngilizce için standart sentence case - sadece ilk harf büyük
+      if (sanitized.length === 0) return '';
+      return sanitized.charAt(0).toUpperCase() + sanitized.slice(1);
+    }
+  }
+
+  /**
+   * Dil tespiti - içeriğe bakarak Türkçe/İngilizce tespit eder
+   */
+  private detectLanguage(text: string): 'TURKISH' | 'ENGLISH' {
+    if (!text) return 'TURKISH';
+    
+    // Türkçe karakterlerin varlığını kontrol et
+    const turkishChars = /[çğıöşüÇĞIÖŞÜ]/;
+    if (turkishChars.test(text)) {
+      return 'TURKISH';
+    }
+    
+    // Türkçe kelimelerin varlığını kontrol et
+    const turkishWords = /\b(için|ile|bir|bu|şu|olan|olan|saygılarımla|mektub|başvuru|pozisyon|şirket)\b/i;
+    if (turkishWords.test(text)) {
+      return 'TURKISH';
+    }
+    
+    // İngilizce kelimelerin varlığını kontrol et  
+    const englishWords = /\b(for|with|and|the|this|that|position|company|application|letter|regards)\b/i;
+    if (englishWords.test(text)) {
+      return 'ENGLISH';
+    }
+    
+    // Varsayılan olarak Türkçe
+    return 'TURKISH';
+  }
+
   public static getInstance(): DOCXExportService {
     if (!DOCXExportService.instance) {
       DOCXExportService.instance = new DOCXExportService();
@@ -89,13 +152,16 @@ export class DOCXExportService {
   private createATSDocument(cvData: ATSCVData, options: DOCXGenerationOptions): Document {
     const sections = [];
 
+    // Dil tespiti
+    const detectedLanguage = this.detectLanguage(`${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`);
+    
     // Header - Contact Information
     sections.push(
       new Paragraph({
         alignment: AlignmentType.CENTER,
         children: [
           new TextRun({
-            text: `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`.toUpperCase(),
+            text: `${this.formatTitle(cvData.personalInfo.firstName, detectedLanguage)} ${this.formatTitle(cvData.personalInfo.lastName, detectedLanguage)}`.toUpperCase(),
             font: options.fontFamily,
             size: (options.fontSize + 4) * 2, // Convert to half-points
             bold: true
@@ -108,7 +174,7 @@ export class DOCXExportService {
     const contactInfo = [
       cvData.personalInfo.email,
       cvData.personalInfo.phone,
-      `${cvData.personalInfo.address.city}, ${cvData.personalInfo.address.country}`
+      `${this.formatTitle(cvData.personalInfo.address.city, detectedLanguage)}, ${this.formatTitle(cvData.personalInfo.address.country, detectedLanguage)}`
     ].join(' | ');
 
     sections.push(
@@ -166,17 +232,20 @@ export class DOCXExportService {
     // Work Experience
     sections.push(this.createSectionHeader('WORK EXPERIENCE', options));
     cvData.workExperience.forEach(exp => {
+      // Dil tespiti (deneyim içeriğinden)
+      const expLanguage = this.detectLanguage(`${exp.position} ${exp.companyName}`);
+      
       sections.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: exp.position,
+              text: this.formatTitle(exp.position, expLanguage),
               font: options.fontFamily,
               size: options.fontSize * 2,
               bold: true
             }),
             new TextRun({
-              text: ` | ${exp.companyName}`,
+              text: ` | ${this.formatTitle(exp.companyName, expLanguage)}`,
               font: options.fontFamily,
               size: options.fontSize * 2
             })
@@ -189,7 +258,7 @@ export class DOCXExportService {
         new Paragraph({
           children: [
             new TextRun({
-              text: `${this.formatDate(exp.startDate)} - ${endDate} | ${exp.location}`,
+              text: `${this.formatDate(exp.startDate)} - ${endDate} | ${this.formatTitle(exp.location, expLanguage)}`,
               font: options.fontFamily,
               size: options.fontSize * 2,
               italics: true
@@ -232,11 +301,14 @@ export class DOCXExportService {
     // Education
     sections.push(this.createSectionHeader('EDUCATION', options));
     cvData.education.forEach(edu => {
+      // Dil tespiti (eğitim içeriğinden)
+      const eduLanguage = this.detectLanguage(`${edu.degree} ${edu.fieldOfStudy} ${edu.institution}`);
+      
       sections.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: `${edu.degree} in ${edu.fieldOfStudy}`,
+              text: `${this.formatTitle(edu.degree, eduLanguage)} in ${this.formatTitle(edu.fieldOfStudy, eduLanguage)}`,
               font: options.fontFamily,
               size: options.fontSize * 2,
               bold: true
@@ -250,7 +322,7 @@ export class DOCXExportService {
         new Paragraph({
           children: [
             new TextRun({
-              text: `${edu.institution} | ${this.formatDate(edu.startDate)} - ${endDate}`,
+              text: `${this.formatTitle(edu.institution, eduLanguage)} | ${this.formatDate(edu.startDate)} - ${endDate}`,
               font: options.fontFamily,
               size: options.fontSize * 2,
               italics: true
@@ -292,11 +364,14 @@ export class DOCXExportService {
     // Skills
     sections.push(this.createSectionHeader('SKILLS', options));
     cvData.skills.technical.forEach(category => {
+      // Dil tespiti (skill kategorisinden)
+      const skillLanguage = this.detectLanguage(category.category);
+      
       sections.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: `${category.category}:`,
+              text: `${this.formatTitle(category.category, skillLanguage)}:`,
               font: options.fontFamily,
               size: options.fontSize * 2,
               bold: true
@@ -355,11 +430,14 @@ export class DOCXExportService {
     if (cvData.certifications && cvData.certifications.length > 0) {
       sections.push(this.createSectionHeader('CERTIFICATIONS', options));
       cvData.certifications.forEach(cert => {
+        // Dil tespiti (sertifika içeriğinden)
+        const certLanguage = this.detectLanguage(`${cert.name} ${cert.issuingOrganization}`);
+        
         sections.push(
           new Paragraph({
             children: [
               new TextRun({
-                text: cert.name,
+                text: this.formatTitle(cert.name, certLanguage),
                 font: options.fontFamily,
                 size: options.fontSize * 2,
                 bold: true
@@ -371,7 +449,7 @@ export class DOCXExportService {
           new Paragraph({
             children: [
               new TextRun({
-                text: `${cert.issuingOrganization} | ${this.formatDate(cert.issueDate)}`,
+                text: `${this.formatTitle(cert.issuingOrganization, certLanguage)} | ${this.formatDate(cert.issueDate)}`,
                 font: options.fontFamily,
                 size: options.fontSize * 2,
                 italics: true
@@ -387,11 +465,14 @@ export class DOCXExportService {
     if (cvData.projects && cvData.projects.length > 0) {
       sections.push(this.createSectionHeader('PROJECTS', options));
       cvData.projects.forEach(project => {
+        // Dil tespiti (proje içeriğinden)
+        const projectLanguage = this.detectLanguage(`${project.name} ${project.description}`);
+        
         sections.push(
           new Paragraph({
             children: [
               new TextRun({
-                text: project.name,
+                text: this.formatTitle(project.name, projectLanguage),
                 font: options.fontFamily,
                 size: options.fontSize * 2,
                 bold: true

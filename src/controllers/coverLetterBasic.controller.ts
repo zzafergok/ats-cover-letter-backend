@@ -250,14 +250,28 @@ export class CoverLetterBasicController {
           coverLetter.language as 'TURKISH' | 'ENGLISH'
         );
 
-      // PDF dosya adı oluştur
-      const sanitizedCompany = coverLetter.companyName
-        .replace(/[^a-zA-Z0-9\s]/g, '')
-        .replace(/\s+/g, '_');
-      const sanitizedPosition = coverLetter.positionTitle
-        .replace(/[^a-zA-Z0-9\s]/g, '')
-        .replace(/\s+/g, '_');
+      // PDF dosya adı oluştur - HTTP header için güvenli format
+      const detectedLanguage = this.pdfService.detectLanguage(coverLetter.generatedContent);
+      const formattedCompany = this.pdfService.formatTitle(coverLetter.companyName, detectedLanguage);
+      const formattedPosition = this.pdfService.formatTitle(coverLetter.positionTitle, detectedLanguage);
+      
+      // Türkçe karakterlerin düzgün ASCII dönüşümü
+      const turkishToAscii = (text: string): string => {
+        return text
+          .replace(/Ç/g, 'C').replace(/ç/g, 'c')
+          .replace(/Ğ/g, 'G').replace(/ğ/g, 'g')
+          .replace(/İ/g, 'I').replace(/ı/g, 'i')
+          .replace(/Ö/g, 'O').replace(/ö/g, 'o')
+          .replace(/Ş/g, 'S').replace(/ş/g, 's')
+          .replace(/Ü/g, 'U').replace(/ü/g, 'u')
+          .replace(/[^a-zA-Z0-9\s]/g, '')
+          .replace(/\s+/g, '_');
+      };
+      
+      const sanitizedCompany = turkishToAscii(formattedCompany);
+      const sanitizedPosition = turkishToAscii(formattedPosition);
       const fileName = `${sanitizedCompany}_${sanitizedPosition}_Cover_Letter.pdf`;
+      
 
       // HTTP headers ayarla
       res.setHeader('Content-Type', 'application/pdf');
@@ -302,13 +316,26 @@ export class CoverLetterBasicController {
         language as 'TURKISH' | 'ENGLISH'
       );
 
-      // PDF dosya adı oluştur
-      const sanitizedCompany = companyName
-        .replace(/[^a-zA-Z0-9\s]/g, '')
-        .replace(/\s+/g, '_');
-      const sanitizedPosition = positionTitle
-        .replace(/[^a-zA-Z0-9\s]/g, '')
-        .replace(/\s+/g, '_');
+      // PDF dosya adı oluştur - HTTP header için güvenli format
+      const detectedLanguage = this.pdfService.detectLanguage(content);
+      const formattedCompany = this.pdfService.formatTitle(companyName, detectedLanguage);
+      const formattedPosition = this.pdfService.formatTitle(positionTitle, detectedLanguage);
+      
+      // Türkçe karakterlerin düzgün ASCII dönüşümü
+      const turkishToAscii = (text: string): string => {
+        return text
+          .replace(/Ç/g, 'C').replace(/ç/g, 'c')
+          .replace(/Ğ/g, 'G').replace(/ğ/g, 'g')
+          .replace(/İ/g, 'I').replace(/ı/g, 'i')
+          .replace(/Ö/g, 'O').replace(/ö/g, 'o')
+          .replace(/Ş/g, 'S').replace(/ş/g, 's')
+          .replace(/Ü/g, 'U').replace(/ü/g, 'u')
+          .replace(/[^a-zA-Z0-9\s]/g, '')
+          .replace(/\s+/g, '_');
+      };
+      
+      const sanitizedCompany = turkishToAscii(formattedCompany);
+      const sanitizedPosition = turkishToAscii(formattedPosition);
       const fileName = `${sanitizedCompany}_${sanitizedPosition}_Edited_Cover_Letter.pdf`;
 
       // HTTP headers ayarla

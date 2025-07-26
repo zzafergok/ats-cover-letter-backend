@@ -223,8 +223,25 @@ export class CoverLetterDetailedController {
         language: coverLetter.language as 'TURKISH' | 'ENGLISH',
       });
 
-      const fileName = `${coverLetter.companyName}_${coverLetter.positionTitle}_Cover_Letter.pdf`
-        .replace(/[^a-zA-Z0-9_-]/g, '_');
+      // PDF dosya adı oluştur - HTTP header için güvenli format
+      const detectedLanguage = this.pdfService.detectLanguage(coverLetter.generatedContent);
+      const formattedCompany = this.pdfService.formatTitle(coverLetter.companyName, detectedLanguage);
+      const formattedPosition = this.pdfService.formatTitle(coverLetter.positionTitle, detectedLanguage);
+      
+      // Türkçe karakterlerin düzgün ASCII dönüşümü
+      const turkishToAscii = (text: string): string => {
+        return text
+          .replace(/Ç/g, 'C').replace(/ç/g, 'c')
+          .replace(/Ğ/g, 'G').replace(/ğ/g, 'g')
+          .replace(/İ/g, 'I').replace(/ı/g, 'i')
+          .replace(/Ö/g, 'O').replace(/ö/g, 'o')
+          .replace(/Ş/g, 'S').replace(/ş/g, 's')
+          .replace(/Ü/g, 'U').replace(/ü/g, 'u')
+          .replace(/[^a-zA-Z0-9\s]/g, '')
+          .replace(/\s+/g, '_');
+      };
+      
+      const fileName = `${turkishToAscii(formattedCompany)}_${turkishToAscii(formattedPosition)}_Cover_Letter.pdf`;
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
@@ -263,8 +280,25 @@ export class CoverLetterDetailedController {
         language as 'TURKISH' | 'ENGLISH'
       );
 
-      const fileName = `${companyName}_${positionTitle}_Edited_Cover_Letter.pdf`
-        .replace(/[^a-zA-Z0-9_-]/g, '_');
+      // PDF dosya adı oluştur - HTTP header için güvenli format
+      const detectedLanguage = this.pdfService.detectLanguage(content);
+      const formattedCompany = this.pdfService.formatTitle(companyName, detectedLanguage);
+      const formattedPosition = this.pdfService.formatTitle(positionTitle, detectedLanguage);
+      
+      // Türkçe karakterlerin düzgün ASCII dönüşümü
+      const turkishToAscii = (text: string): string => {
+        return text
+          .replace(/Ç/g, 'C').replace(/ç/g, 'c')
+          .replace(/Ğ/g, 'G').replace(/ğ/g, 'g')
+          .replace(/İ/g, 'I').replace(/ı/g, 'i')
+          .replace(/Ö/g, 'O').replace(/ö/g, 'o')
+          .replace(/Ş/g, 'S').replace(/ş/g, 's')
+          .replace(/Ü/g, 'U').replace(/ü/g, 'u')
+          .replace(/[^a-zA-Z0-9\s]/g, '')
+          .replace(/\s+/g, '_');
+      };
+      
+      const fileName = `${turkishToAscii(formattedCompany)}_${turkishToAscii(formattedPosition)}_Edited_Cover_Letter.pdf`;
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);

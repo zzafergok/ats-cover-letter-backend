@@ -8,7 +8,7 @@ import {
   formatMessage,
   createErrorMessage,
 } from '../constants/messages';
-import { ATSCVData, ATSOptimizedCVData } from '../types/cv.types';
+import { ATSCVData } from '../types/cv.types';
 import { DOCXExportService } from './docx-export.service';
 
 export class PdfService {
@@ -153,6 +153,69 @@ export class PdfService {
   }
 
   /**
+   * Başlık formatlaması - sadece ilk harf büyük, geri kalan küçük (Sentence case)
+   */
+  public formatTitle(text: string, language: 'TURKISH' | 'ENGLISH' = 'TURKISH'): string {
+    if (!text) return '';
+    
+    const sanitized = this.sanitizeText(text).toLowerCase();
+    
+    if (language === 'TURKISH') {
+      // Türkçe karakterleri destekleyen sentence case - sadece ilk harf büyük
+      if (sanitized.length === 0) return '';
+      
+      const firstChar = sanitized.charAt(0);
+      const restOfText = sanitized.slice(1);
+      
+      // Türkçe karakter dönüşümleri - sadece ilk harf için
+      const turkishUpperMap: { [key: string]: string } = {
+        'i': 'İ',
+        'ı': 'I',
+        'ğ': 'Ğ',
+        'ü': 'Ü',
+        'ş': 'Ş',
+        'ö': 'Ö',
+        'ç': 'Ç'
+      };
+      
+      const upperFirstChar = turkishUpperMap[firstChar] || firstChar.toUpperCase();
+      return upperFirstChar + restOfText;
+    } else {
+      // İngilizce için standart sentence case - sadece ilk harf büyük
+      if (sanitized.length === 0) return '';
+      return sanitized.charAt(0).toUpperCase() + sanitized.slice(1);
+    }
+  }
+
+  /**
+   * Dil tespiti - içeriğe bakarak Türkçe/İngilizce tespit eder
+   */
+  public detectLanguage(text: string): 'TURKISH' | 'ENGLISH' {
+    if (!text) return 'TURKISH';
+    
+    // Türkçe karakterlerin varlığını kontrol et
+    const turkishChars = /[çğıöşüÇĞIÖŞÜ]/;
+    if (turkishChars.test(text)) {
+      return 'TURKISH';
+    }
+    
+    // Türkçe kelimelerin varlığını kontrol et
+    const turkishWords = /\b(için|ile|bir|bu|şu|olan|olan|saygılarımla|mektub|başvuru|pozisyon|şirket)\b/i;
+    if (turkishWords.test(text)) {
+      return 'TURKISH';
+    }
+    
+    // İngilizce kelimelerin varlığını kontrol et  
+    const englishWords = /\b(for|with|and|the|this|that|position|company|application|letter|regards)\b/i;
+    if (englishWords.test(text)) {
+      return 'ENGLISH';
+    }
+    
+    // Varsayılan olarak Türkçe
+    return 'TURKISH';
+  }
+
+  /**
    * Sayfa sonu kontrolü ve yeni sayfa ekleme
    */
   private checkPageBreak(
@@ -199,12 +262,15 @@ export class PdfService {
 
       let yPosition = 50;
 
+      // Dil tespiti (kullanıcı belirtmemişse otomatik tespit)
+      const detectedLanguage = language || this.detectLanguage(content);
+      
       // Başlık
       doc.font('Roboto-Bold').fontSize(16);
       const title =
-        language === 'TURKISH'
-          ? `${this.sanitizeText(companyName)} - ${this.sanitizeText(positionTitle)} Pozisyonu İçin Başvuru Mektubu`
-          : `Cover Letter for ${this.sanitizeText(positionTitle)} Position at ${this.sanitizeText(companyName)}`;
+        detectedLanguage === 'TURKISH'
+          ? `${this.formatTitle(companyName, 'TURKISH')} - ${this.formatTitle(positionTitle, 'TURKISH')} Pozisyonu İçin Başvuru Mektubu`
+          : `Cover Letter For ${this.formatTitle(positionTitle, 'ENGLISH')} Position At ${this.formatTitle(companyName, 'ENGLISH')}`;
 
       doc.text(title, 50, yPosition, { width: 500, align: 'center' });
       yPosition += 40;
@@ -359,9 +425,9 @@ export class PdfService {
       const pdfBuffer = await pdfPromise;
 
       logger.info(formatMessage(SERVICE_MESSAGES.PDF.GENERATION_SUCCESS), {
-        positionTitle: this.sanitizeText(positionTitle),
-        companyName: this.sanitizeText(companyName),
-        language,
+        positionTitle: this.formatTitle(positionTitle, detectedLanguage),
+        companyName: this.formatTitle(companyName, detectedLanguage),
+        language: detectedLanguage,
         contentLength: content.length,
         pdfSize: pdfBuffer.length,
       });
@@ -386,7 +452,7 @@ export class PdfService {
     positionTitle: string,
     companyName: string,
     applicantName?: string,
-    _language: 'TURKISH' | 'ENGLISH' = 'TURKISH'
+    language: 'TURKISH' | 'ENGLISH' = 'TURKISH'
   ): Promise<Buffer> {
     try {
       const doc = await this.createDocument();
@@ -404,13 +470,19 @@ export class PdfService {
 
       let yPosition = 50;
 
+      // Dil tespiti
+      const detectedLanguage = this.detectLanguage(content);
+      
       // Şirket bilgisi (üst kısmı daha minimal)
       doc.font('Roboto-Bold').fontSize(12);
-      doc.text(this.sanitizeText(companyName), 50, yPosition);
+      doc.text(this.formatTitle(companyName, detectedLanguage), 50, yPosition);
       yPosition += 15;
 
       doc.font('Roboto').fontSize(11);
-      doc.text(`${this.sanitizeText(positionTitle)} Pozisyonu`, 50, yPosition);
+      const positionText = detectedLanguage === 'TURKISH' ? 
+        `${this.formatTitle(positionTitle, 'TURKISH')} Pozisyonu` :
+        `${this.formatTitle(positionTitle, 'ENGLISH')} Position`;
+      doc.text(positionText, 50, yPosition);
       yPosition += 30;
 
       // İçerik
@@ -462,10 +534,11 @@ export class PdfService {
       const pdfBuffer = await pdfPromise;
 
       logger.info(formatMessage(SERVICE_MESSAGES.PDF.CUSTOM_FORMAT_SUCCESS), {
-        positionTitle: this.sanitizeText(positionTitle),
-        companyName: this.sanitizeText(companyName),
-        applicantName: applicantName ? this.sanitizeText(applicantName) : null,
+        positionTitle: this.formatTitle(positionTitle, detectedLanguage),
+        companyName: this.formatTitle(companyName, detectedLanguage),
+        applicantName: applicantName ? this.formatTitle(applicantName, detectedLanguage) : null,
         pdfSize: pdfBuffer.length,
+        detectedLanguage,
       });
 
       return pdfBuffer;
@@ -514,12 +587,15 @@ export class PdfService {
 
       let yPosition = 50;
 
+      // Dil tespiti (kullanıcı belirtmemişse otomatik tespit)
+      const detectedLanguage = language || this.detectLanguage(content);
+      
       // Başlık
       doc.font('Roboto-Bold').fontSize(16);
       const title =
-        language === 'TURKISH'
-          ? `${this.sanitizeText(companyName)} - ${this.sanitizeText(positionTitle)} Pozisyonu İçin CV`
-          : `CV for ${this.sanitizeText(positionTitle)} Position at ${this.sanitizeText(companyName)}`;
+        detectedLanguage === 'TURKISH'
+          ? `${this.formatTitle(companyName, 'TURKISH')} - ${this.formatTitle(positionTitle, 'TURKISH')} Pozisyonu İçin CV`
+          : `CV For ${this.formatTitle(positionTitle, 'ENGLISH')} Position At ${this.formatTitle(companyName, 'ENGLISH')}`;
 
       doc.text(title, 50, yPosition, { width: 500, align: 'center' });
       yPosition += 30;
@@ -576,10 +652,10 @@ export class PdfService {
       const pdfBuffer = await pdfPromise;
 
       logger.info('CV PDF generated successfully with Turkish support', {
-        positionTitle: this.sanitizeText(positionTitle),
-        companyName: this.sanitizeText(companyName),
+        positionTitle: this.formatTitle(positionTitle, detectedLanguage),
+        companyName: this.formatTitle(companyName, detectedLanguage),
         cvType,
-        language,
+        language: detectedLanguage,
         contentLength: content.length,
         pdfSize: pdfBuffer.length,
       });
@@ -650,8 +726,8 @@ export class PdfService {
       const pdfBuffer = await pdfPromise;
 
       logger.info('ATS compliant CV generated successfully', {
-        applicantName: `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`,
-        targetPosition: cvData.professionalSummary.targetPosition,
+        applicantName: `${this.formatTitle(cvData.personalInfo.firstName, this.detectLanguage(cvData.personalInfo.firstName))} ${this.formatTitle(cvData.personalInfo.lastName, this.detectLanguage(cvData.personalInfo.lastName))}`,
+        targetPosition: this.formatTitle(cvData.professionalSummary.targetPosition, this.detectLanguage(cvData.professionalSummary.targetPosition)),
         pdfSize: pdfBuffer.length,
         language: cvData.configuration.language
       });
@@ -717,9 +793,12 @@ export class PdfService {
   ): Promise<number> {
     let yPosition = startY;
 
+    // Dil tespiti
+    const detectedLanguage = this.detectLanguage(`${personalInfo.firstName} ${personalInfo.lastName}`);
+    
     // İsim - en üstte, bold, büyük font
     doc.font('ATS-Bold').fontSize(16);
-    const fullName = `${this.sanitizeText(personalInfo.firstName)} ${this.sanitizeText(personalInfo.lastName)}`;
+    const fullName = `${this.formatTitle(personalInfo.firstName, detectedLanguage)} ${this.formatTitle(personalInfo.lastName, detectedLanguage)}`;
     doc.text(fullName, 72, yPosition, { align: 'center' });
     yPosition += 25;
 
@@ -729,7 +808,7 @@ export class PdfService {
     const contactLine = [
       this.sanitizeText(personalInfo.email),
       this.sanitizeText(personalInfo.phone),
-      `${personalInfo.address.city}, ${personalInfo.address.country}`
+      `${this.formatTitle(personalInfo.address.city, detectedLanguage)}, ${this.formatTitle(personalInfo.address.country, detectedLanguage)}`
     ].join(' | ');
 
     doc.text(contactLine, 72, yPosition, { align: 'center' });
@@ -801,16 +880,19 @@ export class PdfService {
       const estimatedHeight = 80 + (exp.achievements.length * 15);
       yPosition = this.checkPageBreak(doc, yPosition, estimatedHeight);
 
+      // Dil tespiti (deneyim içeriğinden)
+      const expLanguage = this.detectLanguage(`${exp.position} ${exp.companyName}`);
+      
       // Position Title ve Company - Bold
       doc.font('ATS-Bold').fontSize(11);
-      const positionLine = `${this.sanitizeText(exp.position)} | ${this.sanitizeText(exp.companyName)}`;
+      const positionLine = `${this.formatTitle(exp.position, expLanguage)} | ${this.formatTitle(exp.companyName, expLanguage)}`;
       doc.text(positionLine, 72, yPosition);
       yPosition += 15;
 
       // Date range ve Location
       doc.font('ATS-Regular').fontSize(10);
       const endDateStr = exp.isCurrentRole ? 'Present' : this.formatDate(exp.endDate!);
-      const dateLine = `${this.formatDate(exp.startDate)} - ${endDateStr} | ${this.sanitizeText(exp.location)}`;
+      const dateLine = `${this.formatDate(exp.startDate)} - ${endDateStr} | ${this.formatTitle(exp.location, expLanguage)}`;
       doc.text(dateLine, 72, yPosition);
       yPosition += 15;
 
@@ -862,15 +944,18 @@ export class PdfService {
     for (const edu of education) {
       yPosition = this.checkPageBreak(doc, yPosition, 60);
 
+      // Dil tespiti (eğitim içeriğinden)
+      const eduLanguage = this.detectLanguage(`${edu.degree} ${edu.fieldOfStudy} ${edu.institution}`);
+      
       // Degree ve Institution
       doc.font('ATS-Bold').fontSize(11);
-      doc.text(`${this.sanitizeText(edu.degree)} in ${this.sanitizeText(edu.fieldOfStudy)}`, 72, yPosition);
+      doc.text(`${this.formatTitle(edu.degree, eduLanguage)} in ${this.formatTitle(edu.fieldOfStudy, eduLanguage)}`, 72, yPosition);
       yPosition += 15;
 
       // Institution ve Date
       doc.font('ATS-Regular').fontSize(11);
       const endDateStr = edu.endDate ? this.formatDate(edu.endDate) : 'Present';
-      doc.text(`${this.sanitizeText(edu.institution)} | ${this.formatDate(edu.startDate)} - ${endDateStr}`, 72, yPosition);
+      doc.text(`${this.formatTitle(edu.institution, eduLanguage)} | ${this.formatDate(edu.startDate)} - ${endDateStr}`, 72, yPosition);
       yPosition += 12;
 
       // GPA (3.5+ ise)
@@ -909,8 +994,11 @@ export class PdfService {
     for (const techCategory of skills.technical) {
       yPosition = this.checkPageBreak(doc, yPosition, 30);
       
+      // Dil tespiti (skill kategorisinden)
+      const skillLanguage = this.detectLanguage(techCategory.category);
+      
       doc.font('ATS-Bold').fontSize(11);
-      doc.text(`${techCategory.category}:`, 72, yPosition);
+      doc.text(`${this.formatTitle(techCategory.category, skillLanguage)}:`, 72, yPosition);
       yPosition += 12;
 
       const skillNames = techCategory.items.map(item => item.name).join(', ');
@@ -971,12 +1059,15 @@ export class PdfService {
     for (const cert of certifications) {
       yPosition = this.checkPageBreak(doc, yPosition, 40);
 
+      // Dil tespiti (sertifika içeriğinden)
+      const certLanguage = this.detectLanguage(`${cert.name} ${cert.issuingOrganization}`);
+      
       doc.font('ATS-Bold').fontSize(11);
-      doc.text(this.sanitizeText(cert.name), 72, yPosition);
+      doc.text(this.formatTitle(cert.name, certLanguage), 72, yPosition);
       yPosition += 12;
 
       doc.font('ATS-Regular').fontSize(11);
-      const certLine = `${this.sanitizeText(cert.issuingOrganization)} | ${this.formatDate(cert.issueDate)}`;
+      const certLine = `${this.formatTitle(cert.issuingOrganization, certLanguage)} | ${this.formatDate(cert.issueDate)}`;
       doc.text(certLine, 72, yPosition);
       yPosition += 15;
     }
@@ -1001,8 +1092,11 @@ export class PdfService {
     for (const project of projects) {
       yPosition = this.checkPageBreak(doc, yPosition, 60);
 
+      // Dil tespiti (proje içeriğinden)
+      const projectLanguage = this.detectLanguage(`${project.name} ${project.description}`);
+      
       doc.font('ATS-Bold').fontSize(11);
-      doc.text(this.sanitizeText(project.name), 72, yPosition);
+      doc.text(this.formatTitle(project.name, projectLanguage), 72, yPosition);
       yPosition += 15;
 
       doc.font('ATS-Regular').fontSize(11);
