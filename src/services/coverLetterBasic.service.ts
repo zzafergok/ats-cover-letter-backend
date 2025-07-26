@@ -287,6 +287,7 @@ export class CoverLetterBasicService {
   }
 
   private async getUserInfo(userId: string): Promise<any> {
+    console.log('🔍 getUserInfo called with userId:', userId);
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -295,6 +296,12 @@ export class CoverLetterBasicService {
         email: true,
       }
     });
+    
+    console.log('👤 Found user:', user);
+    
+    if (!user) {
+      throw new Error(`User not found with ID: ${userId}`);
+    }
     
     return user;
   }
@@ -307,7 +314,87 @@ export class CoverLetterBasicService {
     language: 'TURKISH' | 'ENGLISH',
     userInfo: any
   ): string {
-    const { personalInfo, professionalProfile } = profile;
+    // extractProfessionalProfile'dan gelen format: { experience, skills, education, summary, keyAchievements }
+    // Eski kod personalInfo ve professionalProfile bekliyor, ama artık userInfo'dan alıyoruz
+    const fullName = `${userInfo.firstName} ${userInfo.lastName}`;
+    
+    const personalInfo = {
+      email: userInfo.email,
+      phone: userInfo.phone || 'Not specified',
+      city: userInfo.city || 'Not specified',
+      fullName: fullName
+    };
+    
+    // CV verisinden deneyim yılı ve pozisyon çıkar
+    const extractExperienceYears = (experience: string): string => {
+      if (!experience) return 'Not specified';
+      const yearMatches = experience.match(/(\d+)\s*(year|yıl|sene)/i);
+      return yearMatches ? `${yearMatches[1]}+` : 'Not specified';
+    };
+    
+    const extractCurrentPosition = (experience: string): string => {
+      if (!experience) return 'Not specified';
+      
+      // 1. "Current" ifadesi geçen satırları ara
+      const currentMatches = experience.match(/.*current.*$/gim);
+      if (currentMatches && currentMatches.length > 0) {
+        // Current kelimesinden önceki kısmı al (genelde pozisyon adı)
+        const currentLine = currentMatches[0];
+        const beforeCurrent = currentLine.split(/current/i)[0]?.trim();
+        if (beforeCurrent && beforeCurrent.length > 2 && beforeCurrent.length < 100) {
+          return beforeCurrent.replace(/^[-•*]\s*/, ''); // Başındaki bullet point'leri temizle
+        }
+      }
+      
+      // 2. "Present", "güncel", "halen" ifadeleri ara
+      const presentPatterns = /.*(?:present|güncel|halen|devam|ongoing).*$/gim;
+      const presentMatches = experience.match(presentPatterns);
+      if (presentMatches && presentMatches.length > 0) {
+        const presentLine = presentMatches[0];
+        const beforePresent = presentLine.split(/(?:present|güncel|halen|devam|ongoing)/i)[0]?.trim();
+        if (beforePresent && beforePresent.length > 2 && beforePresent.length < 100) {
+          return beforePresent.replace(/^[-•*]\s*/, '');
+        }
+      }
+      
+      // 3. Bitiş tarihi olmayan deneyim ara (2023-, 2024- gibi)
+      const openEndedMatches = experience.match(/.*(\d{4})\s*[-–]\s*$/gim);
+      if (openEndedMatches && openEndedMatches.length > 0) {
+        // En son tarihin olduğu satırı al
+        const latestMatch = openEndedMatches[openEndedMatches.length - 1];
+        const lines = latestMatch.split('\n');
+        for (let line of lines) {
+          if (line.includes('-') && !line.match(/\d{4}\s*[-–]\s*\d{4}/)) {
+            // Bu satırda pozisyon adı olabilir
+            const beforeDate = line.split(/\d{4}/)[0]?.trim();
+            if (beforeDate && beforeDate.length > 2 && beforeDate.length < 100) {
+              return beforeDate.replace(/^[-•*]\s*/, '');
+            }
+          }
+        }
+      }
+      
+      // 4. Son çare: İlk satırdan pozisyon adını çıkar
+      const lines = experience.split('\n');
+      const firstLine = lines[0]?.trim();
+      if (firstLine && firstLine.length > 2 && firstLine.length < 100) {
+        return firstLine.replace(/^[-•*]\s*/, '');
+      }
+      
+      return 'Not specified';
+    };
+
+    const professionalProfile = {
+      experience: profile.experience,
+      skills: profile.skills,
+      education: profile.education,
+      summary: profile.summary,
+      keyAchievements: profile.keyAchievements,
+      experienceYears: extractExperienceYears(profile.experience),
+      currentPosition: extractCurrentPosition(profile.experience),
+      keySkills: profile.skills,
+      achievements: profile.keyAchievements
+    };
 
     const languageConfig = {
       TURKISH: {
@@ -385,8 +472,7 @@ export class CoverLetterBasicService {
       ? 'ÖNEMLİ: Cover letter\'ı MUTLAKA TÜRKÇE yazın. Hiçbir koşulda İngilizce kullanmayın.'
       : 'IMPORTANT: Write the cover letter in ENGLISH only.';
 
-    // User'ın gerçek adını al
-    const fullName = userInfo ? `${userInfo.firstName} ${userInfo.lastName}` : personalInfo.fullName;
+    // fullName zaten yukarıda tanımlandı
 
     return `
 You are a professional cover letter writer. Your ONLY job is to create a compelling cover letter for the given person and position. DO NOT analyze, judge, or give advice about experience levels - just write an excellent cover letter.
