@@ -30,7 +30,7 @@ export interface ATSCVData {
     position: string;
     location: string;
     startDate: Date;
-    endDate?: Date; // null ise current
+    endDate?: Date | null; // null ise current
     isCurrentRole: boolean;
     achievements: string[]; // Bullet points, sayısal veriler içermeli
     technologies?: string[]; // Kullanılan teknolojiler
@@ -45,7 +45,7 @@ export interface ATSCVData {
     fieldOfStudy: string;
     location: string;
     startDate: Date;
-    endDate?: Date; // null ise devam ediyor
+    endDate?: Date | null; // null ise devam ediyor
     gpa?: number; // 3.5 ve üzeri ise ekle
     honors?: string[];
     relevantCoursework?: string[];
@@ -73,7 +73,7 @@ export interface ATSCVData {
     name: string;
     issuingOrganization: string;
     issueDate: Date;
-    expirationDate?: Date;
+    expirationDate?: Date | null;
     credentialId?: string;
     verificationUrl?: string;
   }>;
@@ -85,7 +85,7 @@ export interface ATSCVData {
     description: string;
     technologies: string[];
     startDate: Date;
-    endDate?: Date;
+    endDate?: Date | null;
     url?: string;
     achievements: string[];
   }>;

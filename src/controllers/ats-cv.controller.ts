@@ -41,7 +41,7 @@ const ATSCVSchema = z.object({
         startDate: z.string().transform((str) => new Date(str)),
         endDate: z
           .string()
-          .transform((str) => new Date(str))
+          .transform((str) => str === "" ? null : new Date(str))
           .optional(),
         isCurrentRole: z.boolean(),
         achievements: z.array(z.string()).min(2).max(10),
@@ -62,7 +62,7 @@ const ATSCVSchema = z.object({
         startDate: z.string().transform((str) => new Date(str)),
         endDate: z
           .string()
-          .transform((str) => new Date(str))
+          .transform((str) => str === "" ? null : new Date(str))
           .optional(),
         gpa: z.number().min(0).max(4).optional(),
         honors: z.array(z.string()).optional(),
@@ -130,7 +130,7 @@ const ATSCVSchema = z.object({
         startDate: z.string().transform((str) => new Date(str)),
         endDate: z
           .string()
-          .transform((str) => new Date(str))
+          .transform((str) => str === "" ? null : new Date(str))
           .optional(),
         url: z.string().url().optional(),
         achievements: z.array(z.string()),
