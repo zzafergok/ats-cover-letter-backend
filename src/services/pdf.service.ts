@@ -817,7 +817,7 @@ export class PdfService {
     // LinkedIn ve diğer linkler (varsa)
     const links = [];
     if (personalInfo.linkedIn) links.push(personalInfo.linkedIn);
-    if (personalInfo.website) links.push(personalInfo.website);
+    if (personalInfo.portfolio) links.push(personalInfo.portfolio);
     if (personalInfo.github) links.push(personalInfo.github);
 
     if (links.length > 0) {
@@ -1291,15 +1291,82 @@ Ahmet Yılmaz`;
         }
       ],
       configuration: {
-        targetJobTitle: 'Senior Full Stack Developer',
         targetCompany: 'Microsoft',
         language: 'ENGLISH',
         cvType: 'ATS_OPTIMIZED',
-        includePhoto: false,
-        templateStyle: 'PROFESSIONAL'
+        templateStyle: 'PROFESSIONAL',
+        useAI: false
       }
     };
 
-    return await this.generateATSCompliantCV(testData);
+    return await this.generateSimpleATSCV(testData);
   }
+
+  // Geçici basit ATS CV generator
+  async generateSimpleATSCV(cvData: ATSCVData): Promise<Buffer> {
+    const content = `
+ATS-Optimized CV
+
+${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}
+Email: ${cvData.personalInfo.email}
+Phone: ${cvData.personalInfo.phone}
+
+PROFESSIONAL SUMMARY
+${cvData.professionalSummary.summary}
+
+TARGET POSITION: ${cvData.professionalSummary.targetPosition}
+YEARS OF EXPERIENCE: ${cvData.professionalSummary.yearsOfExperience}
+
+WORK EXPERIENCE
+${cvData.workExperience.map(exp => `
+• ${exp.position} at ${exp.companyName} (${exp.location})
+  Achievements: ${exp.achievements.join(', ')}
+`).join('\n')}
+
+EDUCATION  
+${cvData.education.map(edu => `
+• ${edu.degree} in ${edu.fieldOfStudy} from ${edu.institution}
+`).join('\n')}
+
+SKILLS
+Technical: ${cvData.skills.technical.map(tech => tech.items.map(item => item.name).join(', ')).join(', ')}
+Languages: ${cvData.skills.languages.map(lang => `${lang.language} (${lang.proficiency})`).join(', ')}
+Soft Skills: ${cvData.skills.soft.join(', ')}
+    `;
+    
+    return await this.generateCoverLetterPdfWithCustomFormat(
+      content,
+      cvData.professionalSummary.targetPosition,
+      cvData.configuration.targetCompany || 'Company',
+      `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`,
+      cvData.configuration.language
+    );
+  }
+
+  // AI ile optimize edilmiş ATS CV generator
+  async generateAIOptimizedATSCV(cvData: ATSCVData): Promise<Buffer> {
+    const { generateATSCVWithClaude } = await import('./claude.service');
+    
+    try {
+      // Claude ile optimize edilmiş CV content oluştur
+      const optimizedCVContent = await generateATSCVWithClaude(
+        cvData,
+        cvData.configuration.jobDescription
+      );
+      
+      // CV content'ini PDF formatına dönüştür
+      return await this.generateCoverLetterPdfWithCustomFormat(
+        optimizedCVContent,
+        cvData.professionalSummary.targetPosition,
+        cvData.configuration.targetCompany || 'Company',
+        `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`,
+        cvData.configuration.language
+      );
+    } catch (error) {
+      // AI fail ederse fallback to simple generator
+      console.error('AI optimization failed, falling back to simple generator:', error);
+      return await this.generateSimpleATSCV(cvData);
+    }
+  }
+
 }

@@ -293,7 +293,6 @@ export class CVOptimizationService {
     return {
       ...config,
       cvType: 'ATS_OPTIMIZED',
-      includePhoto: false,
       templateStyle: config.templateStyle === 'MODERN' ? 'PROFESSIONAL' : config.templateStyle
     };
   }
@@ -473,7 +472,7 @@ export class CVOptimizationService {
   private generateImprovementSuggestions(
     originalCV: ATSCVData,
     optimizedCV: ATSCVData,
-    validation: ATSValidationResult
+    _validation: ATSValidationResult
   ): OptimizationSuggestion[] {
     const suggestions: OptimizationSuggestion[] = [];
 

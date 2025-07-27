@@ -44,4 +44,56 @@ router.get('/schema', atsController.getATSSchema);
  */
 router.get('/validation-tips', atsController.getATSValidationTips);
 
+// CRUD Routes
+
+/**
+ * @route   GET /api/ats-cv
+ * @desc    Get user's ATS CVs
+ * @access  Private
+ */
+router.get('/', 
+  authMiddleware,
+  atsController.getUserATSCVs
+);
+
+/**
+ * @route   GET /api/ats-cv/stats
+ * @desc    Get user's ATS CV statistics
+ * @access  Private
+ */
+router.get('/stats', 
+  authMiddleware,
+  atsController.getATSCVStats
+);
+
+/**
+ * @route   GET /api/ats-cv/:id
+ * @desc    Get specific ATS CV by ID
+ * @access  Private
+ */
+router.get('/:id', 
+  authMiddleware,
+  atsController.getATSCV
+);
+
+/**
+ * @route   GET /api/ats-cv/:id/download
+ * @desc    Download specific ATS CV as PDF
+ * @access  Private
+ */
+router.get('/:id/download', 
+  authMiddleware,
+  atsController.downloadATSCV
+);
+
+/**
+ * @route   DELETE /api/ats-cv/:id
+ * @desc    Delete specific ATS CV by ID
+ * @access  Private
+ */
+router.delete('/:id', 
+  authMiddleware,
+  atsController.deleteATSCV
+);
+
 export default router;

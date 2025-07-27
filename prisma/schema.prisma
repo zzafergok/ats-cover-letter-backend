@@ -38,6 +38,7 @@ model User {
   savedCvs             SavedCv[]
   coverLetterBasics    CoverLetterBasic[]
   coverLetterDetailed  CoverLetterDetailed[]
+  atsCvs               AtsCv[]
   educations           Education[]
   experiences          Experience[]
   courses              Course[]
@@ -280,6 +281,51 @@ model CoverLetterTemplate {
   updatedAt   DateTime            @updatedAt @map("updated_at")
 
   @@map("cover_letter_templates")
+}
+
+model AtsCv {
+  id                  String          @id @default(cuid())
+  userId              String          @map("user_id")
+  
+  // Personal Information (stored as JSON for flexibility)
+  personalInfo        Json            @map("personal_info")
+  
+  // Professional Summary
+  professionalSummary Json            @map("professional_summary")
+  
+  // Work Experience (array of experiences)
+  workExperience      Json            @map("work_experience")
+  
+  // Education (array of education entries)
+  education           Json            @map("education")
+  
+  // Skills (technical, languages, soft skills)
+  skills              Json            
+  
+  // Optional sections
+  certifications      Json?           
+  projects            Json?           
+  
+  // Configuration
+  configuration       Json            
+  
+  // Generated Content
+  generatedContent    String?         @map("generated_content")
+  pdfPath             String?         @map("pdf_path")
+  
+  // Metadata
+  fileName            String?         @map("file_name")
+  fileSize            Int?            @map("file_size")
+  
+  // Status
+  generationStatus    ProcessingStatus @default(PENDING) @map("generation_status")
+  
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ats_cvs")
 }
 
 enum TemplateCategory {

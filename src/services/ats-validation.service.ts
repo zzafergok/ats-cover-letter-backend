@@ -98,7 +98,7 @@ export class ATSValidationService {
     let score = 25; // Full score by default
     const issues: ATSIssue[] = [];
     const recommendations: string[] = [];
-    let fontCompliant = true;
+    const fontCompliant = true;
     let layoutCompliant = true;
 
     // CV Type kontrolü
@@ -130,18 +130,8 @@ export class ATSValidationService {
       layoutCompliant = false;
     }
 
-    // Photo inclusion kontrolü - bu hiçbir zaman true olmayacak ama safety check için
-    if (cvData.configuration.includePhoto !== false) {
-      score -= 10;
-      issues.push({
-        type: 'ERROR',
-        category: 'FORMAT',
-        message: 'Photos are not ATS-compatible',
-        suggestion: 'Remove photo from CV as ATS systems cannot process images',
-      });
-      recommendations.push('Never include photos in ATS-compatible CVs');
-      fontCompliant = false;
-    }
+    // Photos are never included in ATS-optimized CVs
+    // This field has been removed from the configuration
 
     return {
       score,

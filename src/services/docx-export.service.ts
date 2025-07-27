@@ -193,7 +193,7 @@ export class DOCXExportService {
     // Links
     const links = [];
     if (cvData.personalInfo.linkedIn) links.push(cvData.personalInfo.linkedIn);
-    if (cvData.personalInfo.website) links.push(cvData.personalInfo.website);
+    if (cvData.personalInfo.portfolio) links.push(cvData.personalInfo.portfolio);
     if (cvData.personalInfo.github) links.push(cvData.personalInfo.github);
     
     if (links.length > 0) {

@@ -7,14 +7,10 @@ export interface ATSCVData {
     email: string;
     phone: string;
     address: {
-      street?: string;
       city: string;
-      state?: string;
-      postalCode?: string;
       country: string;
     };
     linkedIn?: string;
-    website?: string;
     github?: string;
     portfolio?: string;
   };
@@ -96,13 +92,12 @@ export interface ATSCVData {
 
   // CV Konfigürasyonu
   configuration: {
-    targetJobTitle: string;
     targetCompany?: string;
     jobDescription?: string; // Keyword matching için
     language: "TURKISH" | "ENGLISH";
     cvType: "ATS_OPTIMIZED" | "TECHNICAL" | "EXECUTIVE";
-    includePhoto: false; // ATS için her zaman false
     templateStyle: "MINIMAL" | "PROFESSIONAL" | "MODERN";
+    useAI?: boolean; // AI optimization kullanılsın mı?
   };
 }
 
