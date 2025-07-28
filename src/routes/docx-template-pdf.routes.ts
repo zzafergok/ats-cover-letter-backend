@@ -71,6 +71,62 @@ router.post('/classic',
   controller.generateClassicPdf.bind(controller)
 );
 
+// Microsoft ATS-Optimized Template Routes
+/**
+ * @route   POST /api/docx-template-pdf/office-manager
+ * @desc    Generate PDF using Office Manager template
+ * @access  Private
+ */
+router.post('/office-manager',
+  authMiddleware,
+  rateLimiter.atsGeneration,
+  controller.generateOfficeManagerPdf.bind(controller)
+);
+
+/**
+ * @route   POST /api/docx-template-pdf/office-manager-alt
+ * @desc    Generate PDF using Office Manager Alternative template
+ * @access  Private
+ */
+router.post('/office-manager-alt',
+  authMiddleware,
+  rateLimiter.atsGeneration,
+  controller.generateOfficeManagerAltPdf.bind(controller)
+);
+
+/**
+ * @route   POST /api/docx-template-pdf/turkish-general
+ * @desc    Generate PDF using Turkish General template
+ * @access  Private
+ */
+router.post('/turkish-general',
+  authMiddleware,
+  rateLimiter.atsGeneration,
+  controller.generateTurkishGeneralPdf.bind(controller)
+);
+
+/**
+ * @route   POST /api/docx-template-pdf/accountant
+ * @desc    Generate PDF using Accountant template
+ * @access  Private
+ */
+router.post('/accountant',
+  authMiddleware,
+  rateLimiter.atsGeneration,
+  controller.generateAccountantPdf.bind(controller)
+);
+
+/**
+ * @route   POST /api/docx-template-pdf/hr-manager
+ * @desc    Generate PDF using HR Manager template
+ * @access  Private
+ */
+router.post('/hr-manager',
+  authMiddleware,
+  rateLimiter.atsGeneration,
+  controller.generateHRManagerPdf.bind(controller)
+);
+
 /**
  * @route   POST /api/docx-template-pdf/generate/:templateId
  * @desc    Generate PDF using specified template ID

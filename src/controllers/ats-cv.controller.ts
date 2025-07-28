@@ -212,16 +212,34 @@ export class ATSCVController {
         // Check if DOCX template is requested and available
         if (req.body.useDocxTemplate && req.body.docxTemplateId) {
           try {
-            // Use DOCX template service
-            pdfBuffer = await this.docxTemplateService.generatePdfFromDocxTemplate(
-              req.body.docxTemplateId,
-              cvData
-            );
-            
-            logger.info('PDF generated using DOCX template', {
-              templateId: req.body.docxTemplateId,
-              applicantName: `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`
-            });
+            // Check if ATS optimization with Claude API is requested
+            if (req.body.useClaudeOptimization) {
+              // Use Claude-optimized DOCX template generation
+              pdfBuffer = await this.docxTemplateService.generateATSOptimizedPdfFromDocxTemplate(
+                req.body.docxTemplateId,
+                cvData,
+                cvData.configuration.jobDescription,
+                cvData.configuration.targetCompany
+              );
+              
+              logger.info('PDF generated using Claude-optimized DOCX template', {
+                templateId: req.body.docxTemplateId,
+                applicantName: `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`,
+                hasJobDescription: !!cvData.configuration.jobDescription,
+                hasTargetCompany: !!cvData.configuration.targetCompany
+              });
+            } else {
+              // Use standard DOCX template service
+              pdfBuffer = await this.docxTemplateService.generatePdfFromDocxTemplate(
+                req.body.docxTemplateId,
+                cvData
+              );
+              
+              logger.info('PDF generated using standard DOCX template', {
+                templateId: req.body.docxTemplateId,
+                applicantName: `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`
+              });
+            }
           } catch (docxError) {
             logger.warn('DOCX template generation failed, falling back to ATS service:', docxError);
             // Fallback to ATS PDF service

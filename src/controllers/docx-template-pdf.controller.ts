@@ -120,6 +120,27 @@ export class DocxTemplatePdfController {
     await this.generatePdfByTemplate(req, res, 'classic');
   }
 
+  // Microsoft ATS-Optimized Template Methods
+  async generateOfficeManagerPdf(req: Request, res: Response): Promise<void> {
+    await this.generatePdfByTemplate(req, res, 'office-manager');
+  }
+
+  async generateOfficeManagerAltPdf(req: Request, res: Response): Promise<void> {
+    await this.generatePdfByTemplate(req, res, 'office-manager-alt');
+  }
+
+  async generateTurkishGeneralPdf(req: Request, res: Response): Promise<void> {
+    await this.generatePdfByTemplate(req, res, 'turkish-general');
+  }
+
+  async generateAccountantPdf(req: Request, res: Response): Promise<void> {
+    await this.generatePdfByTemplate(req, res, 'accountant');
+  }
+
+  async generateHRManagerPdf(req: Request, res: Response): Promise<void> {
+    await this.generatePdfByTemplate(req, res, 'hr-manager');
+  }
+
   /**
    * Belirtilen template ile PDF oluştur (genel method)
    */
@@ -429,7 +450,7 @@ export class DocxTemplatePdfController {
     try {
       const { templateId } = req.params;
 
-      // Örnek CV verisi ile preview oluştur
+      // Comprehensive sample CV data for preview
       const sampleCvData: ATSCVData = {
         personalInfo: {
           firstName: 'John',
@@ -445,22 +466,136 @@ export class DocxTemplatePdfController {
           github: 'https://github.com/johndoe'
         },
         professionalSummary: {
-          summary: 'Experienced software developer with expertise in modern web technologies...',
+          summary: 'Experienced software developer with expertise in modern web technologies and agile development practices. Proven track record of delivering scalable solutions and leading cross-functional teams.',
           targetPosition: 'Senior Software Developer',
           yearsOfExperience: 5,
-          keySkills: ['React', 'Node.js', 'TypeScript', 'AWS', 'Docker']
+          keySkills: ['React', 'Node.js', 'TypeScript', 'AWS', 'Docker', 'PostgreSQL', 'GraphQL']
         },
-        workExperience: [],
-        education: [],
+        workExperience: [
+          {
+            id: 'work1',
+            companyName: 'Tech Solutions Inc.',
+            position: 'Senior Software Developer',
+            location: 'Istanbul, Turkey',
+            startDate: new Date('2022-01-01'),
+            endDate: null,
+            isCurrentRole: true,
+            achievements: [
+              'Led development of microservices architecture serving 100K+ users',
+              'Improved application performance by 40% through optimization',
+              'Mentored 3 junior developers and established coding standards',
+              'Implemented CI/CD pipeline reducing deployment time by 60%'
+            ],
+            technologies: ['React', 'Node.js', 'AWS', 'Docker', 'PostgreSQL'],
+            industryType: 'Technology'
+          },
+          {
+            id: 'work2',
+            companyName: 'Digital Innovations Ltd.',
+            position: 'Software Developer',
+            location: 'Ankara, Turkey',
+            startDate: new Date('2020-06-01'),
+            endDate: new Date('2021-12-31'),
+            isCurrentRole: false,
+            achievements: [
+              'Developed and maintained 5 client-facing web applications',
+              'Collaborated with UX team to improve user engagement by 35%',
+              'Integrated third-party APIs and payment systems'
+            ],
+            technologies: ['Vue.js', 'PHP', 'MySQL', 'Redis'],
+            industryType: 'Software Development'
+          }
+        ],
+        education: [
+          {
+            id: 'edu1',
+            institution: 'Istanbul Technical University',
+            degree: 'Bachelor of Science',
+            fieldOfStudy: 'Computer Engineering',
+            location: 'Istanbul, Turkey',
+            startDate: new Date('2016-09-01'),
+            endDate: new Date('2020-06-01'),
+            gpa: 3.7,
+            honors: ['Dean\'s List', 'Outstanding Student Award'],
+            relevantCoursework: ['Data Structures', 'Algorithms', 'Database Systems', 'Software Engineering']
+          }
+        ],
         skills: {
-          technical: [],
-          languages: [],
-          soft: []
+          technical: [
+            {
+              category: 'Programming Languages',
+              items: [
+                { name: 'JavaScript', proficiencyLevel: 'Expert' },
+                { name: 'TypeScript', proficiencyLevel: 'Advanced' },
+                { name: 'Python', proficiencyLevel: 'Intermediate' },
+                { name: 'Java', proficiencyLevel: 'Intermediate' }
+              ]
+            },
+            {
+              category: 'Frameworks & Libraries',
+              items: [
+                { name: 'React', proficiencyLevel: 'Expert' },
+                { name: 'Node.js', proficiencyLevel: 'Advanced' },
+                { name: 'Express.js', proficiencyLevel: 'Advanced' },
+                { name: 'Vue.js', proficiencyLevel: 'Intermediate' }
+              ]
+            },
+            {
+              category: 'Cloud & DevOps',
+              items: [
+                { name: 'AWS', proficiencyLevel: 'Advanced' },
+                { name: 'Docker', proficiencyLevel: 'Advanced' },
+                { name: 'Kubernetes', proficiencyLevel: 'Intermediate' },
+                { name: 'Jenkins', proficiencyLevel: 'Intermediate' }
+              ]
+            }
+          ],
+          languages: [
+            { language: 'Turkish', proficiency: 'Native' },
+            { language: 'English', proficiency: 'Fluent' },
+            { language: 'German', proficiency: 'Intermediate' }
+          ],
+          soft: ['Leadership', 'Problem Solving', 'Team Collaboration', 'Communication', 'Project Management']
         },
+        certifications: [
+          {
+            id: 'cert1',
+            name: 'AWS Certified Solutions Architect',
+            issuingOrganization: 'Amazon Web Services',
+            issueDate: new Date('2023-03-15'),
+            expirationDate: new Date('2026-03-15'),
+            credentialId: 'AWS-SA-12345',
+            verificationUrl: 'https://aws.amazon.com/verification'
+          },
+          {
+            id: 'cert2',
+            name: 'Professional Scrum Master I',
+            issuingOrganization: 'Scrum.org',
+            issueDate: new Date('2022-08-20'),
+            credentialId: 'PSM-67890'
+          }
+        ],
+        projects: [
+          {
+            id: 'proj1',
+            name: 'E-Commerce Platform',
+            description: 'Full-stack e-commerce solution with microservices architecture, supporting multi-vendor marketplace functionality.',
+            technologies: ['React', 'Node.js', 'PostgreSQL', 'Redis', 'AWS'],
+            startDate: new Date('2023-01-01'),
+            endDate: new Date('2023-06-30'),
+            url: 'https://github.com/johndoe/ecommerce-platform',
+            achievements: [
+              'Handled 10K+ concurrent users during peak traffic',
+              'Implemented real-time inventory management',
+              'Achieved 99.9% uptime over 6 months'
+            ]
+          }
+        ],
         configuration: {
           language: 'ENGLISH',
           cvType: 'ATS_OPTIMIZED',
-          templateStyle: 'MODERN'
+          templateStyle: 'PROFESSIONAL',
+          useAI: false
         }
       } as ATSCVData;
 
