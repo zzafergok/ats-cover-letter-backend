@@ -96,4 +96,47 @@ router.delete('/:id',
   atsController.deleteATSCV
 );
 
+/**
+ * @route   POST /api/ats-cv/export
+ * @desc    Export ATS CV in multiple formats (PDF, DOCX)
+ * @access  Private
+ * @body    { cvData: ATSCVData, formats: string[], options?: object }
+ */
+router.post('/export', 
+  authMiddleware,
+  atsController.exportMultiFormat
+);
+
+/**
+ * @route   GET /api/ats-cv/templates
+ * @desc    Get available CV templates with details
+ * @access  Private
+ */
+router.get('/templates', 
+  authMiddleware,
+  atsController.getAvailableTemplates
+);
+
+/**
+ * @route   POST /api/ats-cv/validate
+ * @desc    Validate CV data against ATS requirements
+ * @access  Private
+ * @body    { cvData: ATSCVData }
+ */
+router.post('/validate',
+  authMiddleware,
+  atsController.validateATSRequirements
+);
+
+/**
+ * @route   GET /api/ats-cv/test-modern
+ * @desc    Generate test ATS CV using modern HTML-to-PDF approach
+ * @access  Private (for development/testing)
+ */
+router.get('/test-modern', 
+  authMiddleware,
+  atsController.generateModernTestCV
+);
+
+
 export default router;

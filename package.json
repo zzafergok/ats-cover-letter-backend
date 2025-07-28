@@ -34,6 +34,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.56.0",
     "@prisma/client": "^6.10.1",
+    "@types/puppeteer": "^5.4.7",
     "bcryptjs": "^3.0.2",
     "cheerio": "^1.1.2",
     "cors": "^2.8.5",
@@ -49,6 +50,7 @@
     "multer": "^2.0.1",
     "pdf-parse": "^1.1.1",
     "pdfkit": "^0.17.1",
+    "puppeteer": "^24.15.0",
     "resend": "^4.6.0",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",

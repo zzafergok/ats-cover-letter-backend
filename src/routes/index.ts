@@ -14,6 +14,7 @@ import atsCvRoutes from './ats-cv.routes';
 import atsValidationRoutes from './ats-validation.routes';
 import cvOptimizationRoutes from './cv-optimization.routes';
 import docxExportRoutes from './docx-export.routes';
+import docxTemplatePdfRoutes from './docx-template-pdf.routes';
 import cvUploadRoutes from './cvUpload.routes';
 
 const router = Router();
@@ -23,6 +24,7 @@ router.use('/ats-cv', atsCvRoutes);
 router.use('/ats-validation', atsValidationRoutes);
 router.use('/cv-optimization', cvOptimizationRoutes);
 router.use('/docx', docxExportRoutes);
+router.use('/docx-template-pdf', docxTemplatePdfRoutes);
 router.use('/cv-upload', cvUploadRoutes);
 router.use('/cover-letter-basic', coverLetterBasicRoutes);
 router.use('/cover-letter-detailed', coverLetterDetailedRoutes);

@@ -1302,45 +1302,88 @@ Ahmet Yılmaz`;
     return await this.generateSimpleATSCV(testData);
   }
 
-  // Geçici basit ATS CV generator
+  // Geliştirilmiş ATS CV generator - artık generateATSCompliantCV kullanıyor
   async generateSimpleATSCV(cvData: ATSCVData): Promise<Buffer> {
-    const content = `
-ATS-Optimized CV
+    try {
+      // Mevcut gelişmiş ATS CV generator'ı kullan
+      return await this.generateATSCompliantCV(cvData);
+    } catch (error) {
+      logger.error('Advanced ATS CV generation failed, using fallback:', error);
+      
+      // Fallback - basit text-based CV
+      const content = this.generateSimpleATSContent(cvData);
+      
+      return await this.generateCoverLetterPdfWithCustomFormat(
+        content,
+        cvData.professionalSummary.targetPosition,
+        cvData.configuration.targetCompany || 'Company',
+        `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`,
+        cvData.configuration.language
+      );
+    }
+  }
+
+  /**
+   * Basit ATS content oluştur (fallback için)
+   */
+  private generateSimpleATSContent(cvData: ATSCVData): string {
+    const lang = cvData.configuration.language === 'TURKISH';
+    
+    return `
+${lang ? 'ATS Uyumlu CV' : 'ATS-Optimized CV'}
 
 ${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}
-Email: ${cvData.personalInfo.email}
-Phone: ${cvData.personalInfo.phone}
+${lang ? 'E-posta' : 'Email'}: ${cvData.personalInfo.email}
+${lang ? 'Telefon' : 'Phone'}: ${cvData.personalInfo.phone}
+${lang ? 'Konum' : 'Location'}: ${cvData.personalInfo.address.city}, ${cvData.personalInfo.address.country}
 
-PROFESSIONAL SUMMARY
+${lang ? 'PROFESYONEL ÖZET' : 'PROFESSIONAL SUMMARY'}
 ${cvData.professionalSummary.summary}
 
-TARGET POSITION: ${cvData.professionalSummary.targetPosition}
-YEARS OF EXPERIENCE: ${cvData.professionalSummary.yearsOfExperience}
+${lang ? 'HEDEF POZİSYON' : 'TARGET POSITION'}: ${cvData.professionalSummary.targetPosition}
+${lang ? 'DENEYIM SÜRESİ' : 'YEARS OF EXPERIENCE'}: ${cvData.professionalSummary.yearsOfExperience} ${lang ? 'yıl' : 'years'}
 
-WORK EXPERIENCE
-${cvData.workExperience.map(exp => `
-• ${exp.position} at ${exp.companyName} (${exp.location})
-  Achievements: ${exp.achievements.join(', ')}
-`).join('\n')}
+${lang ? 'İŞ DENEYİMİ' : 'WORK EXPERIENCE'}
+${cvData.workExperience.map(exp => {
+  const endDate = exp.isCurrentRole ? (lang ? 'Devam Ediyor' : 'Present') : this.formatDate(exp.endDate!);
+  return `
+${exp.position} | ${exp.companyName}
+${this.formatDate(exp.startDate)} - ${endDate} | ${exp.location}
+${lang ? 'Başarılar' : 'Achievements'}:
+${exp.achievements.map(ach => `• ${ach}`).join('\n')}
+${exp.technologies && exp.technologies.length > 0 ? `${lang ? 'Teknolojiler' : 'Technologies'}: ${exp.technologies.join(', ')}` : ''}
+`;
+}).join('\n')}
 
-EDUCATION  
-${cvData.education.map(edu => `
-• ${edu.degree} in ${edu.fieldOfStudy} from ${edu.institution}
-`).join('\n')}
+${lang ? 'EĞİTİM' : 'EDUCATION'}
+${cvData.education.map(edu => {
+  const gradDate = edu.endDate ? this.formatDate(edu.endDate) : (lang ? 'Devam Ediyor' : 'Present');
+  return `${edu.degree} - ${edu.fieldOfStudy}
+${edu.institution} | ${this.formatDate(edu.startDate)} - ${gradDate}
+${edu.gpa ? `GPA: ${edu.gpa}` : ''}`;
+}).join('\n\n')}
 
-SKILLS
-Technical: ${cvData.skills.technical.map(tech => tech.items.map(item => item.name).join(', ')).join(', ')}
-Languages: ${cvData.skills.languages.map(lang => `${lang.language} (${lang.proficiency})`).join(', ')}
-Soft Skills: ${cvData.skills.soft.join(', ')}
-    `;
-    
-    return await this.generateCoverLetterPdfWithCustomFormat(
-      content,
-      cvData.professionalSummary.targetPosition,
-      cvData.configuration.targetCompany || 'Company',
-      `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`,
-      cvData.configuration.language
-    );
+${lang ? 'BECERİLER' : 'SKILLS'}
+${cvData.skills.technical.map(tech => 
+  `${tech.category}: ${tech.items.map(item => item.name).join(', ')}`
+).join('\n')}
+
+${cvData.skills.languages.length > 0 ? `${lang ? 'Diller' : 'Languages'}: ${cvData.skills.languages.map(l => `${l.language} (${l.proficiency})`).join(', ')}` : ''}
+
+${cvData.skills.soft.length > 0 ? `${lang ? 'Diğer Beceriler' : 'Additional Skills'}: ${cvData.skills.soft.join(', ')}` : ''}
+
+${cvData.certifications && cvData.certifications.length > 0 ? `
+${lang ? 'SERTİFİKALAR' : 'CERTIFICATIONS'}
+${cvData.certifications.map(cert => 
+  `${cert.name} - ${cert.issuingOrganization} (${this.formatDate(cert.issueDate)})`
+).join('\n')}` : ''}
+
+${cvData.projects && cvData.projects.length > 0 ? `
+${lang ? 'PROJELER' : 'PROJECTS'}
+${cvData.projects.map(proj => 
+  `${proj.name}: ${proj.description}\n${lang ? 'Teknolojiler' : 'Technologies'}: ${proj.technologies.join(', ')}`
+).join('\n\n')}` : ''}
+    `.trim();
   }
 
   // AI ile optimize edilmiş ATS CV generator
@@ -1367,6 +1410,310 @@ Soft Skills: ${cvData.skills.soft.join(', ')}
       console.error('AI optimization failed, falling back to simple generator:', error);
       return await this.generateSimpleATSCV(cvData);
     }
+  }
+
+  /**
+   * Template-based PDF generation
+   * DOCX dosyalarından template alır ve PDF'e dönüştürür
+   */
+  async generateATSCVFromTemplate(
+    cvData: ATSCVData, 
+    templateStyle: 'PROFESSIONAL' | 'MODERN' | 'EXECUTIVE' = 'PROFESSIONAL'
+  ): Promise<Buffer> {
+    try {
+      // Template stiline göre layout seç
+      const templateConfig = this.getTemplateConfig(templateStyle);
+      
+      // Template'e uygun content oluştur
+      const templateContent = await this.generateTemplateBasedContent(cvData, templateConfig);
+      
+      // Template-specific PDF oluştur
+      return await this.generateATSTemplateDocument(templateContent, templateConfig, cvData);
+    } catch (error) {
+      logger.error('Template-based PDF generation failed:', error);
+      // Fallback to standard ATS CV
+      return await this.generateATSCompliantCV(cvData);
+    }
+  }
+
+  /**
+   * Template konfigürasyonu al
+   */
+  private getTemplateConfig(style: string) {
+    const configs = {
+      PROFESSIONAL: {
+        fontSizes: { header: 14, section: 12, body: 11 },
+        colors: { primary: '#000000', secondary: '#333333' },
+        spacing: { section: 20, paragraph: 12 },
+        layout: 'standard'
+      },
+      MODERN: {
+        fontSizes: { header: 16, section: 13, body: 11 },
+        colors: { primary: '#2c3e50', secondary: '#34495e' },
+        spacing: { section: 25, paragraph: 15 },
+        layout: 'modern'
+      },
+      EXECUTIVE: {
+        fontSizes: { header: 18, section: 14, body: 12 },
+        colors: { primary: '#1a1a1a', secondary: '#4a4a4a' },
+        spacing: { section: 30, paragraph: 18 },
+        layout: 'executive'
+      }
+    };
+    
+    return configs[style as keyof typeof configs] || configs.PROFESSIONAL;
+  }
+
+  /**
+   * Template-based content oluştur
+   */
+  private async generateTemplateBasedContent(cvData: ATSCVData, config: any): Promise<string> {
+    const lang = cvData.configuration.language === 'TURKISH';
+    
+    // ATS-optimized sections in proper order
+    const sections = [];
+    
+    // 1. Professional Summary - keyword heavy
+    sections.push(`${lang ? 'PROFESYONEL ÖZET' : 'PROFESSIONAL SUMMARY'}
+${cvData.professionalSummary.summary}`);
+    
+    // 2. Core Competencies - keyword showcase
+    const keySkills = cvData.professionalSummary.keySkills || 
+      cvData.skills.technical.flatMap(t => t.items.slice(0, 3).map(i => i.name));
+    
+    if (keySkills.length > 0) {
+      sections.push(`${lang ? 'TEMEL YETKİNLİKLER' : 'CORE COMPETENCIES'}
+${keySkills.join(' • ')}`);
+    }
+    
+    // 3. Work Experience - most important for ATS
+    if (cvData.workExperience.length > 0) {
+      const expSection = [`${lang ? 'İŞ DENEYİMİ' : 'PROFESSIONAL EXPERIENCE'}`];
+      
+      cvData.workExperience.forEach(exp => {
+        const endDate = exp.isCurrentRole ? (lang ? 'Günümüz' : 'Present') : this.formatDate(exp.endDate!);
+        
+        expSection.push(`${exp.position} | ${exp.companyName}`);
+        expSection.push(`${this.formatDate(exp.startDate)} - ${endDate} | ${exp.location}`);
+        
+        exp.achievements.forEach(ach => {
+          expSection.push(`• ${ach}`);
+        });
+        
+        if (exp.technologies && exp.technologies.length > 0) {
+          expSection.push(`${lang ? 'Teknolojiler' : 'Technologies'}: ${exp.technologies.join(', ')}`);
+        }
+        
+        expSection.push(''); // Empty line between experiences
+      });
+      
+      sections.push(expSection.join('\n'));
+    }
+    
+    // 4. Education
+    if (cvData.education.length > 0) {
+      const eduSection = [`${lang ? 'EĞİTİM' : 'EDUCATION'}`];
+      
+      cvData.education.forEach(edu => {
+        const gradDate = edu.endDate ? this.formatDate(edu.endDate) : (lang ? 'Devam Ediyor' : 'Present');
+        
+        eduSection.push(`${edu.degree} in ${edu.fieldOfStudy}`);
+        eduSection.push(`${edu.institution} | ${gradDate}`);
+        
+        if (edu.gpa && edu.gpa >= 3.5) {
+          eduSection.push(`GPA: ${edu.gpa}`);
+        }
+        
+        if (edu.honors && edu.honors.length > 0) {
+          eduSection.push(`${lang ? 'Onurlar' : 'Honors'}: ${edu.honors.join(', ')}`);
+        }
+        
+        eduSection.push('');
+      });
+      
+      sections.push(eduSection.join('\n'));
+    }
+    
+    // 5. Technical Skills - ATS keyword paradise
+    if (cvData.skills.technical.length > 0) {
+      const skillsSection = [`${lang ? 'TEKNİK BECERİLER' : 'TECHNICAL SKILLS'}`];
+      
+      cvData.skills.technical.forEach(category => {
+        const skillList = category.items.map(item => item.name).join(', ');
+        skillsSection.push(`${category.category}: ${skillList}`);
+      });
+      
+      sections.push(skillsSection.join('\n'));
+    }
+    
+    // 6. Additional sections
+    if (cvData.certifications && cvData.certifications.length > 0) {
+      const certSection = [`${lang ? 'SERTİFİKALAR' : 'CERTIFICATIONS'}`];
+      
+      cvData.certifications.forEach(cert => {
+        certSection.push(`${cert.name} - ${cert.issuingOrganization} (${this.formatDate(cert.issueDate)})`);
+      });
+      
+      sections.push(certSection.join('\n'));
+    }
+    
+    if (cvData.skills.languages.length > 0) {
+      sections.push(`${lang ? 'DİLLER' : 'LANGUAGES'}
+${cvData.skills.languages.map(l => `${l.language} (${l.proficiency})`).join(', ')}`);
+    }
+    
+    return sections.join('\n\n');
+  }
+
+  /**
+   * Template-specific PDF document oluştur
+   */
+  private async generateATSTemplateDocument(
+    content: string, 
+    config: any, 
+    cvData: ATSCVData
+  ): Promise<Buffer> {
+    const doc = await this.createATSDocument();
+    
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+
+    const pdfPromise = new Promise<Buffer>((resolve, reject) => {
+      doc.on('end', () => {
+        const pdfBuffer = Buffer.concat(chunks);
+        resolve(pdfBuffer);
+      });
+      doc.on('error', reject);
+    });
+
+    let yPosition = 50;
+    
+    // Header with template styling
+    yPosition = await this.renderTemplateHeader(doc, cvData, config, yPosition);
+    
+    // Content sections with template styling
+    const sections = content.split('\n\n');
+    
+    for (const section of sections) {
+      if (section.trim()) {
+        yPosition = await this.renderTemplateSection(doc, section, config, yPosition);
+      }
+    }
+
+    doc.end();
+    const pdfBuffer = await pdfPromise;
+
+    logger.info('Template-based ATS CV generated successfully', {
+      applicantName: `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`,
+      templateStyle: config.layout,
+      pdfSize: pdfBuffer.length
+    });
+
+    return pdfBuffer;
+  }
+
+  /**
+   * Template header render
+   */
+  private async renderTemplateHeader(
+    doc: InstanceType<typeof PDFDocument>,
+    cvData: ATSCVData,
+    config: any,
+    startY: number
+  ): Promise<number> {
+    let yPosition = startY;
+    
+    const detectedLanguage = this.detectLanguage(`${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`);
+    
+    // Name - template styled
+    doc.font('ATS-Bold').fontSize(config.fontSizes.header);
+    const fullName = `${this.formatTitle(cvData.personalInfo.firstName, detectedLanguage)} ${this.formatTitle(cvData.personalInfo.lastName, detectedLanguage)}`;
+    doc.text(fullName, 72, yPosition, { align: 'center' });
+    yPosition += config.fontSizes.header + 8;
+
+    // Target position - template styled
+    doc.font('ATS-Regular').fontSize(config.fontSizes.section - 1);
+    doc.text(cvData.professionalSummary.targetPosition, 72, yPosition, { align: 'center' });
+    yPosition += config.fontSizes.section + 5;
+
+    // Contact info - clean and ATS-friendly
+    doc.font('ATS-Regular').fontSize(config.fontSizes.body);
+    const contactLine = [
+      cvData.personalInfo.email,
+      cvData.personalInfo.phone,
+      `${cvData.personalInfo.address.city}, ${cvData.personalInfo.address.country}`
+    ].join(' | ');
+
+    doc.text(contactLine, 72, yPosition, { align: 'center' });
+    yPosition += config.fontSizes.body + 3;
+
+    // Links
+    const links = [
+      cvData.personalInfo.linkedIn,
+      cvData.personalInfo.portfolio,
+      cvData.personalInfo.github
+    ].filter(Boolean);
+
+    if (links.length > 0) {
+      doc.text(links.join(' | '), 72, yPosition, { align: 'center' });
+      yPosition += config.fontSizes.body + 3;
+    }
+
+    yPosition += config.spacing.section;
+    return yPosition;
+  }
+
+  /**
+   * Template section render
+   */
+  private async renderTemplateSection(
+    doc: InstanceType<typeof PDFDocument>,
+    section: string,
+    config: any,
+    startY: number
+  ): Promise<number> {
+    const lines = section.split('\n').filter(line => line.trim());
+    if (lines.length === 0) return startY;
+
+    let yPosition = this.checkPageBreak(doc, startY, 60);
+
+    // First line is section header
+    const sectionHeader = lines[0];
+    const contentLines = lines.slice(1);
+
+    // Section header with template styling
+    doc.font('ATS-Bold').fontSize(config.fontSizes.section);
+    doc.text(sectionHeader, 72, yPosition);
+    yPosition += config.fontSizes.section + 8;
+
+    // Content lines
+    doc.font('ATS-Regular').fontSize(config.fontSizes.body);
+    
+    for (const line of contentLines) {
+      if (line.trim()) {
+        yPosition = this.checkPageBreak(doc, yPosition, config.fontSizes.body + 5);
+        
+        // Check if it's a bullet point
+        if (line.startsWith('•')) {
+          doc.text(line, 85, yPosition, { width: 450 });
+        } else if (line.includes(' | ')) {
+          // Job title, company, date line
+          doc.font('ATS-Bold').fontSize(config.fontSizes.body);
+          doc.text(line, 72, yPosition, { width: 450 });
+          doc.font('ATS-Regular').fontSize(config.fontSizes.body);
+        } else {
+          doc.text(line, 72, yPosition, { width: 450 });
+        }
+        
+        const lineHeight = doc.heightOfString(line, { width: 450 });
+        yPosition += Math.max(lineHeight, config.fontSizes.body) + 3;
+      } else {
+        yPosition += 5; // Empty line spacing
+      }
+    }
+
+    yPosition += config.spacing.paragraph;
+    return yPosition;
   }
 
 }

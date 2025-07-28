@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { PdfService } from '../services/pdf.service';
+import { ATSPDFService } from '../services/ats-pdf.service';
+import { DocxTemplatePdfService } from '../services/docx-template-pdf.service';
 import { ATSCVData } from '../types/cv.types';
 import logger from '../config/logger';
 import { createResponse } from '../utils/response';
@@ -150,9 +152,13 @@ const ATSCVSchema = z.object({
 
 export class ATSCVController {
   private pdfService: PdfService;
+  private atsPdfService: ATSPDFService;
+  private docxTemplateService: DocxTemplatePdfService;
 
   constructor() {
     this.pdfService = PdfService.getInstance();
+    this.atsPdfService = ATSPDFService.getInstance();
+    this.docxTemplateService = DocxTemplatePdfService.getInstance();
   }
 
   /**
@@ -200,10 +206,31 @@ export class ATSCVController {
       });
 
       try {
-        // Generate PDF - AI or simple based on user preference
-        const pdfBuffer = cvData.configuration.useAI
-          ? await this.pdfService.generateAIOptimizedATSCV(cvData)
-          : await this.pdfService.generateSimpleATSCV(cvData);
+        // Generate PDF using appropriate service
+        let pdfBuffer: Buffer;
+        
+        // Check if DOCX template is requested and available
+        if (req.body.useDocxTemplate && req.body.docxTemplateId) {
+          try {
+            // Use DOCX template service
+            pdfBuffer = await this.docxTemplateService.generatePdfFromDocxTemplate(
+              req.body.docxTemplateId,
+              cvData
+            );
+            
+            logger.info('PDF generated using DOCX template', {
+              templateId: req.body.docxTemplateId,
+              applicantName: `${cvData.personalInfo.firstName} ${cvData.personalInfo.lastName}`
+            });
+          } catch (docxError) {
+            logger.warn('DOCX template generation failed, falling back to ATS service:', docxError);
+            // Fallback to ATS PDF service
+            pdfBuffer = await this.generateWithATSService(cvData);
+          }
+        } else {
+          // Use ATS PDF service (existing logic)
+          pdfBuffer = await this.generateWithATSService(cvData);
+        }
 
         // Generate filename
         const fileName = `${cvData.personalInfo.firstName}_${cvData.personalInfo.lastName}_CV_ATS.pdf`;
@@ -575,22 +602,74 @@ export class ATSCVController {
         return;
       }
 
-      // CV datasını parse et
+      // CV datasını parse et ve date'leri düzelt
       const cvData = {
         personalInfo: atsCv.personalInfo,
         professionalSummary: atsCv.professionalSummary,
-        workExperience: atsCv.workExperience,
-        education: atsCv.education,
+        workExperience: Array.isArray(atsCv.workExperience) ? 
+          (atsCv.workExperience as any[]).map(exp => ({
+            ...exp,
+            startDate: exp.startDate ? new Date(exp.startDate) : undefined,
+            endDate: exp.endDate ? new Date(exp.endDate) : null
+          })) : [],
+        education: Array.isArray(atsCv.education) ? 
+          (atsCv.education as any[]).map(edu => ({
+            ...edu,
+            startDate: edu.startDate ? new Date(edu.startDate) : undefined,
+            endDate: edu.endDate ? new Date(edu.endDate) : null
+          })) : [],
         skills: atsCv.skills,
-        certifications: atsCv.certifications,
-        projects: atsCv.projects,
+        certifications: Array.isArray(atsCv.certifications) ? 
+          (atsCv.certifications as any[]).map(cert => ({
+            ...cert,
+            issueDate: cert.issueDate ? new Date(cert.issueDate) : undefined,
+            expirationDate: cert.expirationDate ? new Date(cert.expirationDate) : null
+          })) : [],
+        projects: Array.isArray(atsCv.projects) ? 
+          (atsCv.projects as any[]).map(proj => ({
+            ...proj,
+            startDate: proj.startDate ? new Date(proj.startDate) : undefined,
+            endDate: proj.endDate ? new Date(proj.endDate) : null
+          })) : [],
         configuration: atsCv.configuration,
       } as any;
 
-      // PDF'i yeniden oluştur
-      const pdfBuffer = (cvData.configuration as any).useAI
-        ? await this.pdfService.generateAIOptimizedATSCV(cvData)
-        : await this.pdfService.generateSimpleATSCV(cvData);
+      // PDF'i yeniden oluştur - Modern ATS PDF service kullan
+      let pdfBuffer: Buffer;
+      
+      logger.info('Starting PDF generation for download', {
+        cvId: id,
+        applicantName: `${(cvData.personalInfo as any).firstName} ${(cvData.personalInfo as any).lastName}`,
+        useAI: (cvData.configuration as any).useAI,
+        templateStyle: (cvData.configuration as any).templateStyle
+      });
+
+      try {
+        if ((cvData.configuration as any).useAI) {
+          // AI-optimized generation using modern HTML-to-PDF
+          pdfBuffer = await this.atsPdfService.generateAIOptimized(cvData);
+        } else if ((cvData.configuration as any).templateStyle && 
+                   ['PROFESSIONAL', 'MODERN', 'EXECUTIVE'].includes((cvData.configuration as any).templateStyle)) {
+          // Template-based generation using modern approach
+          pdfBuffer = await this.atsPdfService.generateWithTemplate(
+            cvData, 
+            (cvData.configuration as any).templateStyle as 'PROFESSIONAL' | 'MODERN' | 'EXECUTIVE'
+          );
+        } else {
+          // Standard ATS-compliant CV using modern approach
+          pdfBuffer = await this.atsPdfService.generateSimpleATS(cvData);
+        }
+      } catch (pdfGenerationError) {
+        logger.error('PDF generation failed during download:', {
+          error: pdfGenerationError instanceof Error ? pdfGenerationError.message : 'Unknown error',
+          stack: pdfGenerationError instanceof Error ? pdfGenerationError.stack : undefined,
+          cvId: id,
+          userId
+        });
+        
+        // Throw more specific error
+        throw new Error(`PDF generation failed: ${pdfGenerationError instanceof Error ? pdfGenerationError.message : 'Unknown error'}`);
+      }
 
       // PDF download headers
       res.setHeader('Content-Type', 'application/pdf');
@@ -610,10 +689,16 @@ export class ATSCVController {
         pdfSize: pdfBuffer.length,
       });
     } catch (error) {
-      logger.error('Failed to download ATS CV:', error);
+      logger.error('Failed to download ATS CV:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        cvId: req.params.id,
+        userId: req.user?.userId
+      });
       res.status(500).json(
         createResponse(false, 'ATS CV indirilemedi', {
           error: error instanceof Error ? error.message : 'Unknown error',
+          details: 'PDF generation failed during download'
         })
       );
     }
@@ -676,4 +761,116 @@ export class ATSCVController {
         .json(createResponse(false, 'ATS CV istatistikleri alınamadı'));
     }
   };
+
+  /**
+   * Export ATS CV in multiple formats
+   */
+  async exportMultiFormat(req: Request, res: Response): Promise<void> {
+    try {
+      const { cvData, formats, options } = req.body;
+      
+      if (!cvData || !formats || !Array.isArray(formats)) {
+        res.status(400).json(createResponse(false, 'CV verisi ve formatlar gerekli'));
+        return;
+      }
+
+      const results = await this.atsPdfService.exportMultiFormat(cvData, formats, options);
+
+      if (results.length === 0) {
+        res.status(400).json(createResponse(false, 'Hiçbir format başarıyla oluşturulamadı'));
+        return;
+      }
+
+      // Convert buffers to base64 for JSON response
+      const responseData = results.map(result => ({
+        format: result.format,
+        filename: result.filename,
+        data: result.buffer.toString('base64'),
+        size: result.buffer.length
+      }));
+
+      res.json(createResponse(true, 'CV başarıyla export edildi', responseData));
+    } catch (error) {
+      logger.error('Multi-format export failed:', error);
+      res.status(500).json(createResponse(false, 'Export hatası', null, [
+        { message: error instanceof Error ? error.message : 'Bilinmeyen hata' }
+      ]));
+    }
+  }
+
+  /**
+   * Get available CV templates
+   */
+  getAvailableTemplates = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      const templates = this.atsPdfService.getAvailableTemplates();
+      res.json(createResponse(true, 'Template listesi başarıyla alındı', templates));
+    } catch (error) {
+      logger.error('Failed to get templates:', error);
+      res.status(500).json(createResponse(false, 'Template listesi alınamadı', null, [
+        { message: error instanceof Error ? error.message : 'Bilinmeyen hata' }
+      ]));
+    }
+  };
+
+  /**
+   * Validate CV data against ATS requirements
+   */
+  validateATSRequirements = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { cvData } = req.body;
+      
+      if (!cvData) {
+        res.status(400).json(createResponse(false, 'CV verisi gerekli'));
+        return;
+      }
+
+      const validation = this.atsPdfService.validateATSRequirements(cvData);
+      
+      res.json(createResponse(true, 'CV validasyonu tamamlandı', validation));
+    } catch (error) {
+      logger.error('CV validation failed:', error);
+      res.status(500).json(createResponse(false, 'Validasyon hatası', null, [
+        { message: error instanceof Error ? error.message : 'Bilinmeyen hata' }
+      ]));
+    }
+  };
+
+  /**
+   * Generate modern test CV using HTML-to-PDF
+   */
+  generateModernTestCV = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      const pdfBuffer = await this.atsPdfService.generateTestCV();
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="Modern_Test_ATS_CV.pdf"');
+      res.send(pdfBuffer);
+    } catch (error) {
+      logger.error('Modern test CV generation failed:', error);
+      res.status(500).json(createResponse(false, 'Modern test CV oluşturulamadı', null, [
+        { message: error instanceof Error ? error.message : 'Bilinmeyen hata' }
+      ]));
+    }
+  };
+
+  /**
+   * ATS PDF Service ile PDF oluştur (helper method)
+   */
+  private async generateWithATSService(cvData: ATSCVData): Promise<Buffer> {
+    if (cvData.configuration.useAI) {
+      // AI-optimized generation using modern HTML-to-PDF
+      return await this.atsPdfService.generateAIOptimized(cvData);
+    } else if (cvData.configuration.templateStyle && 
+               ['PROFESSIONAL', 'MODERN', 'EXECUTIVE'].includes(cvData.configuration.templateStyle)) {
+      // Template-based generation using modern approach
+      return await this.atsPdfService.generateWithTemplate(
+        cvData, 
+        cvData.configuration.templateStyle as 'PROFESSIONAL' | 'MODERN' | 'EXECUTIVE'
+      );
+    } else {
+      // Standard ATS-compliant CV using modern approach
+      return await this.atsPdfService.generateSimpleATS(cvData);
+    }
+  }
 }
