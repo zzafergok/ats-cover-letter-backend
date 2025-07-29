@@ -39,6 +39,7 @@ model User {
   coverLetterBasics    CoverLetterBasic[]
   coverLetterDetailed  CoverLetterDetailed[]
   atsCvs               AtsCv[]
+  generatedCvs         GeneratedCv[]
   educations           Education[]
   experiences          Experience[]
   courses              Course[]
@@ -326,6 +327,21 @@ model AtsCv {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("ats_cvs")
+}
+
+model GeneratedCv {
+  id               String           @id @default(cuid())
+  userId           String           @map("user_id")
+  templateType     String           @map("template_type")
+  templateData     String           @map("template_data") // JSON string of template data
+  pdfData          Bytes?           @map("pdf_data")
+  generationStatus ProcessingStatus @default(PENDING) @map("generation_status")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("generated_cvs")
 }
 
 enum TemplateCategory {

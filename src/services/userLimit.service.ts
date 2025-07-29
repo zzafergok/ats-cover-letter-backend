@@ -2,6 +2,7 @@ export interface UserLimits {
   cvUploads: number;
   savedCvs: number;
   coverLetters: number;
+  generatedCvs: number;
 }
 
 export class UserLimitService {
@@ -19,12 +20,14 @@ export class UserLimitService {
     cvUploads: 3,
     savedCvs: 3,
     coverLetters: 3,
+    generatedCvs: 5,
   };
 
   private static readonly ADMIN_LIMITS: UserLimits = {
     cvUploads: Number.MAX_SAFE_INTEGER,
     savedCvs: Number.MAX_SAFE_INTEGER,
     coverLetters: Number.MAX_SAFE_INTEGER,
+    generatedCvs: Number.MAX_SAFE_INTEGER,
   };
 
   /**
@@ -66,6 +69,14 @@ export class UserLimitService {
   static canCreateCoverLetter(userRole: string, currentCount: number): boolean {
     const limits = this.getLimitsForUser(userRole);
     return currentCount < limits.coverLetters;
+  }
+
+  /**
+   * Check if user can generate more CVs
+   */
+  static canCreateCV(userRole: string, currentCount: number): boolean {
+    const limits = this.getLimitsForUser(userRole);
+    return currentCount < limits.generatedCvs;
   }
 
   /**
