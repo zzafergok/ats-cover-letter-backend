@@ -4,8 +4,6 @@ import * as path from 'path';
 
 import logger from '../config/logger';
 
-import { createErrorMessage, SERVICE_MESSAGES } from '../constants/messages';
-
 export interface HighSchool {
   id: string;
   name: string;
@@ -41,7 +39,12 @@ export class HighSchoolService {
       this.highSchools = data
         .map((row: any, index: number) => ({
           id: (index + 1).toString(),
-          name: row['Kurum Adı '] || row['Okul Adı'] || row['name'] || row['Name'] || '',
+          name:
+            row['Kurum Adı '] ||
+            row['Okul Adı'] ||
+            row['name'] ||
+            row['Name'] ||
+            '',
           city: row['İl'] || row['city'] || row['City'] || '',
           district: row['İlçe'] || row['district'] || row['District'] || '',
           type: row['Tür'] || row['type'] || row['Type'] || '',

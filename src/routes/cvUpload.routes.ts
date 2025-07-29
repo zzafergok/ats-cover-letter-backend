@@ -29,6 +29,10 @@ router.get(
   cvUploadController.getCvUploadStatus
 );
 
-router.delete('/uploads/:id', authenticateToken, cvUploadController.deleteCvUpload);
+router.delete(
+  '/uploads/:id',
+  authenticateToken,
+  cvUploadController.deleteCvUpload
+);
 
 export default router;

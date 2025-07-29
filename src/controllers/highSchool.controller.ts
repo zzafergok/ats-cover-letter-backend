@@ -4,10 +4,13 @@ import { sendSuccess, sendError } from '../utils/response';
 import logger from '../config/logger';
 
 export class HighSchoolController {
-  public static async getAllHighSchools(req: Request, res: Response): Promise<void> {
+  public static async getAllHighSchools(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     try {
       const highSchools = HighSchoolService.getAllHighSchools();
-      
+
       sendSuccess(res, highSchools, 'Liseler başarıyla getirildi');
     } catch (error) {
       logger.error('Error fetching all high schools:', error);
@@ -15,17 +18,20 @@ export class HighSchoolController {
     }
   }
 
-  public static async searchHighSchools(req: Request, res: Response): Promise<void> {
+  public static async searchHighSchools(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     try {
       const { q } = req.query;
-      
+
       if (!q || typeof q !== 'string') {
         sendError(res, 'Arama terimi gereklidir', 400);
         return;
       }
 
       const highSchools = HighSchoolService.searchHighSchools(q);
-      
+
       sendSuccess(res, highSchools, 'Arama başarıyla tamamlandı');
     } catch (error) {
       logger.error('Error searching high schools:', error);
@@ -33,35 +39,45 @@ export class HighSchoolController {
     }
   }
 
-  public static async getHighSchoolsByCity(req: Request, res: Response): Promise<void> {
+  public static async getHighSchoolsByCity(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     try {
       const { city } = req.params;
-      
+
       if (!city) {
         sendError(res, 'Şehir adı gereklidir', 400);
         return;
       }
 
       const highSchools = HighSchoolService.getHighSchoolsByCity(city);
-      
-      sendSuccess(res, highSchools, `${city} şehrindeki liseler başarıyla getirildi`);
+
+      sendSuccess(
+        res,
+        highSchools,
+        `${city} şehrindeki liseler başarıyla getirildi`
+      );
     } catch (error) {
       logger.error('Error fetching high schools by city:', error);
       sendError(res, 'Şehir bazlı liseler getirilirken hata oluştu', 500);
     }
   }
 
-  public static async getHighSchoolById(req: Request, res: Response): Promise<void> {
+  public static async getHighSchoolById(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     try {
       const { id } = req.params;
-      
+
       if (!id) {
-        sendError(res, 'Lise ID\'si gereklidir', 400);
+        sendError(res, "Lise ID'si gereklidir", 400);
         return;
       }
 
       const highSchool = HighSchoolService.getHighSchoolById(id);
-      
+
       if (!highSchool) {
         sendError(res, 'Lise bulunamadı', 404);
         return;
@@ -88,7 +104,7 @@ export class HighSchoolController {
     try {
       HighSchoolService.reloadData();
       const stats = HighSchoolService.getStats();
-      
+
       sendSuccess(res, stats, 'Veriler başarıyla yeniden yüklendi');
     } catch (error) {
       logger.error('Error reloading high school data:', error);

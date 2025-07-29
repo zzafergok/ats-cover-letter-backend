@@ -22,16 +22,26 @@ export class UserProfileController {
   private userProfileService = UserProfileService.getInstance();
 
   // Profile Methods
-  public getUserProfile = async (req: Request, res: Response): Promise<void> => {
+  public getUserProfile = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
-      const userProfile = await this.userProfileService.getUserProfile(req.user!.userId);
+      const userProfile = await this.userProfileService.getUserProfile(
+        req.user!.userId
+      );
 
       res.json({
         success: true,
         data: userProfile,
       });
     } catch (error) {
-      logger.error(createErrorMessage(SERVICE_MESSAGES.USER.PROFILE_GET_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.USER.PROFILE_GET_ERROR,
+          error as Error
+        )
+      );
       res.status(500).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.USER.PROFILE_GET_ERROR),
@@ -39,7 +49,10 @@ export class UserProfileController {
     }
   };
 
-  public updateUserProfile = async (req: Request, res: Response): Promise<void> => {
+  public updateUserProfile = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const validatedData = updateUserDetailedProfileSchema.parse(req.body);
 
@@ -66,7 +79,12 @@ export class UserProfileController {
         return;
       }
 
-      logger.error(createErrorMessage(SERVICE_MESSAGES.USER.PROFILE_UPDATE_ERROR, error as Error));
+      logger.error(
+        createErrorMessage(
+          SERVICE_MESSAGES.USER.PROFILE_UPDATE_ERROR,
+          error as Error
+        )
+      );
       res.status(500).json({
         success: false,
         message: formatMessage(SERVICE_MESSAGES.USER.PROFILE_UPDATE_ERROR),
@@ -110,7 +128,10 @@ export class UserProfileController {
     }
   };
 
-  public updateEducation = async (req: Request, res: Response): Promise<void> => {
+  public updateEducation = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
       const validatedData = educationSchema.partial().parse(req.body);
@@ -146,7 +167,10 @@ export class UserProfileController {
     }
   };
 
-  public deleteEducation = async (req: Request, res: Response): Promise<void> => {
+  public deleteEducation = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
 
@@ -201,7 +225,10 @@ export class UserProfileController {
     }
   };
 
-  public updateExperience = async (req: Request, res: Response): Promise<void> => {
+  public updateExperience = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
       const validatedData = experienceSchema.partial().parse(req.body);
@@ -237,7 +264,10 @@ export class UserProfileController {
     }
   };
 
-  public deleteExperience = async (req: Request, res: Response): Promise<void> => {
+  public deleteExperience = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
 
@@ -348,7 +378,10 @@ export class UserProfileController {
   };
 
   // Certificate Methods
-  public addCertificate = async (req: Request, res: Response): Promise<void> => {
+  public addCertificate = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const validatedData = certificateSchema.parse(req.body);
 
@@ -383,7 +416,10 @@ export class UserProfileController {
     }
   };
 
-  public updateCertificate = async (req: Request, res: Response): Promise<void> => {
+  public updateCertificate = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
       const validatedData = certificateSchema.partial().parse(req.body);
@@ -419,7 +455,10 @@ export class UserProfileController {
     }
   };
 
-  public deleteCertificate = async (req: Request, res: Response): Promise<void> => {
+  public deleteCertificate = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
 

@@ -34,7 +34,9 @@ export class CvAnalysisService {
       const skills = this.extractSkillsList(cvData.skills || []);
       const education = this.extractEducationText(cvData.education || []);
       const summary = cvData.summary || '';
-      const keyAchievements = this.extractKeyAchievements(cvData.experience || []);
+      const keyAchievements = this.extractKeyAchievements(
+        cvData.experience || []
+      );
 
       const profile: ProfessionalProfile = {
         experience,
@@ -55,7 +57,7 @@ export class CvAnalysisService {
       logger.error('Failed to extract professional profile', {
         error: error.message,
       });
-      
+
       // Hata durumunda boş profil döndür
       return {
         experience: '',
@@ -78,7 +80,8 @@ export class CvAnalysisService {
     return experienceArray
       .map((exp) => {
         const title = exp.title || exp.position || 'Pozisyon belirtilmemiş';
-        const company = exp.company || exp.companyName || 'Şirket belirtilmemiş';
+        const company =
+          exp.company || exp.companyName || 'Şirket belirtilmemiş';
         const duration = exp.duration || exp.period || 'Süre belirtilmemiş';
         const description = exp.description || exp.responsibilities || '';
 
@@ -123,7 +126,8 @@ export class CvAnalysisService {
     return educationArray
       .map((edu) => {
         const degree = edu.degree || 'Derece belirtilmemiş';
-        const institution = edu.institution || edu.school || 'Kurum belirtilmemiş';
+        const institution =
+          edu.institution || edu.school || 'Kurum belirtilmemiş';
         const year = edu.year || edu.graduationYear || 'Yıl belirtilmemiş';
 
         return `${degree} - ${institution} (${year})`;
@@ -147,15 +151,30 @@ export class CvAnalysisService {
       } else if (exp.description) {
         // Açıklamadan başarı ifadelerini çıkarmaya çalış
         const achievementKeywords = [
-          'başardı', 'gerçekleştirdi', 'geliştirdi', 'artırdı', 'azalttı',
-          'achieved', 'implemented', 'developed', 'increased', 'decreased',
-          'improved', 'optimized', 'led', 'managed'
+          'başardı',
+          'gerçekleştirdi',
+          'geliştirdi',
+          'artırdı',
+          'azalttı',
+          'achieved',
+          'implemented',
+          'developed',
+          'increased',
+          'decreased',
+          'improved',
+          'optimized',
+          'led',
+          'managed',
         ];
 
         const sentences = exp.description.split(/[.!?]+/);
         sentences.forEach((sentence: string) => {
           const lowerSentence = sentence.toLowerCase();
-          if (achievementKeywords.some(keyword => lowerSentence.includes(keyword))) {
+          if (
+            achievementKeywords.some((keyword) =>
+              lowerSentence.includes(keyword)
+            )
+          ) {
             achievements.push(sentence.trim());
           }
         });
@@ -203,7 +222,9 @@ export class CvAnalysisService {
         strengths.push('Profesyonel özet mevcut');
       } else {
         weaknesses.push('Profesyonel özet eksik veya çok kısa');
-        recommendations.push('En az 50 karakter uzunluğunda profesyonel özet ekleyin');
+        recommendations.push(
+          'En az 50 karakter uzunluğunda profesyonel özet ekleyin'
+        );
       }
 
       // Deneyim bölümü kontrolü (30 puan)
@@ -211,8 +232,8 @@ export class CvAnalysisService {
         score += 15;
         strengths.push('İş deneyimi bilgileri mevcut');
 
-        const hasDetailedExperience = cvData.experience.some((exp: any) => 
-          exp.description && exp.description.length > 100
+        const hasDetailedExperience = cvData.experience.some(
+          (exp: any) => exp.description && exp.description.length > 100
         );
         if (hasDetailedExperience) {
           score += 15;
@@ -252,7 +273,7 @@ export class CvAnalysisService {
       };
     } catch (error: any) {
       logger.error('CV quality analysis failed', { error: error.message });
-      
+
       return {
         score: 0,
         recommendations: ['CV analizi yapılamadı'],
@@ -265,7 +286,10 @@ export class CvAnalysisService {
   /**
    * Pozisyona uygunluk analizi
    */
-  async analyzeJobFit(cvData: any, jobDescription: string): Promise<{
+  async analyzeJobFit(
+    cvData: any,
+    jobDescription: string
+  ): Promise<{
     matchScore: number;
     matchingSkills: string[];
     missingSkills: string[];
@@ -279,26 +303,35 @@ export class CvAnalysisService {
       const matchingSkills: string[] = [];
       const missingSkills: string[] = [];
 
-      jobKeywords.forEach(keyword => {
+      jobKeywords.forEach((keyword) => {
         const keywordLower = keyword.toLowerCase();
-        if (cvSkills.some(skill => skill.toLowerCase().includes(keywordLower)) ||
-            cvText.includes(keywordLower)) {
+        if (
+          cvSkills.some((skill) =>
+            skill.toLowerCase().includes(keywordLower)
+          ) ||
+          cvText.includes(keywordLower)
+        ) {
           matchingSkills.push(keyword);
         } else {
           missingSkills.push(keyword);
         }
       });
 
-      const matchScore = jobKeywords.length > 0 
-        ? Math.round((matchingSkills.length / jobKeywords.length) * 100)
-        : 0;
+      const matchScore =
+        jobKeywords.length > 0
+          ? Math.round((matchingSkills.length / jobKeywords.length) * 100)
+          : 0;
 
       const recommendations: string[] = [];
       if (missingSkills.length > 0) {
-        recommendations.push(`Bu becerileri CV'nize ekleyebilirsiniz: ${missingSkills.slice(0, 5).join(', ')}`);
+        recommendations.push(
+          `Bu becerileri CV'nize ekleyebilirsiniz: ${missingSkills.slice(0, 5).join(', ')}`
+        );
       }
       if (matchScore < 60) {
-        recommendations.push('İş ilanındaki anahtar kelimeleri CV\'nizde daha fazla vurgulayın');
+        recommendations.push(
+          "İş ilanındaki anahtar kelimeleri CV'nizde daha fazla vurgulayın"
+        );
       }
 
       return {
@@ -309,7 +342,7 @@ export class CvAnalysisService {
       };
     } catch (error: any) {
       logger.error('Job fit analysis failed', { error: error.message });
-      
+
       return {
         matchScore: 0,
         matchingSkills: [],
@@ -324,20 +357,51 @@ export class CvAnalysisService {
    */
   private extractJobKeywords(jobDescription: string): string[] {
     const commonWords = [
-      'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
-      've', 'ile', 'için', 'olan', 'bu', 'şu', 'o', 'bir', 'de', 'da', 'is', 'are',
-      'will', 'be', 'have', 'has', 'can', 'should', 'must', 'may', 'would', 'could'
+      'the',
+      'and',
+      'or',
+      'but',
+      'in',
+      'on',
+      'at',
+      'to',
+      'for',
+      'of',
+      'with',
+      'by',
+      've',
+      'ile',
+      'için',
+      'olan',
+      'bu',
+      'şu',
+      'o',
+      'bir',
+      'de',
+      'da',
+      'is',
+      'are',
+      'will',
+      'be',
+      'have',
+      'has',
+      'can',
+      'should',
+      'must',
+      'may',
+      'would',
+      'could',
     ];
 
     const words = jobDescription
       .toLowerCase()
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/)
-      .filter(word => word.length > 2 && !commonWords.includes(word));
+      .filter((word) => word.length > 2 && !commonWords.includes(word));
 
     // Kelime frekansı hesapla
     const wordCount: { [key: string]: number } = {};
-    words.forEach(word => {
+    words.forEach((word) => {
       wordCount[word] = (wordCount[word] || 0) + 1;
     });
 

@@ -17,14 +17,20 @@ export class UniversityService {
   private static async fetchUniversitiesFromWikipedia(): Promise<University[]> {
     try {
       const universities: University[] = [];
-      
+
       // Complete list of Turkish universities from Wikipedia
       const stateUniversities = [
-        { name: 'Adana Alparslan Türkeş Bilim ve Teknoloji Üniversitesi', city: 'Adana' },
+        {
+          name: 'Adana Alparslan Türkeş Bilim ve Teknoloji Üniversitesi',
+          city: 'Adana',
+        },
         { name: 'Çukurova Üniversitesi', city: 'Adana' },
         { name: 'Adıyaman Üniversitesi', city: 'Adıyaman' },
         { name: 'Afyon Kocatepe Üniversitesi', city: 'Afyonkarahisar' },
-        { name: 'Afyonkarahisar Sağlık Bilimleri Üniversitesi', city: 'Afyonkarahisar' },
+        {
+          name: 'Afyonkarahisar Sağlık Bilimleri Üniversitesi',
+          city: 'Afyonkarahisar',
+        },
         { name: 'Ağrı İbrahim Çeçen Üniversitesi', city: 'Ağrı' },
         { name: 'Aksaray Üniversitesi', city: 'Aksaray' },
         { name: 'Amasya Üniversitesi', city: 'Amasya' },
@@ -105,7 +111,10 @@ export class UniversityService {
         { name: 'İnönü Üniversitesi', city: 'Malatya' },
         { name: 'Malatya Turgut Özal Üniversitesi', city: 'Malatya' },
         { name: 'Manisa Celâl Bayar Üniversitesi', city: 'Manisa' },
-        { name: 'Kahramanmaraş Sütçü İmam Üniversitesi', city: 'Kahramanmaraş' },
+        {
+          name: 'Kahramanmaraş Sütçü İmam Üniversitesi',
+          city: 'Kahramanmaraş',
+        },
         { name: 'İstanbul Medeniyet Üniversitesi', city: 'İstanbul' },
         { name: 'Muğla Sıtkı Koçman Üniversitesi', city: 'Muğla' },
         { name: 'Muş Alparslan Üniversitesi', city: 'Muş' },
@@ -131,7 +140,7 @@ export class UniversityService {
         { name: 'Uşak Üniversitesi', city: 'Uşak' },
         { name: 'Van Yüzüncü Yıl Üniversitesi', city: 'Van' },
         { name: 'Yozgat Bozok Üniversitesi', city: 'Yozgat' },
-        { name: 'Zonguldak Bülent Ecevit Üniversitesi', city: 'Zonguldak' }
+        { name: 'Zonguldak Bülent Ecevit Üniversitesi', city: 'Zonguldak' },
       ];
 
       const foundationUniversities = [
@@ -182,32 +191,34 @@ export class UniversityService {
         { name: 'Yaşar Üniversitesi', city: 'İzmir' },
         { name: 'İzmir Ekonomi Üniversitesi', city: 'İzmir' },
         { name: 'İzmir Tınaztepe Üniversitesi', city: 'İzmir' },
-        { name: 'Atatürk Kültür, Dil ve Tarih Yüksek Kurumu', city: 'Ankara' }
+        { name: 'Atatürk Kültür, Dil ve Tarih Yüksek Kurumu', city: 'Ankara' },
       ];
 
       let idCounter = 1;
 
       // Add state universities
-      stateUniversities.forEach(uni => {
+      stateUniversities.forEach((uni) => {
         universities.push({
           id: (idCounter++).toString(),
           name: uni.name,
           city: uni.city,
-          type: 'STATE'
+          type: 'STATE',
         });
       });
 
       // Add foundation universities
-      foundationUniversities.forEach(uni => {
+      foundationUniversities.forEach((uni) => {
         universities.push({
           id: (idCounter++).toString(),
           name: uni.name,
           city: uni.city,
-          type: 'FOUNDATION'
+          type: 'FOUNDATION',
         });
       });
 
-      logger.info(`Loaded ${universities.length} universities (hardcoded data)`);
+      logger.info(
+        `Loaded ${universities.length} universities (hardcoded data)`
+      );
       return universities;
     } catch (error) {
       logger.error('Error loading universities:', error);
@@ -215,12 +226,11 @@ export class UniversityService {
     }
   }
 
-
   private static shouldRefreshCache(): boolean {
     if (!this.lastUpdated) {
       return true;
     }
-    
+
     const now = new Date();
     const timeDiff = now.getTime() - this.lastUpdated.getTime();
     return timeDiff > this.CACHE_DURATION;
@@ -247,40 +257,47 @@ export class UniversityService {
 
   public static async searchUniversities(query: string): Promise<University[]> {
     const universities = await this.getAllUniversities();
-    
+
     if (!query || query.trim().length < 2) {
       return universities;
     }
 
     const searchTerm = query.toLowerCase().trim();
-    const filtered = universities.filter(university =>
-      university.name.toLowerCase().includes(searchTerm) ||
-      university.city?.toLowerCase().includes(searchTerm)
+    const filtered = universities.filter(
+      (university) =>
+        university.name.toLowerCase().includes(searchTerm) ||
+        university.city?.toLowerCase().includes(searchTerm)
     );
 
     return filtered;
   }
 
-  public static async getUniversitiesByCity(city: string): Promise<University[]> {
+  public static async getUniversitiesByCity(
+    city: string
+  ): Promise<University[]> {
     const universities = await this.getAllUniversities();
-    
+
     if (!city) {
       return [];
     }
 
-    return universities.filter(university =>
-      university.city?.toLowerCase() === city.toLowerCase()
+    return universities.filter(
+      (university) => university.city?.toLowerCase() === city.toLowerCase()
     );
   }
 
-  public static async getUniversitiesByType(type: 'STATE' | 'PRIVATE' | 'FOUNDATION'): Promise<University[]> {
+  public static async getUniversitiesByType(
+    type: 'STATE' | 'PRIVATE' | 'FOUNDATION'
+  ): Promise<University[]> {
     const universities = await this.getAllUniversities();
-    return universities.filter(university => university.type === type);
+    return universities.filter((university) => university.type === type);
   }
 
-  public static async getUniversityById(id: string): Promise<University | null> {
+  public static async getUniversityById(
+    id: string
+  ): Promise<University | null> {
     const universities = await this.getAllUniversities();
-    return universities.find(university => university.id === id) || null;
+    return universities.find((university) => university.id === id) || null;
   }
 
   public static async forceRefresh(): Promise<void> {
@@ -299,15 +316,19 @@ export class UniversityService {
     lastUpdated: Date | null;
   }> {
     const universities = await this.getAllUniversities();
-    
-    const stateCount = universities.filter(u => u.type === 'STATE').length;
-    const foundationCount = universities.filter(u => u.type === 'FOUNDATION').length;
-    const privateCount = universities.filter(u => u.type === 'PRIVATE').length;
-    
+
+    const stateCount = universities.filter((u) => u.type === 'STATE').length;
+    const foundationCount = universities.filter(
+      (u) => u.type === 'FOUNDATION'
+    ).length;
+    const privateCount = universities.filter(
+      (u) => u.type === 'PRIVATE'
+    ).length;
+
     const uniqueCities = new Set(
       universities
-        .map(university => university.city)
-        .filter(city => city && city.trim() !== '')
+        .map((university) => university.city)
+        .filter((city) => city && city.trim() !== '')
     );
 
     return {

@@ -11,8 +11,14 @@ router.get('/provinces/name/:name', LocationController.getProvinceByName);
 
 // District endpoints
 router.get('/districts/search', LocationController.searchDistricts);
-router.get('/districts/province-code/:code', LocationController.getDistrictsByProvinceCode);
-router.get('/districts/province-name/:name', LocationController.getDistrictsByProvinceName);
+router.get(
+  '/districts/province-code/:code',
+  LocationController.getDistrictsByProvinceCode
+);
+router.get(
+  '/districts/province-name/:name',
+  LocationController.getDistrictsByProvinceName
+);
 
 // Stats endpoint
 router.get('/stats', LocationController.getStats);

@@ -17,7 +17,7 @@ export class UserLimitService {
   }
   private static readonly USER_LIMITS: UserLimits = {
     cvUploads: 3,
-    savedCvs: 3, 
+    savedCvs: 3,
     coverLetters: 3,
   };
 
@@ -37,7 +37,9 @@ export class UserLimitService {
   /**
    * Check CV upload limit
    */
-  async checkCvUploadLimit(userId: string): Promise<{ allowed: boolean; message: string }> {
+  async checkCvUploadLimit(
+    userId: string
+  ): Promise<{ allowed: boolean; message: string }> {
     // For now, allow all uploads (you can implement actual limit checking here)
     return { allowed: true, message: 'Upload allowed' };
   }
@@ -69,10 +71,14 @@ export class UserLimitService {
   /**
    * Get remaining quota for user
    */
-  static getRemainingQuota(userRole: string, currentCount: number, type: keyof UserLimits): number {
+  static getRemainingQuota(
+    userRole: string,
+    currentCount: number,
+    type: keyof UserLimits
+  ): number {
     const limits = this.getLimitsForUser(userRole);
     const limit = limits[type];
-    
+
     if (limit === Number.MAX_SAFE_INTEGER) return Number.MAX_SAFE_INTEGER;
     return Math.max(0, limit - currentCount);
   }
@@ -80,7 +86,11 @@ export class UserLimitService {
   /**
    * Format limit info for response
    */
-  static formatLimitInfo(userRole: string, currentCount: number, type: keyof UserLimits) {
+  static formatLimitInfo(
+    userRole: string,
+    currentCount: number,
+    type: keyof UserLimits
+  ) {
     const limits = this.getLimitsForUser(userRole);
     const limit = limits[type];
     const remaining = this.getRemainingQuota(userRole, currentCount, type);
@@ -88,7 +98,8 @@ export class UserLimitService {
     return {
       current: currentCount,
       maximum: limit === Number.MAX_SAFE_INTEGER ? 'unlimited' : limit,
-      remaining: remaining === Number.MAX_SAFE_INTEGER ? 'unlimited' : remaining,
+      remaining:
+        remaining === Number.MAX_SAFE_INTEGER ? 'unlimited' : remaining,
       isAdmin: userRole === 'ADMIN',
     };
   }

@@ -69,8 +69,8 @@ async function extractDocContent(fileBuffer: Buffer): Promise<string> {
 export function convertToMarkdown(text: string): string {
   return text
     .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
     .join('\n\n');
 }
 
@@ -98,8 +98,8 @@ export function extractSections(text: string): {
   languages: any[];
   certifications: string[];
 } {
-  const lines = text.split('\n').map(line => line.trim());
-  
+  const lines = text.split('\n').map((line) => line.trim());
+
   const sections = {
     summary: '',
     experience: [] as any[],
@@ -117,25 +117,42 @@ export function extractSections(text: string): {
     const lowerLine = line.toLowerCase();
 
     // Bölüm başlıklarını tespit et
-    if (lowerLine.includes('özet') || lowerLine.includes('summary') || lowerLine.includes('profil')) {
+    if (
+      lowerLine.includes('özet') ||
+      lowerLine.includes('summary') ||
+      lowerLine.includes('profil')
+    ) {
       if (currentSection) {
         processSectionContent(sections, currentSection, currentContent);
       }
       currentSection = 'summary';
       currentContent = [];
-    } else if (lowerLine.includes('deneyim') || lowerLine.includes('experience') || lowerLine.includes('iş') || lowerLine.includes('work')) {
+    } else if (
+      lowerLine.includes('deneyim') ||
+      lowerLine.includes('experience') ||
+      lowerLine.includes('iş') ||
+      lowerLine.includes('work')
+    ) {
       if (currentSection) {
         processSectionContent(sections, currentSection, currentContent);
       }
       currentSection = 'experience';
       currentContent = [];
-    } else if (lowerLine.includes('eğitim') || lowerLine.includes('education') || lowerLine.includes('öğrenim')) {
+    } else if (
+      lowerLine.includes('eğitim') ||
+      lowerLine.includes('education') ||
+      lowerLine.includes('öğrenim')
+    ) {
       if (currentSection) {
         processSectionContent(sections, currentSection, currentContent);
       }
       currentSection = 'education';
       currentContent = [];
-    } else if (lowerLine.includes('beceri') || lowerLine.includes('skill') || lowerLine.includes('yetenek')) {
+    } else if (
+      lowerLine.includes('beceri') ||
+      lowerLine.includes('skill') ||
+      lowerLine.includes('yetenek')
+    ) {
       if (currentSection) {
         processSectionContent(sections, currentSection, currentContent);
       }
@@ -147,7 +164,10 @@ export function extractSections(text: string): {
       }
       currentSection = 'languages';
       currentContent = [];
-    } else if (lowerLine.includes('sertifika') || lowerLine.includes('certificate')) {
+    } else if (
+      lowerLine.includes('sertifika') ||
+      lowerLine.includes('certificate')
+    ) {
       if (currentSection) {
         processSectionContent(sections, currentSection, currentContent);
       }
@@ -169,7 +189,11 @@ export function extractSections(text: string): {
 /**
  * Bölüm içeriğini işle
  */
-function processSectionContent(sections: any, sectionType: string, content: string[]): void {
+function processSectionContent(
+  sections: any,
+  sectionType: string,
+  content: string[]
+): void {
   const contentText = content.join(' ').trim();
 
   switch (sectionType) {
@@ -192,10 +216,10 @@ function processSectionContent(sections: any, sectionType: string, content: stri
       });
       break;
     case 'skills':
-      sections.skills = content.filter(skill => skill.trim().length > 0);
+      sections.skills = content.filter((skill) => skill.trim().length > 0);
       break;
     case 'languages':
-      content.forEach(lang => {
+      content.forEach((lang) => {
         const parts = lang.split(/[(),]/);
         sections.languages.push({
           language: parts[0]?.trim() || lang,
@@ -204,7 +228,9 @@ function processSectionContent(sections: any, sectionType: string, content: stri
       });
       break;
     case 'certifications':
-      sections.certifications = content.filter(cert => cert.trim().length > 0);
+      sections.certifications = content.filter(
+        (cert) => cert.trim().length > 0
+      );
       break;
   }
 }
@@ -214,19 +240,40 @@ function processSectionContent(sections: any, sectionType: string, content: stri
  */
 export function extractKeywords(text: string): string[] {
   const commonWords = [
-    'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
-    've', 'ile', 'için', 'olan', 'olan', 'bu', 'şu', 'o', 'bir', 'de', 'da',
+    'the',
+    'and',
+    'or',
+    'but',
+    'in',
+    'on',
+    'at',
+    'to',
+    'for',
+    'of',
+    'with',
+    'by',
+    've',
+    'ile',
+    'için',
+    'olan',
+    'olan',
+    'bu',
+    'şu',
+    'o',
+    'bir',
+    'de',
+    'da',
   ];
 
   const words = text
     .toLowerCase()
     .replace(/[^\w\s]/g, ' ')
     .split(/\s+/)
-    .filter(word => word.length > 2 && !commonWords.includes(word));
+    .filter((word) => word.length > 2 && !commonWords.includes(word));
 
   // Kelime frekansı hesapla
   const wordCount: { [key: string]: number } = {};
-  words.forEach(word => {
+  words.forEach((word) => {
     wordCount[word] = (wordCount[word] || 0) + 1;
   });
 
@@ -257,14 +304,16 @@ export function extractContactInformation(text: string): {
   }
 
   // Telefon regex
-  const phoneRegex = /(?:\+90|0)?[\s\-.]?5\d{2}[\s\-.]?\d{3}[\s\-.]?\d{2}[\s\-.]?\d{2}/g;
+  const phoneRegex =
+    /(?:\+90|0)?[\s\-.]?5\d{2}[\s\-.]?\d{3}[\s\-.]?\d{2}[\s\-.]?\d{2}/g;
   const phoneMatch = text.match(phoneRegex);
   if (phoneMatch) {
     contactInfo.phone = phoneMatch[0];
   }
 
   // LinkedIn regex
-  const linkedinRegex = /(?:linkedin\.com\/in\/|linkedin\.com\/profile\/view\?id=)([A-Za-z0-9\-._]+)/g;
+  const linkedinRegex =
+    /(?:linkedin\.com\/in\/|linkedin\.com\/profile\/view\?id=)([A-Za-z0-9\-._]+)/g;
   const linkedinMatch = text.match(linkedinRegex);
   if (linkedinMatch) {
     contactInfo.linkedin = linkedinMatch[0];
@@ -284,7 +333,7 @@ export function extractContactInformation(text: string): {
     if (trimmedLine.length > 5 && trimmedLine.length < 50) {
       const words = trimmedLine.split(/\s+/);
       if (words.length >= 2 && words.length <= 4) {
-        const isLikelyName = words.every(word => 
+        const isLikelyName = words.every((word) =>
           /^[A-ZÇĞİÖŞÜ][a-zçğıöşü]*$/.test(word)
         );
         if (isLikelyName) {
@@ -307,21 +356,33 @@ export function generateDocumentMetadata(text: string): {
   estimatedReadingTime: number;
   sections: string[];
 } {
-  const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+  const wordCount = text.split(/\s+/).filter((word) => word.length > 0).length;
   const characterCount = text.length;
   const estimatedReadingTime = Math.ceil(wordCount / 200); // 200 kelime/dakika
 
   const sections = [];
-  if (text.toLowerCase().includes('özet') || text.toLowerCase().includes('summary')) {
+  if (
+    text.toLowerCase().includes('özet') ||
+    text.toLowerCase().includes('summary')
+  ) {
     sections.push('Summary');
   }
-  if (text.toLowerCase().includes('deneyim') || text.toLowerCase().includes('experience')) {
+  if (
+    text.toLowerCase().includes('deneyim') ||
+    text.toLowerCase().includes('experience')
+  ) {
     sections.push('Experience');
   }
-  if (text.toLowerCase().includes('eğitim') || text.toLowerCase().includes('education')) {
+  if (
+    text.toLowerCase().includes('eğitim') ||
+    text.toLowerCase().includes('education')
+  ) {
     sections.push('Education');
   }
-  if (text.toLowerCase().includes('beceri') || text.toLowerCase().includes('skill')) {
+  if (
+    text.toLowerCase().includes('beceri') ||
+    text.toLowerCase().includes('skill')
+  ) {
     sections.push('Skills');
   }
 

@@ -4,10 +4,13 @@ import { sendSuccess, sendError } from '../utils/response';
 import logger from '../config/logger';
 
 export class UniversityController {
-  public static async getAllUniversities(req: Request, res: Response): Promise<void> {
+  public static async getAllUniversities(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     try {
       const universities = await UniversityService.getAllUniversities();
-      
+
       sendSuccess(res, universities, 'Üniversiteler başarıyla getirildi');
     } catch (error) {
       logger.error('Error fetching all universities:', error);
@@ -15,17 +18,20 @@ export class UniversityController {
     }
   }
 
-  public static async searchUniversities(req: Request, res: Response): Promise<void> {
+  public static async searchUniversities(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     try {
       const { q } = req.query;
-      
+
       if (!q || typeof q !== 'string') {
         sendError(res, 'Arama terimi gereklidir', 400);
         return;
       }
 
       const universities = await UniversityService.searchUniversities(q);
-      
+
       sendSuccess(res, universities, 'Arama başarıyla tamamlandı');
     } catch (error) {
       logger.error('Error searching universities:', error);
@@ -33,53 +39,79 @@ export class UniversityController {
     }
   }
 
-  public static async getUniversitiesByCity(req: Request, res: Response): Promise<void> {
+  public static async getUniversitiesByCity(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     try {
       const { city } = req.params;
-      
+
       if (!city) {
         sendError(res, 'Şehir adı gereklidir', 400);
         return;
       }
 
       const universities = await UniversityService.getUniversitiesByCity(city);
-      
-      sendSuccess(res, universities, `${city} şehrindeki üniversiteler başarıyla getirildi`);
+
+      sendSuccess(
+        res,
+        universities,
+        `${city} şehrindeki üniversiteler başarıyla getirildi`
+      );
     } catch (error) {
       logger.error('Error fetching universities by city:', error);
       sendError(res, 'Şehir bazlı üniversiteler getirilirken hata oluştu', 500);
     }
   }
 
-  public static async getUniversitiesByType(req: Request, res: Response): Promise<void> {
+  public static async getUniversitiesByType(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     try {
       const { type } = req.params;
-      
-      if (!type || !['STATE', 'PRIVATE', 'FOUNDATION'].includes(type.toUpperCase())) {
-        sendError(res, 'Geçerli bir üniversite türü gereklidir (STATE, PRIVATE, FOUNDATION)', 400);
+
+      if (
+        !type ||
+        !['STATE', 'PRIVATE', 'FOUNDATION'].includes(type.toUpperCase())
+      ) {
+        sendError(
+          res,
+          'Geçerli bir üniversite türü gereklidir (STATE, PRIVATE, FOUNDATION)',
+          400
+        );
         return;
       }
 
-      const universities = await UniversityService.getUniversitiesByType(type.toUpperCase() as 'STATE' | 'PRIVATE' | 'FOUNDATION');
-      
-      sendSuccess(res, universities, `${type} türündeki üniversiteler başarıyla getirildi`);
+      const universities = await UniversityService.getUniversitiesByType(
+        type.toUpperCase() as 'STATE' | 'PRIVATE' | 'FOUNDATION'
+      );
+
+      sendSuccess(
+        res,
+        universities,
+        `${type} türündeki üniversiteler başarıyla getirildi`
+      );
     } catch (error) {
       logger.error('Error fetching universities by type:', error);
       sendError(res, 'Tür bazlı üniversiteler getirilirken hata oluştu', 500);
     }
   }
 
-  public static async getUniversityById(req: Request, res: Response): Promise<void> {
+  public static async getUniversityById(
+    req: Request,
+    res: Response
+  ): Promise<void> {
     try {
       const { id } = req.params;
-      
+
       if (!id) {
-        sendError(res, 'Üniversite ID\'si gereklidir', 400);
+        sendError(res, "Üniversite ID'si gereklidir", 400);
         return;
       }
 
       const university = await UniversityService.getUniversityById(id);
-      
+
       if (!university) {
         sendError(res, 'Üniversite bulunamadı', 404);
         return;
@@ -106,7 +138,7 @@ export class UniversityController {
     try {
       await UniversityService.forceRefresh();
       const stats = await UniversityService.getStats();
-      
+
       sendSuccess(res, stats, 'Veriler başarıyla yeniden yüklendi');
     } catch (error) {
       logger.error('Error refreshing university data:', error);
