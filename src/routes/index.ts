@@ -9,6 +9,7 @@ import highSchoolRoutes from './highSchool';
 import universityRoutes from './university';
 import locationRoutes from './location';
 import cvUploadRoutes from './cvUpload.routes';
+import templateRoutes from './template.routes';
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/contact', contactRoutes);
 router.use('/high-schools', highSchoolRoutes);
 router.use('/universities', universityRoutes);
 router.use('/locations', locationRoutes);
+router.use('/templates', templateRoutes);
 
 export default router;

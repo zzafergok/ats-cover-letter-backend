@@ -431,7 +431,7 @@ export const updateDetailedCoverLetterSchema = z.object({
 
 // Template schemas
 export const getTemplatesSchema = z.object({
-  industry: z.enum(['TECHNOLOGY', 'FINANCE']).optional(),
+  industry: z.enum(['TECHNOLOGY', 'FINANCE', 'HEALTHCARE', 'EDUCATION', 'MARKETING']).optional(),
   category: z.enum([
     'SOFTWARE_DEVELOPER',
     'FRONTEND_DEVELOPER', 
@@ -442,7 +442,13 @@ export const getTemplatesSchema = z.object({
     'INVESTMENT_BANKER',
     'FINANCIAL_ADVISOR',
     'ACCOUNTING_SPECIALIST',
-    'RISK_ANALYST'
+    'RISK_ANALYST',
+    'NURSE',
+    'DOCTOR',
+    'PHARMACIST',
+    'TEACHER',
+    'ACADEMIC_ADMINISTRATOR',
+    'MARKETING_SPECIALIST'
   ]).optional(),
   language: z.enum(['TURKISH', 'ENGLISH']).optional(),
 });
