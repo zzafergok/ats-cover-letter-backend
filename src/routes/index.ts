@@ -10,11 +10,13 @@ import universityRoutes from './university';
 import locationRoutes from './location';
 import cvUploadRoutes from './cvUpload.routes';
 import templateRoutes from './template.routes';
+import cvGeneratorRoutes from './cvGenerator';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/cv-upload', cvUploadRoutes);
+router.use('/cv-generator', cvGeneratorRoutes);
 router.use('/cover-letter-basic', coverLetterBasicRoutes);
 router.use('/cover-letter-detailed', coverLetterDetailedRoutes);
 router.use('/user-profile', userProfileRoutes);

@@ -352,7 +352,25 @@ export class CVGeneratorService {
   }
 
   private validateBasicHRData(data: any): boolean {
-    return !!(data.personalInfo?.fullName && data.personalInfo?.email);
+    // Check required fields
+    if (!data.personalInfo?.fullName || !data.personalInfo?.email) {
+      return false;
+    }
+
+    // Validate arrays if they exist
+    if (data.experience && !Array.isArray(data.experience)) {
+      return false;
+    }
+
+    if (data.education && !Array.isArray(data.education)) {
+      return false;
+    }
+
+    if (data.references && !Array.isArray(data.references)) {
+      return false;
+    }
+
+    return true;
   }
 
   private validateOfficeManagerData(data: any): boolean {
