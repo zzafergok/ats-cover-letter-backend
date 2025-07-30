@@ -1,8 +1,8 @@
 import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream';
-import path from 'path';
-import fs from 'fs';
 import logger from '../config/logger';
+import { FontLoader } from '../utils/fontLoader';
+import { DateFormatter } from '../utils/dateFormatter';
 
 export interface CVBasicHRData {
   personalInfo: {
@@ -67,7 +67,6 @@ export interface CVBasicHRData {
 
 export class CVTemplateBasicHRService {
   private static instance: CVTemplateBasicHRService;
-  private static cachedFonts: { [key: string]: Buffer } = {};
 
   private constructor() {}
 
@@ -78,83 +77,6 @@ export class CVTemplateBasicHRService {
     return CVTemplateBasicHRService.instance;
   }
 
-  /**
-   * Font yükleme - PDF Service'ten alınan font loading sistemi
-   */
-  private async loadFont(fontName: string): Promise<Buffer> {
-    if (!CVTemplateBasicHRService.cachedFonts[fontName]) {
-      const possiblePaths = [
-        path.join(__dirname, '..', 'assets', 'fonts', `${fontName}.ttf`),
-        path.join(__dirname, '..', '..', 'src', 'assets', 'fonts', `${fontName}.ttf`),
-        path.join(process.cwd(), 'src', 'assets', 'fonts', `${fontName}.ttf`),
-      ];
-
-      let fontPath: string | null = null;
-      for (const possiblePath of possiblePaths) {
-        if (fs.existsSync(possiblePath)) {
-          fontPath = possiblePath;
-          break;
-        }
-      }
-
-      if (!fontPath) {
-        logger.warn(`Font not found in any of these paths: ${possiblePaths.join(', ')}`);
-        throw new Error(`Font file not found: ${fontName}`);
-      }
-
-      CVTemplateBasicHRService.cachedFonts[fontName] = fs.readFileSync(fontPath);
-      logger.info(`Font loaded and cached: ${fontName} from ${fontPath}`);
-    }
-
-    return CVTemplateBasicHRService.cachedFonts[fontName];
-  }
-
-  /**
-   * Türkçe destekleyen PDF document oluştur
-   */
-  private async createPDFDocument(): Promise<InstanceType<typeof PDFDocument>> {
-    const doc = new PDFDocument({
-      size: 'A4',
-      margin: 50,
-      info: {
-        Title: 'ATS Optimized Resume',
-        Author: 'ATS Cover Letter System',
-        Subject: 'Professional Resume with Turkish Support',
-        Creator: 'PDFKit with Turkish Support',
-        Producer: 'PDFKit with Turkish Support',
-      },
-    });
-
-    try {
-      // Noto Sans fonts - Google'ın en zarif ve kapsamlı Türkçe destekli fontu
-      const notoSansRegular = await this.loadFont('NotoSans-Regular');
-      const notoSansBold = await this.loadFont('NotoSans-Bold');
-
-      doc.registerFont('NotoSans', notoSansRegular);
-      doc.registerFont('NotoSans-Bold', notoSansBold);
-
-      // Varsayılan fontu ayarla
-      doc.font('NotoSans');
-
-      logger.info('PDF document created with Noto Sans fonts for Turkish support');
-    } catch (error) {
-      logger.error('Noto Sans font loading failed, using fallback fonts', error);
-      // Fallback olarak Roboto fontlarını dene
-      try {
-        const robotoRegular = await this.loadFont('Roboto-Regular');
-        const robotoBold = await this.loadFont('Roboto-Bold');
-        doc.registerFont('NotoSans', robotoRegular);
-        doc.registerFont('NotoSans-Bold', robotoBold);
-        doc.font('NotoSans');
-        logger.info('Using Roboto fonts as fallback');
-      } catch (fallbackError) {
-        logger.error('All font loading failed, using system fonts', fallbackError);
-        doc.font('Helvetica');
-      }
-    }
-
-    return doc;
-  }
 
   /**
    * Metni güvenli şekilde temizle
@@ -166,31 +88,6 @@ export class CVTemplateBasicHRService {
     return text.trim();
   }
 
-  /**
-   * Tarihi 'Ay Yıl' formatına çevir
-   */
-  private formatDate(dateString: string): string {
-    if (!dateString || dateString.toLowerCase() === 'present' || dateString.toLowerCase() === 'current') {
-      return 'Present';
-    }
-    
-    try {
-      // Farklı tarih formatlarını destekle
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return dateString; // Geçersiz tarih ise orijinalini döndür
-      }
-      
-      const monthNames = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-      ];
-      
-      return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-    } catch (error) {
-      return dateString; // Hata durumunda orijinal string'i döndür
-    }
-  }
 
   /**
    * Dil bazında section başlıklarını getir
@@ -236,7 +133,7 @@ export class CVTemplateBasicHRService {
       data.language = data.version === 'turkey' ? 'turkish' : 'english';
     }
     try {
-      const doc = await this.createPDFDocument();
+      const doc = await FontLoader.createPDFDocument();
       
       return new Promise((resolve, reject) => {
 
@@ -334,8 +231,8 @@ export class CVTemplateBasicHRService {
               .text(companyLocation, 50, yPosition + 15);
 
             // Date range - right aligned like template with formatted dates
-            const startDate = this.formatDate(this.sanitizeText(exp.startDate));
-            const endDate = this.formatDate(this.sanitizeText(exp.endDate));
+            const startDate = DateFormatter.formatDate(this.sanitizeText(exp.startDate));
+            const endDate = DateFormatter.formatDate(this.sanitizeText(exp.endDate));
             const dateRange = `${startDate} – ${endDate}`;
             const dateWidth = doc.widthOfString(dateRange);
             const dateStartX = 545 - dateWidth; // Position from right edge
@@ -393,7 +290,7 @@ export class CVTemplateBasicHRService {
               .text(universityLocation, 50, yPosition + 15);
 
             // Graduation date - right aligned with formatted date
-            const graduationDate = this.formatDate(this.sanitizeText(edu.graduationDate));
+            const graduationDate = DateFormatter.formatGraduationDate(this.sanitizeText(edu.graduationDate));
             const gradDateWidth = doc.widthOfString(graduationDate);
             const gradDateStartX = 545 - gradDateWidth; // Position from right edge
             
@@ -622,7 +519,7 @@ export class CVTemplateBasicHRService {
               .text(issuer, 50, yPosition + 15);
 
             // Date - right aligned
-            const certDate = this.formatDate(this.sanitizeText(cert.date));
+            const certDate = DateFormatter.formatDate(this.sanitizeText(cert.date));
             const dateWidth = doc.widthOfString(certDate);
             const dateStartX = 545 - dateWidth;
             

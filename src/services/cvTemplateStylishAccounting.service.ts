@@ -1,6 +1,8 @@
 import PDFDocument from 'pdfkit';
 import * as PDFKit from 'pdfkit';
 import { PassThrough } from 'stream';
+import { FontLoader } from '../utils/fontLoader';
+import { DateFormatter } from '../utils/dateFormatter';
 
 export interface CVStylishAccountingData {
   personalInfo: {
@@ -52,12 +54,14 @@ export class CVTemplateStylishAccountingService {
   }
 
   async generatePDF(data: CVStylishAccountingData): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      try {
-        const doc = new PDFDocument({
-          size: 'A4',
-          margin: 50,
-        });
+    try {
+      const doc = await FontLoader.createPDFDocument({
+        size: 'A4',
+        margin: 50,
+      });
+      
+      return new Promise((resolve, reject) => {
+        try {
 
         const chunks: Buffer[] = [];
         const stream = new PassThrough();
@@ -139,7 +143,7 @@ export class CVTemplateStylishAccountingService {
           doc
             .fontSize(11)
             .fillColor('#666666')
-            .text(`Degree obtained ${edu.graduationDate}`, 50, yPosition + 15);
+            .text(`Degree obtained ${DateFormatter.formatGraduationDate(edu.graduationDate)}`, 50, yPosition + 15);
 
           yPosition += 35;
 
@@ -213,7 +217,7 @@ export class CVTemplateStylishAccountingService {
           doc
             .fontSize(11)
             .fillColor('#666666')
-            .text(`${exp.startDate} – ${exp.endDate}`, 50, yPosition + 15);
+            .text(DateFormatter.formatDateRange(exp.startDate, exp.endDate), 50, yPosition + 15);
 
           yPosition += 35;
 
@@ -317,10 +321,13 @@ export class CVTemplateStylishAccountingService {
         }
 
         doc.end();
-      } catch (error) {
-        reject(error);
-      }
-    });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    } catch (error) {
+      throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private calculateTextHeight(

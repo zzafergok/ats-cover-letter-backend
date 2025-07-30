@@ -1,6 +1,8 @@
 import PDFDocument from 'pdfkit';
 import * as PDFKit from 'pdfkit';
 import { PassThrough } from 'stream';
+import { FontLoader } from '../utils/fontLoader';
+import { DateFormatter } from '../utils/dateFormatter';
 
 export interface CVSimpleClassicData {
   personalInfo: {
@@ -46,12 +48,14 @@ export class CVTemplateSimpleClassicService {
   }
 
   async generatePDF(data: CVSimpleClassicData): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      try {
-        const doc = new PDFDocument({
-          size: 'A4',
-          margin: 0,
-        });
+    try {
+      const doc = await FontLoader.createPDFDocument({
+        size: 'A4',
+        margin: 0,
+      });
+      
+      return new Promise((resolve, reject) => {
+        try {
 
         const chunks: Buffer[] = [];
         const stream = new PassThrough();
@@ -130,7 +134,7 @@ export class CVTemplateSimpleClassicService {
           doc
             .fontSize(11)
             .fillColor('#666666')
-            .text(`${exp.startDate} - ${exp.endDate}`, 50, yPosition);
+            .text(DateFormatter.formatDateRange(exp.startDate, exp.endDate), 50, yPosition);
 
           yPosition += 20;
 
@@ -181,7 +185,7 @@ export class CVTemplateSimpleClassicService {
           doc
             .fontSize(11)
             .fillColor('#666666')
-            .text(`${edu.startDate} - ${edu.endDate}`, 50, yPosition);
+            .text(DateFormatter.formatDateRange(edu.startDate, edu.endDate), 50, yPosition);
 
           yPosition += 15;
 
@@ -239,10 +243,13 @@ export class CVTemplateSimpleClassicService {
         }
 
         doc.end();
-      } catch (error) {
-        reject(error);
-      }
-    });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    } catch (error) {
+      throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private calculateTextHeight(

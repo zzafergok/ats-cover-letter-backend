@@ -1,6 +1,8 @@
 import PDFDocument from 'pdfkit';
 import * as PDFKit from 'pdfkit';
 import { PassThrough } from 'stream';
+import { FontLoader } from '../utils/fontLoader';
+import { DateFormatter } from '../utils/dateFormatter';
 
 export interface CVMinimalistTurkishData {
   personalInfo: {
@@ -49,12 +51,14 @@ export class CVTemplateMinimalistTurkishService {
   }
 
   async generatePDF(data: CVMinimalistTurkishData): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      try {
-        const doc = new PDFDocument({
-          size: 'A4',
-          margin: 50,
-        });
+    try {
+      const doc = await FontLoader.createPDFDocument({
+        size: 'A4',
+        margin: 50,
+      });
+      
+      return new Promise((resolve, reject) => {
+        try {
 
         const chunks: Buffer[] = [];
         const stream = new PassThrough();
@@ -134,7 +138,7 @@ export class CVTemplateMinimalistTurkishService {
           // Date Range
           doc.fontSize(10)
              .fillColor('#000000')
-             .text(`[${exp.startDate}] – [${exp.endDate}]`, 50, yPosition);
+             .text(`[${DateFormatter.formatDateRange(exp.startDate, exp.endDate)}]`, 50, yPosition);
 
           yPosition += 15;
 
@@ -188,7 +192,7 @@ export class CVTemplateMinimalistTurkishService {
           // Graduation Date
           doc.fontSize(10)
              .fillColor('#000000')
-             .text(`[${edu.graduationDate}]`, 50, yPosition);
+             .text(`[${DateFormatter.formatGraduationDate(edu.graduationDate)}]`, 50, yPosition);
 
           yPosition += 15;
 
@@ -288,10 +292,13 @@ export class CVTemplateMinimalistTurkishService {
         }
 
         doc.end();
-      } catch (error) {
-        reject(error);
-      }
-    });
+        } catch (error) {
+          reject(error);
+        }
+      });
+    } catch (error) {
+      throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private calculateTextHeight(doc: PDFKit.PDFDocument, text: string, options: any): number {
