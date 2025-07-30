@@ -357,7 +357,43 @@ export class CVGeneratorService {
       return false;
     }
 
-    // Validate arrays if they exist
+    // Validate version and language
+    if (!data.version || !['global', 'turkey'].includes(data.version)) {
+      return false;
+    }
+
+    if (!data.language || !['turkish', 'english'].includes(data.language)) {
+      return false;
+    }
+
+    // Turkey version specific validation
+    if (data.version === 'turkey') {
+      // Validate technical skills
+      if (data.technicalSkills) {
+        const { frontend, backend, database, tools } = data.technicalSkills;
+        if (frontend && !Array.isArray(frontend)) return false;
+        if (backend && !Array.isArray(backend)) return false;
+        if (database && !Array.isArray(database)) return false;
+        if (tools && !Array.isArray(tools)) return false;
+      }
+
+      // Validate projects
+      if (data.projects && !Array.isArray(data.projects)) {
+        return false;
+      }
+
+      // Validate certificates
+      if (data.certificates && !Array.isArray(data.certificates)) {
+        return false;
+      }
+
+      // Validate languages
+      if (data.languages && !Array.isArray(data.languages)) {
+        return false;
+      }
+    }
+
+    // Validate common arrays
     if (data.experience && !Array.isArray(data.experience)) {
       return false;
     }

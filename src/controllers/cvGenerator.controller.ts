@@ -28,7 +28,7 @@ export class CVGeneratorController {
         return;
       }
 
-      const { templateType, data } = req.body;
+      const { templateType, data, version, language } = req.body;
 
       // Validate input
       if (!templateType || !data) {
@@ -37,6 +37,33 @@ export class CVGeneratorController {
           message: 'Template type and data are required',
         });
         return;
+      }
+
+      // Validate basic_hr template specific requirements
+      if (templateType === 'basic_hr') {
+        if (!version || !['global', 'turkey'].includes(version)) {
+          res.status(400).json({
+            success: false,
+            message: 'Version is required for basic_hr template (global or turkey)',
+          });
+          return;
+        }
+
+        if (version === 'turkey' && (!language || !['turkish', 'english'].includes(language))) {
+          res.status(400).json({
+            success: false,
+            message: 'Language is required for turkey version (turkish or english)',
+          });
+          return;
+        }
+
+        // Add version and language to data
+        data.version = version;
+        if (version === 'turkey') {
+          data.language = language;
+        } else {
+          data.language = 'english'; // Global version is always English
+        }
       }
 
       // Validate template type
