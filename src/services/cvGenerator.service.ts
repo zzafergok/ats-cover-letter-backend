@@ -351,7 +351,7 @@ export class CVGeneratorService {
     }
   }
 
-  private validateBasicHRData(data: any): boolean {
+  private validateTemplateDataStructure(data: any): boolean {
     // Check required fields
     if (!data.personalInfo?.fullName || !data.personalInfo?.email) {
       return false;
@@ -409,19 +409,23 @@ export class CVGeneratorService {
     return true;
   }
 
+  private validateBasicHRData(data: any): boolean {
+    return this.validateTemplateDataStructure(data);
+  }
+
   private validateOfficeManagerData(data: any): boolean {
-    return !!(data.personalInfo?.firstName && data.personalInfo?.lastName && data.personalInfo?.email);
+    return this.validateTemplateDataStructure(data);
   }
 
   private validateSimpleClassicData(data: any): boolean {
-    return !!(data.personalInfo?.firstName && data.personalInfo?.lastName && data.personalInfo?.email);
+    return this.validateTemplateDataStructure(data);
   }
 
   private validateStylishAccountingData(data: any): boolean {
-    return !!(data.personalInfo?.fullName && data.personalInfo?.email);
+    return this.validateTemplateDataStructure(data);
   }
 
   private validateMinimalistTurkishData(data: any): boolean {
-    return !!(data.personalInfo?.fullName && data.personalInfo?.email);
+    return this.validateTemplateDataStructure(data);
   }
 }

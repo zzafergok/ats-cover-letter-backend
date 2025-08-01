@@ -39,16 +39,8 @@ export class CVGeneratorController {
         return;
       }
 
-      // Validate basic_hr template specific requirements
-      if (templateType === 'basic_hr') {
-        if (!version || !['global', 'turkey'].includes(version)) {
-          res.status(400).json({
-            success: false,
-            message: 'Version is required for basic_hr template (global or turkey)',
-          });
-          return;
-        }
-
+      // Handle version and language for all templates
+      if (version && ['global', 'turkey'].includes(version)) {
         if (version === 'turkey' && (!language || !['turkish', 'english'].includes(language))) {
           res.status(400).json({
             success: false,
@@ -64,6 +56,50 @@ export class CVGeneratorController {
         } else {
           data.language = 'english'; // Global version is always English
         }
+      } else {
+        // Set defaults if not provided
+        data.version = data.version || 'global';
+        data.language = data.language || 'english';
+      }
+
+      // Transform old field structure to new standardized structure
+      if (data.personalInfo) {
+        // Transform firstName + lastName to fullName
+        if (data.personalInfo.firstName && data.personalInfo.lastName && !data.personalInfo.fullName) {
+          data.personalInfo.fullName = `${data.personalInfo.firstName} ${data.personalInfo.lastName}`;
+        }
+        
+        // Ensure required fields exist with defaults
+        if (!data.personalInfo.state) {
+          data.personalInfo.state = '';
+        }
+        if (!data.personalInfo.zipCode) {
+          data.personalInfo.zipCode = '';
+        }
+        if (!data.personalInfo.address) {
+          data.personalInfo.address = '';
+        }
+        
+        // Transform experience location field
+        if (data.experience && Array.isArray(data.experience)) {
+          data.experience = data.experience.map((exp: any) => ({
+            ...exp,
+            location: exp.location || exp.city || ''
+          }));
+        }
+        
+        // Transform education location field
+        if (data.education && Array.isArray(data.education)) {
+          data.education = data.education.map((edu: any) => ({
+            ...edu,
+            location: edu.location || edu.city || ''
+          }));
+        }
+      }
+
+      // Transform professionalSummary to objective for compatibility
+      if (data.professionalSummary && !data.objective) {
+        data.objective = data.professionalSummary;
       }
 
       // Validate template type
