@@ -13,6 +13,9 @@ export interface CVSimpleClassicData {
     email: string;
     jobTitle?: string;
     linkedin?: string;
+    website?: string;
+    github?: string;
+    medium?: string;
     phone: string;
   };
   objective: string;
@@ -369,24 +372,53 @@ export class CVTemplateSimpleClassicService {
 
     doc.moveDown(1);
 
-    // Contact Information
-    const contactInfo = [
-      `${this.sanitizeText(data.personalInfo.address)} | ${this.sanitizeText(data.personalInfo.city)}`,
-      this.sanitizeText(data.personalInfo.phone),
+    // Contact Information - Left side
+    const leftContactInfo = [
       this.sanitizeText(data.personalInfo.email),
+      this.sanitizeText(data.personalInfo.phone),
+      `${this.sanitizeText(data.personalInfo.address)} | ${this.sanitizeText(data.personalInfo.city)}`,
+    ];
+
+    // Links - Right side
+    const rightLinks = [
       data.personalInfo.linkedin
         ? this.sanitizeText(data.personalInfo.linkedin)
         : '',
+      data.personalInfo.website
+        ? this.sanitizeText(data.personalInfo.website)
+        : '',
+      data.personalInfo.github
+        ? this.sanitizeText(data.personalInfo.github)
+        : '',
+      data.personalInfo.medium
+        ? this.sanitizeText(data.personalInfo.medium)
+        : '',
     ].filter(Boolean);
 
-    contactInfo.forEach((info) => {
+    const startY = doc.y;
+    
+    // Left side contact info
+    leftContactInfo.forEach((info, index) => {
       doc
         .fontSize(9)
         .fillColor(colors.black)
         .font('NotoSans')
-        .text(info, margins.left, doc.y);
-      doc.moveDown(0.3);
+        .text(info, margins.left, startY + index * 12);
     });
+
+    // Right side links
+    rightLinks.forEach((link, index) => {
+      const linkWidth = doc.widthOfString(link);
+      doc
+        .fontSize(9)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(link, margins.right - linkWidth, startY + index * 12);
+    });
+
+    // Move to next position
+    const maxLines = Math.max(leftContactInfo.length, rightLinks.length);
+    doc.y = startY + maxLines * 12;
   }
 
   private addObjectiveSection(
@@ -544,15 +576,21 @@ export class CVTemplateSimpleClassicService {
         doc.y = 60;
       }
 
-      // Graduation date
-      const graduationDate = DateFormatter.formatGraduationDate(
-        this.sanitizeText(edu.graduationDate)
-      );
+      // Date range for education with long format
+      let dateRange = '';
+      if (edu.startDate) {
+        const startDate = DateFormatter.formatDateLong(this.sanitizeText(edu.startDate));
+        const endDate = DateFormatter.formatDateLong(this.sanitizeText(edu.graduationDate));
+        dateRange = `${startDate} - ${endDate}`;
+      } else {
+        dateRange = DateFormatter.formatDateLong(this.sanitizeText(edu.graduationDate));
+      }
+      
       doc
         .fontSize(9)
         .fillColor(colors.gray)
         .font('NotoSans')
-        .text(graduationDate, margins.left, doc.y);
+        .text(dateRange, margins.left, doc.y);
 
       doc.moveDown(0.3);
 
@@ -897,7 +935,7 @@ export class CVTemplateSimpleClassicService {
 
       const certName = this.sanitizeText(cert.name);
       const issuer = this.sanitizeText(cert.issuer);
-      const certDate = DateFormatter.formatDate(this.sanitizeText(cert.date));
+      const certDate = DateFormatter.formatDateLong(this.sanitizeText(cert.date));
 
       const currentY = doc.y;
       doc
