@@ -97,7 +97,7 @@ export class CVTemplateStylishAccountingService {
         languages: 'DİLLER',
         communication: 'İLETİŞİM',
         leadership: 'LİDERLİK',
-        references: 'REFERANSLAR'
+        references: 'REFERANSLAR',
       };
     } else {
       return {
@@ -110,7 +110,7 @@ export class CVTemplateStylishAccountingService {
         languages: 'LANGUAGES',
         communication: 'COMMUNICATION',
         leadership: 'LEADERSHIP',
-        references: 'REFERENCES'
+        references: 'REFERENCES',
       };
     }
   }
@@ -120,7 +120,7 @@ export class CVTemplateStylishAccountingService {
     if (!data.version) {
       data.version = 'global';
     }
-    
+
     // Set default language based on version
     if (!data.language) {
       data.language = data.version === 'turkey' ? 'turkish' : 'english';
@@ -131,7 +131,7 @@ export class CVTemplateStylishAccountingService {
         size: 'A4',
         margin: 50,
       });
-      
+
       return new Promise((resolve, reject) => {
         const chunks: Buffer[] = [];
         const stream = new PassThrough();
@@ -147,36 +147,76 @@ export class CVTemplateStylishAccountingService {
           });
 
           // Define colors and get section headers - Preserving Stylish Accounting green
-          const greenColor = '#2d5a2d'; // Stylish Accounting signature green
-          const blackColor = '#000000';
+          const greenColor = '#275e46'; // RGB(39,94,70) converted to hex - text color
+          const lineColor = '#55b88d'; // RGB(85,184,141) converted to hex - line color
+          const backgroundColor = '#dcf0e8'; // RGB(220,240,232) converted to hex
           const greyColor = '#666666';
           const headers = this.getSectionHeaders(data.language!);
 
+          // Calculate text row width (4/5 of line width)
+          const lineWidth = 495; // From 50 to 545 (495px)
+          const textRowWidth = (lineWidth * 4) / 5; // 396px
+
+          // Set page background color
+          doc
+            .rect(0, 0, 595.28, 841.89) // A4 page dimensions in points
+            .fillColor(backgroundColor)
+            .fill();
+
           let yPosition = 50;
 
-          // Header with name - Stylish Accounting style with larger font
+          // Header with name - Stylish Accounting style with larger font (increased by 2pt)
           doc
-            .fontSize(28)
+            .fontSize(30)
             .fillColor(greenColor)
             .font('NotoSans-Bold')
-            .text(this.sanitizeText(data.personalInfo.fullName).toUpperCase(), 50, yPosition);
+            .text(
+              this.sanitizeText(data.personalInfo.fullName).toUpperCase(),
+              50,
+              yPosition
+            );
 
           yPosition += 45;
 
-          // Contact information - Center-aligned as per Stylish Accounting design
-          const contactInfo = [
-            this.sanitizeText(data.personalInfo.address),
-            `${this.sanitizeText(data.personalInfo.city)}, ${this.sanitizeText(data.personalInfo.state)} ${this.sanitizeText(data.personalInfo.zipCode)}`,
-            this.sanitizeText(data.personalInfo.phone),
-            this.sanitizeText(data.personalInfo.email)
-          ].filter(Boolean).join(' | ');
+          // Contact information - pipe-separated and bold
+          const contactInfoParts = [];
+
+          if (data.personalInfo.address && data.personalInfo.city) {
+            contactInfoParts.push(
+              `${this.sanitizeText(data.personalInfo.address)}, ${this.sanitizeText(data.personalInfo.city)}`
+            );
+          }
+          if (data.personalInfo.phone) {
+            contactInfoParts.push(this.sanitizeText(data.personalInfo.phone));
+          }
+          if (data.personalInfo.email) {
+            contactInfoParts.push(this.sanitizeText(data.personalInfo.email));
+          }
+          // Add any other personal info fields that exist
+          if ((data.personalInfo as any).linkedin) {
+            contactInfoParts.push(
+              this.sanitizeText((data.personalInfo as any).linkedin)
+            );
+          }
+          if ((data.personalInfo as any).website) {
+            contactInfoParts.push(
+              this.sanitizeText((data.personalInfo as any).website)
+            );
+          }
+          if ((data.personalInfo as any).github) {
+            contactInfoParts.push(
+              this.sanitizeText((data.personalInfo as any).github)
+            );
+          }
+
+          const contactInfo = contactInfoParts.filter(Boolean).join(' | ');
 
           doc
             .fontSize(11)
-            .fillColor(blackColor)
-            .font('NotoSans')
+            .fillColor(greenColor)
+            .font('NotoSans-Bold')
             .text(contactInfo, 50, yPosition, {
-              width: 515,
+              width: textRowWidth,
               align: 'center',
             });
 
@@ -184,7 +224,37 @@ export class CVTemplateStylishAccountingService {
 
           // Green separator line - Stylish Accounting signature design
           doc
-            .strokeColor(greenColor)
+            .strokeColor(lineColor)
+            .lineWidth(2)
+            .moveTo(50, yPosition)
+            .lineTo(545, yPosition)
+            .stroke();
+
+          // Add objective text under personal info (no header, 10-15px below)
+          if (data.objective) {
+            yPosition += 15; // 15px spacing
+
+            const objective = this.sanitizeText(data.objective);
+            doc
+              .fontSize(11)
+              .fillColor(greenColor)
+              .font('NotoSans')
+              .text(objective, 50, yPosition, {
+                width: textRowWidth,
+                align: 'justify',
+                lineGap: 2,
+              });
+
+            yPosition +=
+              this.calculateTextHeight(doc, objective, {
+                width: textRowWidth,
+                lineGap: 2,
+              }) + 20;
+          }
+
+          // Green separator line - Stylish Accounting signature design
+          doc
+            .strokeColor(lineColor)
             .lineWidth(2)
             .moveTo(50, yPosition)
             .lineTo(545, yPosition)
@@ -192,41 +262,14 @@ export class CVTemplateStylishAccountingService {
 
           yPosition += 25;
 
-          // Objective Section
-          if (data.objective) {
-            this.addSectionHeader(doc, headers.objective, yPosition, greenColor);
-            yPosition += 25;
-
-            const objective = this.sanitizeText(data.objective);
-            doc
-              .fontSize(11)
-              .fillColor(blackColor)
-              .font('NotoSans')
-              .text(objective, 50, yPosition, {
-                width: 515,
-                align: 'justify',
-                lineGap: 2,
-              });
-
-            yPosition += this.calculateTextHeight(doc, objective, { 
-              width: 515, 
-              lineGap: 2 
-            }) + 20;
-
-            // Green separator line after objective
-            doc
-              .strokeColor(greenColor)
-              .lineWidth(2)
-              .moveTo(50, yPosition)
-              .lineTo(545, yPosition)
-              .stroke();
-
-            yPosition += 25;
-          }
-
           // Experience Section
           if (data.experience && data.experience.length > 0) {
-            this.addSectionHeader(doc, headers.experience, yPosition, greenColor);
+            this.addSectionHeader(
+              doc,
+              headers.experience,
+              yPosition,
+              greenColor
+            );
             yPosition += 25;
 
             data.experience.forEach((exp) => {
@@ -234,23 +277,25 @@ export class CVTemplateStylishAccountingService {
               const jobTitle = this.sanitizeText(exp.jobTitle);
               doc
                 .fontSize(12)
-                .fillColor(blackColor)
+                .fillColor(greenColor)
                 .font('NotoSans-Bold')
                 .text(jobTitle, 50, yPosition);
 
               // Company and location - regular font
               const companyLocation = `${this.sanitizeText(exp.company)} | ${this.sanitizeText(exp.location)}`;
-              doc
-                .font('NotoSans')
-                .text(companyLocation, 50, yPosition + 15);
+              doc.font('NotoSans').text(companyLocation, 50, yPosition + 15);
 
               // Date range - right aligned with formatted dates
-              const startDate = DateFormatter.formatDate(this.sanitizeText(exp.startDate));
-              const endDate = DateFormatter.formatDate(this.sanitizeText(exp.endDate));
+              const startDate = DateFormatter.formatDate(
+                this.sanitizeText(exp.startDate)
+              );
+              const endDate = DateFormatter.formatDate(
+                this.sanitizeText(exp.endDate)
+              );
               const dateRange = `${startDate} – ${endDate}`;
               const dateWidth = doc.widthOfString(dateRange);
               const dateStartX = 545 - dateWidth;
-              
+
               doc
                 .fontSize(11)
                 .fillColor(greyColor)
@@ -262,29 +307,35 @@ export class CVTemplateStylishAccountingService {
               const description = this.sanitizeText(exp.description);
               doc
                 .fontSize(11)
-                .fillColor(blackColor)
+                .fillColor(greenColor)
                 .font('NotoSans')
                 .text(description, 50, yPosition, {
-                  width: 515,
+                  width: textRowWidth,
                   align: 'justify',
                   lineGap: 2,
                 });
 
-              yPosition += this.calculateTextHeight(doc, description, { 
-                width: 515, 
-                lineGap: 2 
-              }) + 15;
+              yPosition +=
+                this.calculateTextHeight(doc, description, {
+                  width: textRowWidth,
+                  lineGap: 2,
+                }) + 15;
 
               // Check for page break
               if (yPosition > 720) {
                 doc.addPage();
+                // Set background color for new page
+                doc
+                  .rect(0, 0, 595.28, 841.89)
+                  .fillColor(backgroundColor)
+                  .fill();
                 yPosition = 50;
               }
             });
 
             // Green separator line after experience
             doc
-              .strokeColor(greenColor)
+              .strokeColor(lineColor)
               .lineWidth(2)
               .moveTo(50, yPosition)
               .lineTo(545, yPosition)
@@ -295,7 +346,12 @@ export class CVTemplateStylishAccountingService {
 
           // Education Section
           if (data.education && data.education.length > 0) {
-            this.addSectionHeader(doc, headers.education, yPosition, greenColor);
+            this.addSectionHeader(
+              doc,
+              headers.education,
+              yPosition,
+              greenColor
+            );
             yPosition += 25;
 
             data.education.forEach((edu) => {
@@ -303,21 +359,21 @@ export class CVTemplateStylishAccountingService {
               const degree = this.sanitizeText(edu.degree);
               doc
                 .fontSize(12)
-                .fillColor(blackColor)
+                .fillColor(greenColor)
                 .font('NotoSans-Bold')
                 .text(degree, 50, yPosition);
 
               // University and location - regular font
               const universityLocation = `${this.sanitizeText(edu.university)} | ${this.sanitizeText(edu.location)}`;
-              doc
-                .font('NotoSans')
-                .text(universityLocation, 50, yPosition + 15);
+              doc.font('NotoSans').text(universityLocation, 50, yPosition + 15);
 
               // Graduation date - right aligned with formatted date
-              const graduationDate = DateFormatter.formatGraduationDate(this.sanitizeText(edu.graduationDate));
+              const graduationDate = DateFormatter.formatGraduationDate(
+                this.sanitizeText(edu.graduationDate)
+              );
               const gradDateWidth = doc.widthOfString(graduationDate);
               const gradDateStartX = 545 - gradDateWidth;
-              
+
               doc
                 .fontSize(11)
                 .fillColor(greyColor)
@@ -329,30 +385,36 @@ export class CVTemplateStylishAccountingService {
                 const details = this.sanitizeText(edu.details);
                 doc
                   .fontSize(11)
-                  .fillColor(blackColor)
+                  .fillColor(greenColor)
                   .font('NotoSans')
                   .text(details, 50, yPosition, {
-                    width: 515,
+                    width: textRowWidth,
                     align: 'justify',
                     lineGap: 2,
                   });
 
-                yPosition += this.calculateTextHeight(doc, details, { 
-                  width: 515, 
-                  lineGap: 2 
-                }) + 15;
+                yPosition +=
+                  this.calculateTextHeight(doc, details, {
+                    width: textRowWidth,
+                    lineGap: 2,
+                  }) + 15;
               }
 
               // Check for page break
               if (yPosition > 720) {
                 doc.addPage();
+                // Set background color for new page
+                doc
+                  .rect(0, 0, 595.28, 841.89)
+                  .fillColor(backgroundColor)
+                  .fill();
                 yPosition = 50;
               }
             });
 
             // Green separator line after education
             doc
-              .strokeColor(greenColor)
+              .strokeColor(lineColor)
               .lineWidth(2)
               .moveTo(50, yPosition)
               .lineTo(545, yPosition)
@@ -367,47 +429,127 @@ export class CVTemplateStylishAccountingService {
             const sectionMinHeight = 80;
             if (yPosition + sectionMinHeight > 720) {
               doc.addPage();
+              // Set background color for new page
+              doc.rect(0, 0, 595.28, 841.89).fillColor(backgroundColor).fill();
               yPosition = 50;
             }
-            
-            this.addSectionHeader(doc, headers.technicalSkills, yPosition, greenColor);
+
+            this.addSectionHeader(
+              doc,
+              headers.technicalSkills,
+              yPosition,
+              greenColor
+            );
             yPosition += 25;
 
             const skills = data.technicalSkills;
-            
+            const skillsArray = [];
+            const columnWidth = textRowWidth / 2; // Half of text row width for each column
+            const dotSize = 3;
+            const dotSpacing = 16; // Changed from 4px to 16px
+
             if (skills.frontend && skills.frontend.length > 0) {
-              doc.fontSize(11).fillColor(blackColor).font('NotoSans-Bold').text('Frontend:', 50, yPosition);
-              const frontendText = skills.frontend.join(', ');
-              doc.font('NotoSans').text(frontendText, 120, yPosition, { width: 425 });
-              yPosition += 18;
+              skills.frontend.forEach((skill) => skillsArray.push(skill));
             }
-            
             if (skills.backend && skills.backend.length > 0) {
-              doc.fontSize(11).fillColor(blackColor).font('NotoSans-Bold').text('Backend:', 50, yPosition);
-              const backendText = skills.backend.join(', ');
-              doc.font('NotoSans').text(backendText, 120, yPosition, { width: 425 });
-              yPosition += 18;
+              skills.backend.forEach((skill) => skillsArray.push(skill));
             }
-            
             if (skills.database && skills.database.length > 0) {
-              doc.fontSize(11).fillColor(blackColor).font('NotoSans-Bold').text('Database:', 50, yPosition);
-              const databaseText = skills.database.join(', ');
-              doc.font('NotoSans').text(databaseText, 120, yPosition, { width: 425 });
-              yPosition += 18;
+              skills.database.forEach((skill) => skillsArray.push(skill));
             }
-            
             if (skills.tools && skills.tools.length > 0) {
-              doc.fontSize(11).fillColor(blackColor).font('NotoSans-Bold').text('Tools:', 50, yPosition);
-              const toolsText = skills.tools.join(', ');
-              doc.font('NotoSans').text(toolsText, 120, yPosition, { width: 425 });
-              yPosition += 18;
+              skills.tools.forEach((skill) => skillsArray.push(skill));
             }
+
+            // Display skills in 2 columns
+            skillsArray.forEach((skill, index) => {
+              const isFirstColumn = index % 2 === 0;
+              const xPosition = isFirstColumn ? 50 : 50 + textRowWidth / 2; // Second column starts at middle of text area
+              const currentY = yPosition + Math.floor(index / 2) * 18;
+
+              // Draw dot
+              doc
+                .fillColor(lineColor)
+                .circle(xPosition + dotSize, currentY + 6, dotSize)
+                .fill();
+
+              // Draw skill text
+              doc
+                .fontSize(11)
+                .fillColor(greenColor)
+                .font('NotoSans')
+                .text(skill, xPosition + dotSize + dotSpacing + 3, currentY, {
+                  width: columnWidth,
+                });
+            });
+
+            yPosition += Math.ceil(skillsArray.length / 2) * 18;
 
             yPosition += 15;
 
             // Green separator line after technical skills
             doc
-              .strokeColor(greenColor)
+              .strokeColor(lineColor)
+              .lineWidth(2)
+              .moveTo(50, yPosition)
+              .lineTo(545, yPosition)
+              .stroke();
+
+            yPosition += 25;
+          }
+
+          // Skills Section - Global version (using simple skills array)
+          if (
+            data.version !== 'turkey' &&
+            (data as any).skills &&
+            Array.isArray((data as any).skills)
+          ) {
+            // Check if section fits on current page
+            const sectionMinHeight = 80;
+            if (yPosition + sectionMinHeight > 720) {
+              doc.addPage();
+              // Set background color for new page
+              doc.rect(0, 0, 595.28, 841.89).fillColor(backgroundColor).fill();
+              yPosition = 50;
+            }
+
+            this.addSectionHeader(doc, 'SKILLS', yPosition, greenColor);
+            yPosition += 25;
+
+            const skillsArray = (data as any).skills;
+            const columnWidth = textRowWidth / 2; // Half of text row width for each column
+            const dotSize = 3;
+            const dotSpacing = 16; // Changed from 4px to 16px
+
+            // Display skills in 2 columns
+            skillsArray.forEach((skill: string, index: number) => {
+              const isFirstColumn = index % 2 === 0;
+              const xPosition = isFirstColumn ? 50 : 50 + textRowWidth / 2; // Second column starts at middle of text area
+              const currentY = yPosition + Math.floor(index / 2) * 18;
+
+              // Draw dot
+              doc
+                .fillColor(lineColor)
+                .circle(xPosition + dotSize, currentY + 6, dotSize)
+                .fill();
+
+              // Draw skill text
+              doc
+                .fontSize(11)
+                .fillColor(greenColor)
+                .font('NotoSans')
+                .text(skill, xPosition + dotSize + dotSpacing + 3, currentY, {
+                  width: columnWidth,
+                });
+            });
+
+            yPosition += Math.ceil(skillsArray.length / 2) * 18;
+
+            yPosition += 15;
+
+            // Green separator line after skills
+            doc
+              .strokeColor(lineColor)
               .lineWidth(2)
               .moveTo(50, yPosition)
               .lineTo(545, yPosition)
@@ -422,31 +564,39 @@ export class CVTemplateStylishAccountingService {
             const sectionMinHeight = 60;
             if (yPosition + sectionMinHeight > 720) {
               doc.addPage();
+              // Set background color for new page
+              doc.rect(0, 0, 595.28, 841.89).fillColor(backgroundColor).fill();
               yPosition = 50;
             }
-            
-            this.addSectionHeader(doc, headers.communication, yPosition, greenColor);
+
+            this.addSectionHeader(
+              doc,
+              headers.communication,
+              yPosition,
+              greenColor
+            );
             yPosition += 25;
 
             const communication = this.sanitizeText(data.communication);
             doc
               .fontSize(11)
-              .fillColor(blackColor)
+              .fillColor(greenColor)
               .font('NotoSans')
               .text(communication, 50, yPosition, {
-                width: 515,
+                width: textRowWidth,
                 align: 'justify',
                 lineGap: 2,
               });
 
-            yPosition += this.calculateTextHeight(doc, communication, { 
-              width: 515, 
-              lineGap: 2 
-            }) + 20;
+            yPosition +=
+              this.calculateTextHeight(doc, communication, {
+                width: textRowWidth,
+                lineGap: 2,
+              }) + 20;
 
             // Green separator line after communication
             doc
-              .strokeColor(greenColor)
+              .strokeColor(lineColor)
               .lineWidth(2)
               .moveTo(50, yPosition)
               .lineTo(545, yPosition)
@@ -456,14 +606,20 @@ export class CVTemplateStylishAccountingService {
           }
 
           // Projects Section - Turkey version
-          if (data.version === 'turkey' && data.projects && data.projects.length > 0) {
+          if (
+            data.version === 'turkey' &&
+            data.projects &&
+            data.projects.length > 0
+          ) {
             // Check if section fits on current page
             const sectionMinHeight = 80;
             if (yPosition + sectionMinHeight > 720) {
               doc.addPage();
+              // Set background color for new page
+              doc.rect(0, 0, 595.28, 841.89).fillColor(backgroundColor).fill();
               yPosition = 50;
             }
-            
+
             this.addSectionHeader(doc, headers.projects, yPosition, greenColor);
             yPosition += 25;
 
@@ -472,7 +628,7 @@ export class CVTemplateStylishAccountingService {
               const projectName = this.sanitizeText(project.name);
               doc
                 .fontSize(11)
-                .fillColor(blackColor)
+                .fillColor(greenColor)
                 .font('NotoSans-Bold')
                 .text(projectName, 50, yPosition);
 
@@ -480,10 +636,10 @@ export class CVTemplateStylishAccountingService {
               const technologies = this.sanitizeText(project.technologies);
               const techWidth = doc.widthOfString(technologies);
               const techStartX = 545 - techWidth;
-              
+
               doc
                 .fontSize(11)
-                .fillColor(blackColor)
+                .fillColor(greenColor)
                 .font('NotoSans')
                 .text(technologies, techStartX, yPosition);
 
@@ -493,29 +649,35 @@ export class CVTemplateStylishAccountingService {
               const description = this.sanitizeText(project.description);
               doc
                 .fontSize(11)
-                .fillColor(blackColor)
+                .fillColor(greenColor)
                 .font('NotoSans')
                 .text(description, 50, yPosition, {
-                  width: 515,
+                  width: textRowWidth,
                   align: 'justify',
                   lineGap: 2,
                 });
 
-              yPosition += this.calculateTextHeight(doc, description, { 
-                width: 515, 
-                lineGap: 2 
-              }) + 15;
+              yPosition +=
+                this.calculateTextHeight(doc, description, {
+                  width: textRowWidth,
+                  lineGap: 2,
+                }) + 15;
 
               // Check for page break
               if (yPosition > 720) {
                 doc.addPage();
+                // Set background color for new page
+                doc
+                  .rect(0, 0, 595.28, 841.89)
+                  .fillColor(backgroundColor)
+                  .fill();
                 yPosition = 50;
               }
             });
 
             // Green separator line after projects
             doc
-              .strokeColor(greenColor)
+              .strokeColor(lineColor)
               .lineWidth(2)
               .moveTo(50, yPosition)
               .lineTo(545, yPosition)
@@ -530,31 +692,39 @@ export class CVTemplateStylishAccountingService {
             const sectionMinHeight = 60;
             if (yPosition + sectionMinHeight > 720) {
               doc.addPage();
+              // Set background color for new page
+              doc.rect(0, 0, 595.28, 841.89).fillColor(backgroundColor).fill();
               yPosition = 50;
             }
 
-            this.addSectionHeader(doc, headers.leadership, yPosition, greenColor);
+            this.addSectionHeader(
+              doc,
+              headers.leadership,
+              yPosition,
+              greenColor
+            );
             yPosition += 25;
 
             const leadership = this.sanitizeText(data.leadership);
             doc
               .fontSize(11)
-              .fillColor(blackColor)
+              .fillColor(greenColor)
               .font('NotoSans')
               .text(leadership, 50, yPosition, {
-                width: 515,
+                width: textRowWidth,
                 align: 'justify',
                 lineGap: 2,
               });
 
-            yPosition += this.calculateTextHeight(doc, leadership, { 
-              width: 515, 
-              lineGap: 2 
-            }) + 20;
+            yPosition +=
+              this.calculateTextHeight(doc, leadership, {
+                width: textRowWidth,
+                lineGap: 2,
+              }) + 20;
 
             // Green separator line after leadership
             doc
-              .strokeColor(greenColor)
+              .strokeColor(lineColor)
               .lineWidth(2)
               .moveTo(50, yPosition)
               .lineTo(545, yPosition)
@@ -564,15 +734,26 @@ export class CVTemplateStylishAccountingService {
           }
 
           // Certificates Section - Turkey version
-          if (data.version === 'turkey' && data.certificates && data.certificates.length > 0) {
+          if (
+            data.version === 'turkey' &&
+            data.certificates &&
+            data.certificates.length > 0
+          ) {
             // Check if section fits on current page
             const sectionMinHeight = 80;
             if (yPosition + sectionMinHeight > 720) {
               doc.addPage();
+              // Set background color for new page
+              doc.rect(0, 0, 595.28, 841.89).fillColor(backgroundColor).fill();
               yPosition = 50;
             }
-            
-            this.addSectionHeader(doc, headers.certificates, yPosition, greenColor);
+
+            this.addSectionHeader(
+              doc,
+              headers.certificates,
+              yPosition,
+              greenColor
+            );
             yPosition += 25;
 
             data.certificates.forEach((cert) => {
@@ -580,24 +761,24 @@ export class CVTemplateStylishAccountingService {
               const certName = this.sanitizeText(cert.name);
               doc
                 .fontSize(11)
-                .fillColor(blackColor)
+                .fillColor(greenColor)
                 .font('NotoSans-Bold')
                 .text(certName, 50, yPosition);
 
               // Issuer - regular font
               const issuer = this.sanitizeText(cert.issuer);
-              doc
-                .font('NotoSans')
-                .text(issuer, 50, yPosition + 15);
+              doc.font('NotoSans').text(issuer, 50, yPosition + 15);
 
               // Date - right aligned
-              const certDate = DateFormatter.formatDate(this.sanitizeText(cert.date));
+              const certDate = DateFormatter.formatDate(
+                this.sanitizeText(cert.date)
+              );
               const dateWidth = doc.widthOfString(certDate);
               const dateStartX = 545 - dateWidth;
-              
+
               doc
                 .fontSize(11)
-                .fillColor(blackColor)
+                .fillColor(greenColor)
                 .text(certDate, dateStartX, yPosition + 15);
 
               yPosition += 35;
@@ -605,7 +786,7 @@ export class CVTemplateStylishAccountingService {
 
             // Green separator line after certificates
             doc
-              .strokeColor(greenColor)
+              .strokeColor(lineColor)
               .lineWidth(2)
               .moveTo(50, yPosition)
               .lineTo(545, yPosition)
@@ -615,15 +796,26 @@ export class CVTemplateStylishAccountingService {
           }
 
           // Languages Section - Turkey version
-          if (data.version === 'turkey' && data.languages && data.languages.length > 0) {
+          if (
+            data.version === 'turkey' &&
+            data.languages &&
+            data.languages.length > 0
+          ) {
             // Check if section fits on current page
             const sectionMinHeight = 60;
             if (yPosition + sectionMinHeight > 720) {
               doc.addPage();
+              // Set background color for new page
+              doc.rect(0, 0, 595.28, 841.89).fillColor(backgroundColor).fill();
               yPosition = 50;
             }
-            
-            this.addSectionHeader(doc, headers.languages, yPosition, greenColor);
+
+            this.addSectionHeader(
+              doc,
+              headers.languages,
+              yPosition,
+              greenColor
+            );
             yPosition += 25;
 
             data.languages.forEach((lang) => {
@@ -631,7 +823,7 @@ export class CVTemplateStylishAccountingService {
               const language = this.sanitizeText(lang.language);
               doc
                 .fontSize(11)
-                .fillColor(blackColor)
+                .fillColor(greenColor)
                 .font('NotoSans-Bold')
                 .text(language, 50, yPosition);
 
@@ -639,10 +831,10 @@ export class CVTemplateStylishAccountingService {
               const level = this.sanitizeText(lang.level);
               const levelWidth = doc.widthOfString(level);
               const levelStartX = 545 - levelWidth;
-              
+
               doc
                 .fontSize(11)
-                .fillColor(blackColor)
+                .fillColor(greenColor)
                 .font('NotoSans')
                 .text(level, levelStartX, yPosition);
 
@@ -651,7 +843,7 @@ export class CVTemplateStylishAccountingService {
 
             // Green separator line after languages
             doc
-              .strokeColor(greenColor)
+              .strokeColor(lineColor)
               .lineWidth(2)
               .moveTo(50, yPosition)
               .lineTo(545, yPosition)
@@ -666,10 +858,17 @@ export class CVTemplateStylishAccountingService {
             const sectionMinHeight = 80;
             if (yPosition + sectionMinHeight > 720) {
               doc.addPage();
+              // Set background color for new page
+              doc.rect(0, 0, 595.28, 841.89).fillColor(backgroundColor).fill();
               yPosition = 50;
             }
 
-            this.addSectionHeader(doc, headers.references, yPosition, greenColor);
+            this.addSectionHeader(
+              doc,
+              headers.references,
+              yPosition,
+              greenColor
+            );
             yPosition += 25;
 
             data.references.forEach((ref) => {
@@ -677,15 +876,13 @@ export class CVTemplateStylishAccountingService {
               const name = this.sanitizeText(ref.name);
               doc
                 .fontSize(11)
-                .fillColor(blackColor)
+                .fillColor(greenColor)
                 .font('NotoSans-Bold')
                 .text(name, 50, yPosition);
 
               // Company and contact - regular font
               const companyContact = `${this.sanitizeText(ref.company)} | ${this.sanitizeText(ref.contact)}`;
-              doc
-                .font('NotoSans')
-                .text(companyContact, 50, yPosition + 15);
+              doc.font('NotoSans').text(companyContact, 50, yPosition + 15);
 
               yPosition += 40;
             });
@@ -693,17 +890,31 @@ export class CVTemplateStylishAccountingService {
 
           doc.end();
         } catch (error) {
-          logger.error('PDF generation error in stylish accounting template:', error);
-          reject(new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`));
+          logger.error(
+            'PDF generation error in stylish accounting template:',
+            error
+          );
+          reject(
+            new Error(
+              `PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            )
+          );
         }
       });
     } catch (error) {
       logger.error('PDF document creation failed:', error);
-      throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
-  private addSectionHeader(doc: InstanceType<typeof PDFDocument>, title: string, yPosition: number, greenColor: string): void {
+  private addSectionHeader(
+    doc: InstanceType<typeof PDFDocument>,
+    title: string,
+    yPosition: number,
+    greenColor: string
+  ): void {
     // Section title - Stylish Accounting style with larger font
     doc
       .fontSize(16)
