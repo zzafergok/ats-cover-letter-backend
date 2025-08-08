@@ -396,10 +396,24 @@ export class CVTemplateSimpleClassicService {
     colors: any,
     margins: any
   ): void {
-    this.addSectionTitle(doc, title, colors.green);
+    const text = this.sanitizeText(objective);
+    const estimatedHeight = Math.max(60, text.length / 5); // Rough estimation
+    
+    this.addSectionTitle(doc, title, colors.green, estimatedHeight);
     doc.moveDown(0.4);
 
-    const text = this.sanitizeText(objective);
+    // Check if content fits, if not move to next page
+    const contentHeight = this.calculateTextHeight(doc, text, {
+      width: margins.right - margins.left,
+      lineGap: 2,
+    });
+    
+    if (doc.y + contentHeight > 750) {
+      doc.addPage();
+      this.addVerticalBorders(doc, colors.green);
+      doc.y = 60;
+    }
+
     doc
       .fontSize(9)
       .fillColor(colors.black)
@@ -420,11 +434,26 @@ export class CVTemplateSimpleClassicService {
     margins: any,
     language: 'turkish' | 'english'
   ): void {
-    this.addSectionTitle(doc, title, colors.green);
+    this.addSectionTitle(doc, title, colors.green, 120);
     doc.moveDown(0.4);
 
     experience.forEach((exp, index) => {
       if (index > 0) doc.moveDown(0.6);
+
+      // Calculate required space for this experience item
+      const description = this.sanitizeText(exp.description);
+      const descriptionHeight = this.calculateTextHeight(doc, description, {
+        width: margins.right - margins.left,
+        lineGap: 2,
+      });
+      const requiredSpace = 80 + descriptionHeight; // Header + description + margins
+
+      // Check if entire experience item fits
+      if (doc.y + requiredSpace > 750) {
+        doc.addPage();
+        this.addVerticalBorders(doc, colors.green);
+        doc.y = 60;
+      }
 
       // Job title and company with location
       const jobTitle = this.sanitizeText(exp.jobTitle);
@@ -474,7 +503,6 @@ export class CVTemplateSimpleClassicService {
       doc.moveDown(0.7);
 
       // Description
-      const description = this.sanitizeText(exp.description);
       doc
         .fontSize(9)
         .font('NotoSans')
@@ -495,11 +523,26 @@ export class CVTemplateSimpleClassicService {
     colors: any,
     margins: any
   ): void {
-    this.addSectionTitle(doc, title, colors.green);
+    this.addSectionTitle(doc, title, colors.green, 100);
     doc.moveDown(0.4);
 
     education.forEach((edu, index) => {
       if (index > 0) doc.moveDown(0.4);
+
+      // Calculate required space for education item
+      const details = edu.details ? this.sanitizeText(edu.details) : '';
+      const detailsHeight = details ? this.calculateTextHeight(doc, details, {
+        width: margins.right - margins.left,
+        lineGap: 2,
+      }) : 0;
+      const requiredSpace = 60 + detailsHeight;
+
+      // Check if entire education item fits
+      if (doc.y + requiredSpace > 750) {
+        doc.addPage();
+        this.addVerticalBorders(doc, colors.green);
+        doc.y = 60;
+      }
 
       // Graduation date
       const graduationDate = DateFormatter.formatGraduationDate(
@@ -517,7 +560,6 @@ export class CVTemplateSimpleClassicService {
       const degree = this.sanitizeText(edu.degree);
       const university = this.sanitizeText(edu.university);
       const location = this.sanitizeText(edu.location);
-      const details = edu.details ? `${this.sanitizeText(edu.details)}` : '';
 
       doc
         .fontSize(10)
@@ -532,17 +574,18 @@ export class CVTemplateSimpleClassicService {
       doc.moveDown(0.5);
 
       // Description
-      const description = this.sanitizeText(details);
-      doc
-        .fontSize(9)
-        .font('NotoSans')
-        .fillColor(colors.black)
-        .text(description, margins.left, doc.y, {
-          width: margins.right - margins.left,
-          align: 'justify',
-          lineGap: 2,
-        });
-      doc.moveDown(0.7);
+      if (details) {
+        doc
+          .fontSize(9)
+          .font('NotoSans')
+          .fillColor(colors.black)
+          .text(details, margins.left, doc.y, {
+            width: margins.right - margins.left,
+            align: 'justify',
+            lineGap: 2,
+          });
+        doc.moveDown(0.7);
+      }
     });
   }
 
@@ -553,7 +596,12 @@ export class CVTemplateSimpleClassicService {
     colors: any,
     margins: any
   ): void {
-    this.addSectionTitle(doc, title, colors.green);
+    // Calculate required space for skills section
+    const totalRows = Math.ceil(skills.length / 3);
+    const skillsHeight = totalRows * 15;
+    const requiredSpace = 40 + skillsHeight; // Title + skills + margins
+
+    this.addSectionTitle(doc, title, colors.green, requiredSpace);
     doc.moveDown(0.4);
 
     const columnSpacing = 138;
@@ -572,7 +620,6 @@ export class CVTemplateSimpleClassicService {
         .text(skill, xPosition, currentYPosition);
     });
 
-    const totalRows = Math.ceil(skills.length / 3);
     doc.y = startY + totalRows * 15;
     doc.moveDown(0.7);
   }
@@ -584,7 +631,17 @@ export class CVTemplateSimpleClassicService {
     colors: any,
     margins: any
   ): void {
-    this.addSectionTitle(doc, title, colors.green);
+    // Calculate required space for technical skills section
+    let lineCount = 0;
+    if (skills.frontend?.length) lineCount++;
+    if (skills.backend?.length) lineCount++;
+    if (skills.database?.length) lineCount++;
+    if (skills.tools?.length) lineCount++;
+    
+    const skillsHeight = lineCount * 20; // Approximate height per skill line
+    const requiredSpace = 40 + skillsHeight; // Title + skills + margins
+
+    this.addSectionTitle(doc, title, colors.green, requiredSpace);
     doc.moveDown(0.4);
 
     if (skills.frontend?.length) {
@@ -651,11 +708,46 @@ export class CVTemplateSimpleClassicService {
     colors: any,
     margins: any
   ): void {
-    this.addSectionTitle(doc, title, colors.green);
+    // Calculate rough space needed for projects section
+    let totalProjectsHeight = 0;
+    projects.forEach((project) => {
+      const technologies = Array.isArray(project.technologies) 
+        ? project.technologies 
+        : project.technologies.split(',').map((t: string) => t.trim());
+      const techRows = Math.ceil(technologies.length / 4);
+      const techHeight = techRows * 15;
+      const descriptionHeight = this.calculateTextHeight(doc, project.description, {
+        width: margins.right - margins.left,
+        lineGap: 2
+      });
+      totalProjectsHeight += 40 + techHeight + descriptionHeight; // Name + tech + description + margins
+    });
+    const requiredSpace = 40 + Math.min(totalProjectsHeight, 120); // Title + first project or estimate
+
+    this.addSectionTitle(doc, title, colors.green, requiredSpace);
     doc.moveDown(0.4);
 
     projects.forEach((project, index) => {
       if (index > 0) doc.moveDown(0.6);
+
+      // Calculate space for this project item
+      const technologies = Array.isArray(project.technologies) 
+        ? project.technologies 
+        : project.technologies.split(',').map((t: string) => t.trim());
+      const techRows = Math.ceil(technologies.length / 4);
+      const techHeight = techRows * 15;
+      const descriptionHeight = this.calculateTextHeight(doc, project.description, {
+        width: margins.right - margins.left,
+        lineGap: 2
+      });
+      const projectRequiredSpace = 40 + techHeight + descriptionHeight;
+
+      // Check if entire project item fits
+      if (doc.y + projectRequiredSpace > 750) {
+        doc.addPage();
+        this.addVerticalBorders(doc, colors.green);
+        doc.y = 60;
+      }
 
       const projectName = this.sanitizeText(project.name);
       
@@ -669,10 +761,6 @@ export class CVTemplateSimpleClassicService {
       doc.moveDown(0.4);
 
       // Technologies in 4-column grid
-      const technologies = Array.isArray(project.technologies) 
-        ? project.technologies 
-        : project.technologies.split(',').map((t: string) => t.trim());
-
       if (technologies && technologies.length > 0) {
         const columnSpacing = 104; // 415 / 4 ≈ 104
         const startY = doc.y;
@@ -717,10 +805,23 @@ export class CVTemplateSimpleClassicService {
     colors: any,
     margins: any
   ): void {
-    this.addSectionTitle(doc, title, colors.green);
+    const text = this.sanitizeText(communication);
+    const contentHeight = this.calculateTextHeight(doc, text, {
+      width: margins.right - margins.left,
+      lineGap: 2,
+    });
+    const requiredSpace = 40 + contentHeight; // Title + content + margins
+
+    this.addSectionTitle(doc, title, colors.green, requiredSpace);
     doc.moveDown(0.4);
 
-    const text = this.sanitizeText(communication);
+    // Check if content fits, if not move to next page
+    if (doc.y + contentHeight > 750) {
+      doc.addPage();
+      this.addVerticalBorders(doc, colors.green);
+      doc.y = 60;
+    }
+
     doc
       .fontSize(9)
       .fillColor(colors.black)
@@ -740,10 +841,23 @@ export class CVTemplateSimpleClassicService {
     colors: any,
     margins: any
   ): void {
-    this.addSectionTitle(doc, title, colors.green);
+    const text = this.sanitizeText(leadership);
+    const contentHeight = this.calculateTextHeight(doc, text, {
+      width: margins.right - margins.left,
+      lineGap: 2,
+    });
+    const requiredSpace = 40 + contentHeight; // Title + content + margins
+
+    this.addSectionTitle(doc, title, colors.green, requiredSpace);
     doc.moveDown(0.4);
 
-    const text = this.sanitizeText(leadership);
+    // Check if content fits, if not move to next page
+    if (doc.y + contentHeight > 750) {
+      doc.addPage();
+      this.addVerticalBorders(doc, colors.green);
+      doc.y = 60;
+    }
+
     doc
       .fontSize(9)
       .fillColor(colors.black)
@@ -763,11 +877,23 @@ export class CVTemplateSimpleClassicService {
     colors: any,
     margins: any
   ): void {
-    this.addSectionTitle(doc, title, colors.green);
+    // Calculate required space for certificates section
+    const certHeight = certificates.length * 35; // Approximate height per certificate
+    const requiredSpace = 40 + certHeight; // Title + certificates + margins
+
+    this.addSectionTitle(doc, title, colors.green, requiredSpace);
     doc.moveDown(0.4);
 
     certificates.forEach((cert, index) => {
       if (index > 0) doc.moveDown(0.5);
+
+      // Check if certificate item fits
+      const certRequiredSpace = 35; // Height for one certificate
+      if (doc.y + certRequiredSpace > 750) {
+        doc.addPage();
+        this.addVerticalBorders(doc, colors.green);
+        doc.y = 60;
+      }
 
       const certName = this.sanitizeText(cert.name);
       const issuer = this.sanitizeText(cert.issuer);
@@ -804,15 +930,28 @@ export class CVTemplateSimpleClassicService {
     colors: any,
     margins: any
   ): void {
-    this.addSectionTitle(doc, title, colors.green);
-    doc.moveDown(0.4);
-
     const languageEntries = languages
       .map(
         (lang) =>
           `${this.sanitizeText(lang.language)}: ${this.sanitizeText(lang.level)}`
       )
       .join(' • ');
+
+    const contentHeight = this.calculateTextHeight(doc, languageEntries, {
+      width: margins.right - margins.left,
+      lineGap: 2,
+    });
+    const requiredSpace = 40 + contentHeight; // Title + content + margins
+
+    this.addSectionTitle(doc, title, colors.green, requiredSpace);
+    doc.moveDown(0.4);
+
+    // Check if content fits, if not move to next page
+    if (doc.y + contentHeight > 750) {
+      doc.addPage();
+      this.addVerticalBorders(doc, colors.green);
+      doc.y = 60;
+    }
 
     doc
       .fontSize(9)
@@ -832,11 +971,23 @@ export class CVTemplateSimpleClassicService {
     colors: any,
     margins: any
   ): void {
-    this.addSectionTitle(doc, title, colors.green);
+    // Calculate required space for references section
+    const refHeight = references.length * 20; // Approximate height per reference
+    const requiredSpace = 40 + refHeight; // Title + references + margins
+
+    this.addSectionTitle(doc, title, colors.green, requiredSpace);
     doc.moveDown(0.4);
 
     references.forEach((ref, index) => {
       if (index > 0) doc.moveDown(0.3);
+
+      // Check if reference item fits
+      const refRequiredSpace = 20; // Height for one reference
+      if (doc.y + refRequiredSpace > 750) {
+        doc.addPage();
+        this.addVerticalBorders(doc, colors.green);
+        doc.y = 60;
+      }
 
       const refText = `${this.sanitizeText(ref.name)} - ${this.sanitizeText(ref.company)} | ${this.sanitizeText(ref.contact)}`;
       doc
@@ -849,11 +1000,54 @@ export class CVTemplateSimpleClassicService {
     });
   }
 
+  private checkPageBreak(
+    doc: InstanceType<typeof PDFDocument>,
+    requiredSpace: number
+  ): void {
+    if (doc.y + requiredSpace > 750) {
+      doc.addPage();
+      this.addVerticalBorders(doc, '#5e7a5a');
+      doc.y = 60;
+    }
+  }
+
+  private calculateTextHeight(
+    doc: InstanceType<typeof PDFDocument>,
+    text: string,
+    options: { width: number; lineGap?: number }
+  ): number {
+    const currentFontSize = 9; // Default font size for content
+    const lineGap = options.lineGap || 0;
+    const lineHeight = currentFontSize + lineGap;
+    
+    // Simple estimation: count words and estimate line wrapping
+    const words = text.split(' ');
+    const avgCharWidth = currentFontSize * 0.6; // Rough estimation
+    let currentLineLength = 0;
+    let lineCount = 1;
+    
+    for (const word of words) {
+      const wordLength = word.length * avgCharWidth;
+      if (currentLineLength + wordLength > options.width) {
+        lineCount++;
+        currentLineLength = wordLength;
+      } else {
+        currentLineLength += wordLength + avgCharWidth; // Add space
+      }
+    }
+    
+    return lineCount * lineHeight;
+  }
+
   private addSectionTitle(
     doc: InstanceType<typeof PDFDocument>,
     title: string,
-    color: string
+    color: string,
+    requiredSpace: number = 80
   ): void {
+    // Check if section title + minimum content fits
+    this.checkPageBreak(doc, requiredSpace);
+    
     doc
       .fontSize(14)
       .fillColor(color)
