@@ -33,6 +33,7 @@ export interface CVSimpleClassicData {
   // Global version fields
   communication?: string;
   leadership?: string;
+  skills?: string[];
   // Turkey version fields
   technicalSkills?: {
     frontend?: string[];
@@ -110,6 +111,7 @@ export class CVTemplateSimpleClassicService {
         languages: 'LANGUAGES',
         communication: 'COMMUNICATION',
         leadership: 'LEADERSHIP',
+        skills: 'SKILLS',
         references: 'REFERENCES',
       };
     }
@@ -143,15 +145,11 @@ export class CVTemplateSimpleClassicService {
             reject(error);
           });
 
-          // Green border frame
-          doc
-            .strokeColor('#4a7c59')
-            .lineWidth(8)
-            .rect(15, 15, 565, 812)
-            .stroke();
+          // Left and right green vertical lines
+          const greenColor = '#5e7a5a';
+          this.addVerticalBorders(doc, greenColor);
 
           // Define colors and get section headers
-          const greenColor = '#4a7c59';
           const greyColor = '#666666';
           const blackColor = '#000000';
           const headers = this.getSectionHeaders(data.language!);
@@ -160,12 +158,12 @@ export class CVTemplateSimpleClassicService {
 
           // Header with name - Simple Classic style
           doc
-            .fontSize(32)
+            .fontSize(30)
             .fillColor(greenColor)
             .font('NotoSans-Bold')
             .text(
               this.sanitizeText(data.personalInfo.fullName).toUpperCase(),
-              50,
+              75,
               yPosition
             );
 
@@ -181,10 +179,10 @@ export class CVTemplateSimpleClassicService {
 
           contactInfo.forEach((info, index) => {
             doc
-              .fontSize(11)
+              .fontSize(9)
               .fillColor(blackColor)
               .font('NotoSans')
-              .text(info, 50, yPosition + index * 15);
+              .text(info, 75, yPosition + index * 15);
           });
 
           yPosition += contactInfo.length * 15 + 30;
@@ -201,18 +199,18 @@ export class CVTemplateSimpleClassicService {
 
             const objective = this.sanitizeText(data.objective);
             doc
-              .fontSize(11)
+              .fontSize(9)
               .fillColor(blackColor)
               .font('NotoSans')
-              .text(objective, 50, yPosition, {
-                width: 480,
+              .text(objective, 100, yPosition, {
+                width: 415,
                 align: 'justify',
                 lineGap: 2,
               });
 
             yPosition +=
               this.calculateTextHeight(doc, objective, {
-                width: 480,
+                width: 415,
                 lineGap: 2,
               }) + 30;
           }
@@ -234,10 +232,10 @@ export class CVTemplateSimpleClassicService {
               const location = this.sanitizeText(exp.location);
 
               doc
-                .fontSize(12)
+                .fontSize(10)
                 .fillColor(blackColor)
                 .font('NotoSans-Bold')
-                .text(`${jobTitle}, `, 50, yPosition, { continued: true })
+                .text(`${jobTitle}, `, 100, yPosition, { continued: true })
                 .font('NotoSans')
                 .text(`${company} | ${location}`, { continued: false });
 
@@ -253,40 +251,36 @@ export class CVTemplateSimpleClassicService {
               const dateRange = `${startDate} – ${endDate}`;
 
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(greyColor)
                 .font('NotoSans')
-                .text(dateRange, 50, yPosition);
+                .text(dateRange, 100, yPosition);
 
               yPosition += 20;
 
               // Description
               const description = this.sanitizeText(exp.description);
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .font('NotoSans')
-                .text(description, 50, yPosition, {
-                  width: 480,
+                .text(description, 100, yPosition, {
+                  width: 415,
                   align: 'justify',
                   lineGap: 2,
                 });
 
               yPosition +=
                 this.calculateTextHeight(doc, description, {
-                  width: 480,
+                  width: 415,
                   lineGap: 2,
                 }) + 20;
 
               // Check for page break
               if (yPosition > 720 && index < data.experience.length - 1) {
                 doc.addPage();
-                // Green border for new page
-                doc
-                  .strokeColor(greenColor)
-                  .lineWidth(8)
-                  .rect(15, 15, 565, 812)
-                  .stroke();
+                // Green vertical borders for new page
+                this.addVerticalBorders(doc, greenColor);
                 yPosition = 60;
               }
             });
@@ -296,12 +290,8 @@ export class CVTemplateSimpleClassicService {
           yPosition += 10;
           if (yPosition > 650) {
             doc.addPage();
-            // Green border for new page
-            doc
-              .strokeColor(greenColor)
-              .lineWidth(8)
-              .rect(15, 15, 565, 812)
-              .stroke();
+            // Green vertical borders for new page
+            this.addVerticalBorders(doc, greenColor);
             yPosition = 60;
           }
 
@@ -320,10 +310,10 @@ export class CVTemplateSimpleClassicService {
                 this.sanitizeText(edu.graduationDate)
               );
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(greyColor)
                 .font('NotoSans')
-                .text(graduationDate, 50, yPosition);
+                .text(graduationDate, 100, yPosition);
 
               yPosition += 15;
 
@@ -336,15 +326,15 @@ export class CVTemplateSimpleClassicService {
                 : '';
 
               doc
-                .fontSize(12)
+                .fontSize(10)
                 .fillColor(blackColor)
                 .font('NotoSans-Bold')
                 .text(
                   `${degree}, ${university} | ${location}${details}`,
-                  50,
+                  100,
                   yPosition,
                   {
-                    width: 480,
+                    width: 415,
                   }
                 );
 
@@ -352,16 +342,44 @@ export class CVTemplateSimpleClassicService {
             });
           }
 
+          // Skills Section - Global version only
+          if (data.version !== 'turkey' && data.skills && data.skills.length > 0) {
+            yPosition += 20;
+            if (yPosition > 650) {
+              doc.addPage();
+              this.addVerticalBorders(doc, greenColor);
+              yPosition = 60;
+            }
+
+            this.addSectionHeader(doc, headers.skills, yPosition, greenColor);
+            yPosition += 25;
+
+            const columnWidth = 138; // 415 / 3 ≈ 138
+            const columnSpacing = 138;
+            
+            data.skills.forEach((skill, index) => {
+              const column = index % 3;
+              const row = Math.floor(index / 3);
+              const xPosition = 100 + (column * columnSpacing);
+              const currentYPosition = yPosition + (row * 15);
+
+              doc
+                .fontSize(9)
+                .fillColor(blackColor)
+                .font('NotoSans')
+                .text(skill, xPosition, currentYPosition);
+            });
+
+            const totalRows = Math.ceil(data.skills.length / 3);
+            yPosition += (totalRows * 15) + 20;
+          }
+
           // Technical Skills Section - Turkey version
           if (data.version === 'turkey' && data.technicalSkills) {
             yPosition += 20;
             if (yPosition > 650) {
               doc.addPage();
-              doc
-                .strokeColor(greenColor)
-                .lineWidth(8)
-                .rect(15, 15, 565, 812)
-                .stroke();
+              this.addVerticalBorders(doc, greenColor);
               yPosition = 60;
             }
 
@@ -377,53 +395,53 @@ export class CVTemplateSimpleClassicService {
 
             if (skills.frontend && skills.frontend.length > 0) {
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .font('NotoSans-Bold')
-                .text('Frontend:', 50, yPosition);
+                .text('Frontend:', 100, yPosition);
               const frontendText = skills.frontend.join(', ');
               doc
                 .font('NotoSans')
-                .text(frontendText, 120, yPosition, { width: 360 });
+                .text(frontendText, 170, yPosition, { width: 345 });
               yPosition += 18;
             }
 
             if (skills.backend && skills.backend.length > 0) {
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .font('NotoSans-Bold')
-                .text('Backend:', 50, yPosition);
+                .text('Backend:', 100, yPosition);
               const backendText = skills.backend.join(', ');
               doc
                 .font('NotoSans')
-                .text(backendText, 120, yPosition, { width: 360 });
+                .text(backendText, 170, yPosition, { width: 345 });
               yPosition += 18;
             }
 
             if (skills.database && skills.database.length > 0) {
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .font('NotoSans-Bold')
-                .text('Database:', 50, yPosition);
+                .text('Database:', 100, yPosition);
               const databaseText = skills.database.join(', ');
               doc
                 .font('NotoSans')
-                .text(databaseText, 120, yPosition, { width: 360 });
+                .text(databaseText, 170, yPosition, { width: 345 });
               yPosition += 18;
             }
 
             if (skills.tools && skills.tools.length > 0) {
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .font('NotoSans-Bold')
-                .text('Tools:', 50, yPosition);
+                .text('Tools:', 100, yPosition);
               const toolsText = skills.tools.join(', ');
               doc
                 .font('NotoSans')
-                .text(toolsText, 120, yPosition, { width: 360 });
+                .text(toolsText, 170, yPosition, { width: 345 });
               yPosition += 18;
             }
 
@@ -435,11 +453,7 @@ export class CVTemplateSimpleClassicService {
             yPosition += 20;
             if (yPosition > 650) {
               doc.addPage();
-              doc
-                .strokeColor(greenColor)
-                .lineWidth(8)
-                .rect(15, 15, 565, 812)
-                .stroke();
+              this.addVerticalBorders(doc, greenColor);
               yPosition = 60;
             }
 
@@ -453,18 +467,18 @@ export class CVTemplateSimpleClassicService {
 
             const communication = this.sanitizeText(data.communication);
             doc
-              .fontSize(11)
+              .fontSize(9)
               .fillColor(blackColor)
               .font('NotoSans')
-              .text(communication, 50, yPosition, {
-                width: 480,
+              .text(communication, 100, yPosition, {
+                width: 415,
                 align: 'justify',
                 lineGap: 2,
               });
 
             yPosition +=
               this.calculateTextHeight(doc, communication, {
-                width: 480,
+                width: 415,
                 lineGap: 2,
               }) + 20;
           }
@@ -478,11 +492,7 @@ export class CVTemplateSimpleClassicService {
             yPosition += 20;
             if (yPosition > 650) {
               doc.addPage();
-              doc
-                .strokeColor(greenColor)
-                .lineWidth(8)
-                .rect(15, 15, 565, 812)
-                .stroke();
+              this.addVerticalBorders(doc, greenColor);
               yPosition = 60;
             }
 
@@ -493,18 +503,18 @@ export class CVTemplateSimpleClassicService {
               // Project name - bold
               const projectName = this.sanitizeText(project.name);
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .font('NotoSans-Bold')
-                .text(projectName, 50, yPosition);
+                .text(projectName, 100, yPosition);
 
               // Technologies - right aligned
               const technologies = this.sanitizeText(project.technologies);
               const techWidth = doc.widthOfString(technologies);
-              const techStartX = 530 - techWidth;
+              const techStartX = 565 - techWidth;
 
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .font('NotoSans')
                 .text(technologies, techStartX, yPosition);
@@ -514,29 +524,25 @@ export class CVTemplateSimpleClassicService {
               // Project description
               const description = this.sanitizeText(project.description);
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .font('NotoSans')
-                .text(description, 50, yPosition, {
-                  width: 480,
+                .text(description, 100, yPosition, {
+                  width: 415,
                   align: 'justify',
                   lineGap: 2,
                 });
 
               yPosition +=
                 this.calculateTextHeight(doc, description, {
-                  width: 480,
+                  width: 415,
                   lineGap: 2,
                 }) + 15;
 
               // Check for page break
               if (yPosition > 720) {
                 doc.addPage();
-                doc
-                  .strokeColor(greenColor)
-                  .lineWidth(8)
-                  .rect(15, 15, 565, 812)
-                  .stroke();
+                this.addVerticalBorders(doc, greenColor);
                 yPosition = 60;
               }
             });
@@ -549,11 +555,7 @@ export class CVTemplateSimpleClassicService {
             yPosition += 20;
             if (yPosition > 650) {
               doc.addPage();
-              doc
-                .strokeColor(greenColor)
-                .lineWidth(8)
-                .rect(15, 15, 565, 812)
-                .stroke();
+              this.addVerticalBorders(doc, greenColor);
               yPosition = 60;
             }
 
@@ -567,18 +569,18 @@ export class CVTemplateSimpleClassicService {
 
             const leadership = this.sanitizeText(data.leadership);
             doc
-              .fontSize(11)
+              .fontSize(9)
               .fillColor(blackColor)
               .font('NotoSans')
-              .text(leadership, 50, yPosition, {
-                width: 480,
+              .text(leadership, 100, yPosition, {
+                width: 415,
                 align: 'justify',
                 lineGap: 2,
               });
 
             yPosition +=
               this.calculateTextHeight(doc, leadership, {
-                width: 480,
+                width: 415,
                 lineGap: 2,
               }) + 20;
           }
@@ -592,11 +594,7 @@ export class CVTemplateSimpleClassicService {
             yPosition += 20;
             if (yPosition > 650) {
               doc.addPage();
-              doc
-                .strokeColor(greenColor)
-                .lineWidth(8)
-                .rect(15, 15, 565, 812)
-                .stroke();
+              this.addVerticalBorders(doc, greenColor);
               yPosition = 60;
             }
 
@@ -612,24 +610,24 @@ export class CVTemplateSimpleClassicService {
               // Certificate name - bold
               const certName = this.sanitizeText(cert.name);
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .font('NotoSans-Bold')
-                .text(certName, 50, yPosition);
+                .text(certName, 100, yPosition);
 
               // Issuer - regular font
               const issuer = this.sanitizeText(cert.issuer);
-              doc.font('NotoSans').text(issuer, 50, yPosition + 15);
+              doc.font('NotoSans').text(issuer, 100, yPosition + 15);
 
               // Date - right aligned
               const certDate = DateFormatter.formatDate(
                 this.sanitizeText(cert.date)
               );
               const dateWidth = doc.widthOfString(certDate);
-              const dateStartX = 530 - dateWidth;
+              const dateStartX = 565 - dateWidth;
 
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .text(certDate, dateStartX, yPosition + 15);
 
@@ -648,11 +646,7 @@ export class CVTemplateSimpleClassicService {
             yPosition += 20;
             if (yPosition > 650) {
               doc.addPage();
-              doc
-                .strokeColor(greenColor)
-                .lineWidth(8)
-                .rect(15, 15, 565, 812)
-                .stroke();
+              this.addVerticalBorders(doc, greenColor);
               yPosition = 60;
             }
 
@@ -668,18 +662,18 @@ export class CVTemplateSimpleClassicService {
               // Language name - bold
               const language = this.sanitizeText(lang.language);
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .font('NotoSans-Bold')
-                .text(language, 50, yPosition);
+                .text(language, 100, yPosition);
 
               // Level - right aligned
               const level = this.sanitizeText(lang.level);
               const levelWidth = doc.widthOfString(level);
-              const levelStartX = 530 - levelWidth;
+              const levelStartX = 565 - levelWidth;
 
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .font('NotoSans')
                 .text(level, levelStartX, yPosition);
@@ -695,11 +689,7 @@ export class CVTemplateSimpleClassicService {
             yPosition += 20;
             if (yPosition > 650) {
               doc.addPage();
-              doc
-                .strokeColor(greenColor)
-                .lineWidth(8)
-                .rect(15, 15, 565, 812)
-                .stroke();
+              this.addVerticalBorders(doc, greenColor);
               yPosition = 60;
             }
 
@@ -715,14 +705,14 @@ export class CVTemplateSimpleClassicService {
               // Reference name - bold
               const name = this.sanitizeText(ref.name);
               doc
-                .fontSize(11)
+                .fontSize(9)
                 .fillColor(blackColor)
                 .font('NotoSans-Bold')
-                .text(name, 50, yPosition);
+                .text(name, 100, yPosition);
 
               // Company and contact - regular font
               const companyContact = `${this.sanitizeText(ref.company)} | ${this.sanitizeText(ref.contact)}`;
-              doc.font('NotoSans').text(companyContact, 50, yPosition + 15);
+              doc.font('NotoSans').text(companyContact, 100, yPosition + 15);
 
               yPosition += 40;
             });
@@ -757,10 +747,50 @@ export class CVTemplateSimpleClassicService {
   ): void {
     // Section title - Simple Classic style with green color
     doc
-      .fontSize(16)
+      .fontSize(14)
       .fillColor(greenColor)
       .font('NotoSans-Bold')
-      .text(title, 50, yPosition);
+      .text(title, 100, yPosition);
+  }
+
+  private addVerticalBorders(
+    doc: InstanceType<typeof PDFDocument>,
+    greenColor: string
+  ): void {
+    // Lighter green for borders
+    const borderColor = '#7a9175';
+    
+    // Left vertical line - 0.75px width, full page height
+    doc
+      .strokeColor(borderColor)
+      .lineWidth(0.75)
+      .moveTo(30, 0)
+      .lineTo(30, 842)
+      .stroke();
+    
+    // Second left line - 1.75px width with gap, full page height
+    doc
+      .strokeColor(borderColor)
+      .lineWidth(1.75)
+      .moveTo(33.5, 0)
+      .lineTo(33.5, 842)
+      .stroke();
+    
+    // Right vertical line - 0.75px width, full page height
+    doc
+      .strokeColor(borderColor)
+      .lineWidth(0.75)
+      .moveTo(565, 0)
+      .lineTo(565, 842)
+      .stroke();
+    
+    // Second right line - 1.75px width with gap, full page height
+    doc
+      .strokeColor(borderColor)
+      .lineWidth(1.75)
+      .moveTo(561.5, 0)
+      .lineTo(561.5, 842)
+      .stroke();
   }
 
   private calculateTextHeight(
