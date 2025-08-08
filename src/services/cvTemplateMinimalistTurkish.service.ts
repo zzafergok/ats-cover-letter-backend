@@ -3,6 +3,7 @@ import { PassThrough } from 'stream';
 import logger from '../config/logger';
 import { FontLoader } from '../utils/fontLoader';
 import { DateFormatter } from '../utils/dateFormatter';
+import { shortenUrlForDisplay } from '../utils/urlShortener';
 
 export interface CVMinimalistTurkishData {
   personalInfo: {
@@ -133,6 +134,7 @@ export class CVTemplateMinimalistTurkishService {
         languages: 'LANGUAGES',
         communication: 'COMMUNICATION',
         leadership: 'LEADERSHIP',
+        skills: 'SKILLS',
         references: 'REFERENCES',
       };
     }
@@ -222,572 +224,530 @@ export class CVTemplateMinimalistTurkishService {
     const colors = { black: '#000000' };
     const headers = this.getSectionHeaders(data.language!);
 
-    let yPosition = 50;
+    // Page dimensions: A4 = 595x842 points
+    const pageWidth = 545; // 595 - 50 margin
+    const marginLeft = pageWidth * 0.05; // 5% left side
+    const marginRight = pageWidth * 0.125; // 12.5% right side
+    const contentWidth = pageWidth - marginLeft - marginRight;
 
-    this.addHeader(doc, data, colors, yPosition);
-    yPosition = this.updateYPosition(yPosition, 65);
+    // Two-column layout settings (17.5% - 82.5%)
+    const leftColumnX = 50 + marginLeft;
+    const leftColumnWidth = contentWidth * 0.175;
+    const rightColumnX = leftColumnX + leftColumnWidth + 20; // 20px gap
+    const rightColumnWidth = contentWidth * 0.825 - 20;
 
+    let currentY = 50;
+
+    // Add header only in right column (wide)
+    this.addMainHeader(
+      doc,
+      data,
+      colors,
+      rightColumnX,
+      currentY,
+      rightColumnWidth
+    );
+    currentY += 120; // Increased space after header
+
+    // Add sections with title-content layout
     if (data.objective) {
-      yPosition = this.addObjectiveSection(
+      currentY = this.addTwoColumnSection(
         doc,
-        data.objective,
         headers.objective,
+        data.objective,
+        'text',
         colors,
-        yPosition
+        currentY,
+        leftColumnX,
+        leftColumnWidth,
+        rightColumnX,
+        rightColumnWidth
       );
     }
 
     if (data.experience && data.experience.length > 0) {
-      yPosition = this.addExperienceSection(
+      currentY = this.addTwoColumnSection(
         doc,
-        data.experience,
         headers.experience,
+        data.experience,
+        'experience',
         colors,
-        yPosition
+        currentY,
+        leftColumnX,
+        leftColumnWidth,
+        rightColumnX,
+        rightColumnWidth
       );
     }
 
     if (data.education && data.education.length > 0) {
-      yPosition = this.addEducationSection(
+      currentY = this.addTwoColumnSection(
         doc,
-        data.education,
         headers.education,
+        data.education,
+        'education',
         colors,
-        yPosition
+        currentY,
+        leftColumnX,
+        leftColumnWidth,
+        rightColumnX,
+        rightColumnWidth
       );
     }
 
     if (data.version === 'turkey') {
       if (data.technicalSkills) {
-        yPosition = this.addTechnicalSkillsSection(
+        currentY = this.addTwoColumnSection(
           doc,
-          data.technicalSkills,
           headers.technicalSkills,
+          data.technicalSkills,
+          'technicalSkills',
           colors,
-          yPosition
+          currentY,
+          leftColumnX,
+          leftColumnWidth,
+          rightColumnX,
+          rightColumnWidth
         );
       }
 
       if (data.projects && data.projects.length > 0) {
-        yPosition = this.addProjectsSection(
+        currentY = this.addTwoColumnSection(
           doc,
-          data.projects,
           headers.projects,
+          data.projects,
+          'projects',
           colors,
-          yPosition
+          currentY,
+          leftColumnX,
+          leftColumnWidth,
+          rightColumnX,
+          rightColumnWidth
         );
       }
 
       if (data.certificates && data.certificates.length > 0) {
-        yPosition = this.addCertificatesSection(
+        currentY = this.addTwoColumnSection(
           doc,
-          data.certificates,
           headers.certificates,
+          data.certificates,
+          'certificates',
           colors,
-          yPosition
+          currentY,
+          leftColumnX,
+          leftColumnWidth,
+          rightColumnX,
+          rightColumnWidth
         );
       }
 
       if (data.languages && data.languages.length > 0) {
-        yPosition = this.addLanguagesSection(
+        currentY = this.addTwoColumnSection(
           doc,
-          data.languages,
           headers.languages,
+          data.languages,
+          'languages',
           colors,
-          yPosition
+          currentY,
+          leftColumnX,
+          leftColumnWidth,
+          rightColumnX,
+          rightColumnWidth
         );
       }
     } else {
       if (data.communication) {
-        yPosition = this.addCommunicationSection(
+        currentY = this.addTwoColumnSection(
           doc,
-          data.communication,
           headers.communication,
+          data.communication,
+          'text',
           colors,
-          yPosition
+          currentY,
+          leftColumnX,
+          leftColumnWidth,
+          rightColumnX,
+          rightColumnWidth
         );
       }
 
       if (data.leadership) {
-        yPosition = this.addLeadershipSection(
+        currentY = this.addTwoColumnSection(
           doc,
-          data.leadership,
           headers.leadership,
+          data.leadership,
+          'text',
           colors,
-          yPosition
+          currentY,
+          leftColumnX,
+          leftColumnWidth,
+          rightColumnX,
+          rightColumnWidth
+        );
+      }
+
+      if (data.skills && data.skills.length > 0) {
+        currentY = this.addTwoColumnSection(
+          doc,
+          headers.skills!,
+          data.skills,
+          'skills',
+          colors,
+          currentY,
+          leftColumnX,
+          leftColumnWidth,
+          rightColumnX,
+          rightColumnWidth
         );
       }
     }
 
     if (data.references && data.references.length > 0) {
-      this.addReferencesSection(
+      currentY = this.addTwoColumnSection(
         doc,
-        data.references,
         headers.references,
+        data.references,
+        'references',
         colors,
-        yPosition
+        currentY,
+        leftColumnX,
+        leftColumnWidth,
+        rightColumnX,
+        rightColumnWidth
       );
     }
   }
 
-  private addHeader(
+  private renderContactInfoWithSmartWrapping(
+    doc: InstanceType<typeof PDFDocument>,
+    contactInfoParts: string[],
+    urlInfoParts: Array<{ display: string; url: string; platform: string }>,
+    startX: number,
+    startY: number,
+    maxWidth: number,
+    textColor: string
+  ): number {
+    const fontSize = 10;
+    const fontFamily = 'NotoSans';
+    const lineHeight = 15;
+    let currentY = startY;
+
+    doc.fontSize(fontSize).font(fontFamily).fillColor(textColor);
+
+    // Group parts into lines based on available width
+    const lines: string[][] = [];
+    let currentLine: string[] = [];
+    let currentLineWidth = 0;
+
+    for (let i = 0; i < contactInfoParts.length; i++) {
+      const part = contactInfoParts[i];
+      const partWidth = doc.widthOfString(part);
+      const separatorWidth =
+        i < contactInfoParts.length - 1 ? doc.widthOfString(' | ') : 0;
+      const totalPartWidth = partWidth + separatorWidth;
+
+      // Check if adding this part would exceed the line width
+      if (
+        currentLineWidth + totalPartWidth > maxWidth &&
+        currentLine.length > 0
+      ) {
+        lines.push([...currentLine]);
+        currentLine = [part];
+        currentLineWidth = partWidth + separatorWidth;
+      } else {
+        currentLine.push(part);
+        currentLineWidth += totalPartWidth;
+      }
+    }
+
+    // Add the last line if it has content
+    if (currentLine.length > 0) {
+      lines.push(currentLine);
+    }
+
+    // Render each line with hyperlinks
+    lines.forEach((line) => {
+      let currentX = startX;
+
+      line.forEach((part, partIndex) => {
+        // Draw the text part
+        doc.text(part, currentX, currentY);
+
+        // Add hyperlink if this part is a URL or email
+        const urlInfo = urlInfoParts.find((ui) => ui.display === part);
+        if (urlInfo) {
+          const actualPartWidth = doc.widthOfString(part);
+          doc.link(
+            currentX,
+            currentY,
+            actualPartWidth,
+            fontSize + 2,
+            urlInfo.url
+          );
+        }
+
+        // Move to next position
+        currentX += doc.widthOfString(part);
+
+        // Add separator if not the last part in the line
+        if (partIndex < line.length - 1) {
+          doc.text(' | ', currentX, currentY);
+          currentX += doc.widthOfString(' | ');
+        }
+      });
+
+      currentY += lineHeight;
+    });
+
+    return currentY;
+  }
+
+  private addMainHeader(
     doc: InstanceType<typeof PDFDocument>,
     data: CVMinimalistTurkishData,
     colors: any,
-    yPosition: number
+    xPosition: number,
+    yPosition: number,
+    columnWidth: number
   ): void {
-    // Header with name - minimalist style
     const fullName = `${this.sanitizeText(data.personalInfo.firstName)} ${this.sanitizeText(data.personalInfo.lastName)}`;
+
+    // Name - centered in the wide column
     doc
-      .fontSize(18)
+      .fontSize(20)
       .fillColor(colors.black)
       .font('NotoSans-Bold')
-      .text(fullName.toUpperCase(), 50, yPosition);
+      .text(fullName.toUpperCase(), xPosition, yPosition, {
+        width: columnWidth,
+        align: 'left',
+      });
 
-    // Contact information - clean single line format
-    const contactInfo = [
-      `${this.sanitizeText(data.personalInfo.address)}, ${this.sanitizeText(data.personalInfo.city)},`,
+    // Contact information - professional order with smart line wrapping
+    const contactInfoParts: string[] = [
+      `${this.sanitizeText(data.personalInfo.address)}, ${this.sanitizeText(data.personalInfo.city)}`,
       this.sanitizeText(data.personalInfo.phone),
       this.sanitizeText(data.personalInfo.email),
-    ]
-      .filter(Boolean)
-      .join(' – ');
+    ];
 
-    doc
-      .fontSize(10)
-      .fillColor(colors.black)
-      .font('NotoSans')
-      .text(contactInfo, 50, yPosition + 30, {
-        width: 515,
-      });
-  }
+    // Add shortened URLs for social links with hyperlink info
+    const socialFields = [
+      { key: 'website', value: data.personalInfo.website },
+      { key: 'linkedin', value: data.personalInfo.linkedin },
+      { key: 'github', value: data.personalInfo.github },
+      { key: 'medium', value: data.personalInfo.medium },
+    ];
 
-  private addObjectiveSection(
-    doc: InstanceType<typeof PDFDocument>,
-    objective: string,
-    title: string,
-    colors: any,
-    yPosition: number
-  ): number {
-    this.checkPageBreak(doc, yPosition, 80);
-    this.addSectionHeader(doc, title, yPosition);
-    yPosition += 20;
+    const urlInfoParts: Array<{ display: string; url: string; platform: string }> = [];
 
-    const objectiveText = this.sanitizeText(objective);
-    doc
-      .fontSize(10)
-      .fillColor(colors.black)
-      .font('NotoSans')
-      .text(objectiveText, 50, yPosition, {
-        width: 515,
-        align: 'justify',
-        lineGap: 2,
-      });
-
-    return this.updateYPosition(
-      yPosition,
-      this.calculateTextHeight(doc, objectiveText, {
-        width: 515,
-        lineGap: 2,
-      }) + 20
-    );
-  }
-
-  private addExperienceSection(
-    doc: InstanceType<typeof PDFDocument>,
-    experience: any[],
-    title: string,
-    colors: any,
-    yPosition: number
-  ): number {
-    this.checkPageBreak(doc, yPosition, 120);
-    this.addSectionHeader(doc, title, yPosition);
-    yPosition += 20;
-
-    experience.forEach((exp) => {
-      yPosition = this.checkPageBreak(doc, yPosition, 80);
-
-      const jobTitle = this.sanitizeText(exp.jobTitle);
-      doc
-        .fontSize(11)
-        .fillColor(colors.black)
-        .font('NotoSans-Bold')
-        .text(jobTitle, 50, yPosition);
-      yPosition += 15;
-
-      const companyLocation = `${this.sanitizeText(exp.company)}, ${this.sanitizeText(exp.location)}`;
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans')
-        .text(companyLocation, 50, yPosition);
-      yPosition += 15;
-
-      const startDate = DateFormatter.formatDate(
-        this.sanitizeText(exp.startDate)
-      );
-      const endDate = DateFormatter.formatDate(this.sanitizeText(exp.endDate));
-      const dateRange = `${startDate} – ${endDate}`;
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans')
-        .text(dateRange, 50, yPosition);
-      yPosition += 15;
-
-      const description = this.sanitizeText(exp.description);
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans')
-        .text(description, 50, yPosition, {
-          width: 515,
-          align: 'justify',
-          lineGap: 2,
-        });
-
-      yPosition = this.updateYPosition(
-        yPosition,
-        this.calculateTextHeight(doc, description, {
-          width: 515,
-          lineGap: 2,
-        }) + 20
-      );
-    });
-
-    return yPosition;
-  }
-
-  private addEducationSection(
-    doc: InstanceType<typeof PDFDocument>,
-    education: any[],
-    title: string,
-    colors: any,
-    yPosition: number
-  ): number {
-    this.checkPageBreak(doc, yPosition, 100);
-    this.addSectionHeader(doc, title, yPosition);
-    yPosition += 20;
-
-    education.forEach((edu) => {
-      yPosition = this.checkPageBreak(doc, yPosition, 70);
-
-      const degree = this.sanitizeText(edu.degree);
-      doc
-        .fontSize(11)
-        .fillColor(colors.black)
-        .font('NotoSans-Bold')
-        .text(degree, 50, yPosition);
-      yPosition += 15;
-
-      const universityLocation = `${this.sanitizeText(edu.university)}, ${this.sanitizeText(edu.location)}`;
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans')
-        .text(universityLocation, 50, yPosition);
-      yPosition += 15;
-
-      const graduationDate = DateFormatter.formatGraduationDate(
-        this.sanitizeText(edu.graduationDate)
-      );
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans')
-        .text(graduationDate, 50, yPosition);
-      yPosition += 15;
-
-      if (edu.details) {
-        const details = this.sanitizeText(edu.details);
-        doc
-          .fontSize(10)
-          .fillColor(colors.black)
-          .font('NotoSans')
-          .text(details, 50, yPosition, {
-            width: 515,
-            align: 'justify',
-            lineGap: 2,
+    socialFields.forEach((field) => {
+      if (field.value) {
+        try {
+          const shortUrl = shortenUrlForDisplay(field.value);
+          contactInfoParts.push(this.sanitizeText(shortUrl.displayText));
+          urlInfoParts.push({
+            display: this.sanitizeText(shortUrl.displayText),
+            url: shortUrl.fullUrl,
+            platform: shortUrl.platform || 'unknown',
           });
-
-        yPosition = this.updateYPosition(
-          yPosition,
-          this.calculateTextHeight(doc, details, {
-            width: 515,
-            lineGap: 2,
-          }) + 15
-        );
+        } catch (error) {
+          logger.warn(`Invalid ${field.key} URL format: ${field.value}`, {
+            error,
+          });
+          contactInfoParts.push(this.sanitizeText(field.value));
+        }
       }
-
-      yPosition += 10;
     });
 
-    return yPosition;
-  }
-
-  private addTechnicalSkillsSection(
-    doc: InstanceType<typeof PDFDocument>,
-    skills: any,
-    title: string,
-    colors: any,
-    yPosition: number
-  ): number {
-    yPosition = this.checkPageBreak(doc, yPosition, 80);
-    this.addSectionHeader(doc, title, yPosition);
-    yPosition += 20;
-
-    if (skills.frontend && skills.frontend.length > 0) {
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans-Bold')
-        .text('Frontend:', 50, yPosition);
-      const frontendText = skills.frontend.join(', ');
-      doc.font('NotoSans').text(frontendText, 120, yPosition, { width: 395 });
-      yPosition += 15;
-    }
-
-    if (skills.backend && skills.backend.length > 0) {
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans-Bold')
-        .text('Backend:', 50, yPosition);
-      const backendText = skills.backend.join(', ');
-      doc.font('NotoSans').text(backendText, 120, yPosition, { width: 395 });
-      yPosition += 15;
-    }
-
-    if (skills.database && skills.database.length > 0) {
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans-Bold')
-        .text('Database:', 50, yPosition);
-      const databaseText = skills.database.join(', ');
-      doc.font('NotoSans').text(databaseText, 120, yPosition, { width: 395 });
-      yPosition += 15;
-    }
-
-    if (skills.tools && skills.tools.length > 0) {
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans-Bold')
-        .text('Tools:', 50, yPosition);
-      const toolsText = skills.tools.join(', ');
-      doc.font('NotoSans').text(toolsText, 120, yPosition, { width: 395 });
-      yPosition += 15;
-    }
-
-    return yPosition + 15;
-  }
-
-  private addCommunicationSection(
-    doc: InstanceType<typeof PDFDocument>,
-    communication: string,
-    title: string,
-    colors: any,
-    yPosition: number
-  ): number {
-    yPosition = this.checkPageBreak(doc, yPosition, 60);
-    this.addSectionHeader(doc, title, yPosition);
-    yPosition += 20;
-
-    const communicationText = this.sanitizeText(communication);
-    doc
-      .fontSize(10)
-      .fillColor(colors.black)
-      .font('NotoSans')
-      .text(communicationText, 50, yPosition, {
-        width: 515,
-        align: 'justify',
-        lineGap: 2,
+    // Add email as clickable link too
+    if (data.personalInfo.email) {
+      urlInfoParts.push({
+        display: this.sanitizeText(data.personalInfo.email),
+        url: `mailto:${data.personalInfo.email}`,
+        platform: 'email',
       });
+    }
 
-    return this.updateYPosition(
-      yPosition,
-      this.calculateTextHeight(doc, communicationText, {
-        width: 515,
-        lineGap: 2,
-      }) + 20
-    );
-  }
-
-  private addProjectsSection(
-    doc: InstanceType<typeof PDFDocument>,
-    projects: any[],
-    title: string,
-    colors: any,
-    yPosition: number
-  ): number {
-    yPosition = this.checkPageBreak(doc, yPosition, 80);
-    this.addSectionHeader(doc, title, yPosition);
-    yPosition += 20;
-
-    projects.forEach((project) => {
-      yPosition = this.checkPageBreak(doc, yPosition, 80);
-
-      const projectName = this.sanitizeText(project.name);
-      doc
-        .fontSize(11)
-        .fillColor(colors.black)
-        .font('NotoSans-Bold')
-        .text(projectName, 50, yPosition);
-      yPosition += 15;
-
-      const technologies = this.sanitizeText(project.technologies);
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans')
-        .text(technologies, 50, yPosition);
-      yPosition += 15;
-
-      const description = this.sanitizeText(project.description);
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans')
-        .text(description, 50, yPosition, {
-          width: 515,
-          align: 'justify',
-          lineGap: 2,
+    // Add website as clickable link if it exists separately
+    if (data.personalInfo.website) {
+      const websiteDisplay = this.sanitizeText(data.personalInfo.website);
+      // Check if website is not already in urlInfoParts (to avoid duplicates)
+      const websiteExists = urlInfoParts.find(info => info.display === websiteDisplay);
+      if (!websiteExists) {
+        // Ensure website has proper protocol
+        const websiteUrl = data.personalInfo.website.startsWith('http') 
+          ? data.personalInfo.website 
+          : `https://${data.personalInfo.website}`;
+        
+        urlInfoParts.push({
+          display: websiteDisplay,
+          url: websiteUrl,
+          platform: 'website',
         });
+      }
+    }
 
-      yPosition = this.updateYPosition(
-        yPosition,
-        this.calculateTextHeight(doc, description, {
-          width: 515,
-          lineGap: 2,
-        }) + 20
-      );
-    });
+    const finalContactParts = contactInfoParts.filter(Boolean);
 
-    return yPosition;
+    // Smart line wrapping for contact info with hyperlinks
+    const contactEndY = this.renderContactInfoWithSmartWrapping(
+      doc,
+      finalContactParts,
+      urlInfoParts,
+      xPosition,
+      yPosition + 35,
+      columnWidth,
+      colors.black
+    );
+
+    // Underline - spans the column width with proper spacing below text
+    doc
+      .moveTo(xPosition, contactEndY + 10)
+      .lineTo(xPosition + columnWidth, contactEndY + 10)
+      .stroke(colors.black);
   }
 
-  private addLeadershipSection(
+  private addTwoColumnSection(
     doc: InstanceType<typeof PDFDocument>,
-    leadership: string,
     title: string,
+    content: any,
+    contentType:
+      | 'text'
+      | 'experience'
+      | 'education'
+      | 'technicalSkills'
+      | 'projects'
+      | 'certificates'
+      | 'languages'
+      | 'skills'
+      | 'references',
     colors: any,
-    yPosition: number
+    yPosition: number,
+    leftX: number,
+    leftWidth: number,
+    rightX: number,
+    rightWidth: number
   ): number {
+    // Check if we need a page break
     yPosition = this.checkPageBreak(doc, yPosition, 60);
-    this.addSectionHeader(doc, title, yPosition);
-    yPosition += 20;
 
-    const leadershipText = this.sanitizeText(leadership);
+    // Add title in left column
     doc
-      .fontSize(10)
+      .fontSize(11)
       .fillColor(colors.black)
-      .font('NotoSans')
-      .text(leadershipText, 50, yPosition, {
-        width: 515,
-        align: 'justify',
-        lineGap: 2,
+      .font('NotoSans-Bold')
+      .text(title, leftX, yPosition, {
+        width: leftWidth,
+        align: 'left',
       });
 
-    return this.updateYPosition(
+    // Add content in right column
+    const contentHeight = this.addContentByType(
+      doc,
+      content,
+      contentType,
+      colors,
+      rightX,
       yPosition,
-      this.calculateTextHeight(doc, leadershipText, {
-        width: 515,
-        lineGap: 2,
-      }) + 20
+      rightWidth
     );
+
+    return yPosition + Math.max(25, contentHeight) + 15; // Space between sections
   }
 
-  private addCertificatesSection(
+  private addContentByType(
     doc: InstanceType<typeof PDFDocument>,
-    certificates: any[],
-    title: string,
+    content: any,
+    contentType: string,
     colors: any,
-    yPosition: number
+    xPosition: number,
+    yPosition: number,
+    columnWidth: number
   ): number {
-    yPosition = this.checkPageBreak(doc, yPosition, 80);
-    this.addSectionHeader(doc, title, yPosition);
-    yPosition += 20;
-
-    certificates.forEach((cert) => {
-      yPosition = this.checkPageBreak(doc, yPosition, 40);
-
-      const certName = this.sanitizeText(cert.name);
-      doc
-        .fontSize(11)
-        .fillColor(colors.black)
-        .font('NotoSans-Bold')
-        .text(certName, 50, yPosition);
-      yPosition += 15;
-
-      const issuerDate = `${this.sanitizeText(cert.issuer)} – ${DateFormatter.formatDate(this.sanitizeText(cert.date))}`;
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans')
-        .text(issuerDate, 50, yPosition);
-      yPosition += 25;
-    });
-
-    return yPosition + 5;
-  }
-
-  private addLanguagesSection(
-    doc: InstanceType<typeof PDFDocument>,
-    languages: any[],
-    title: string,
-    colors: any,
-    yPosition: number
-  ): number {
-    yPosition = this.checkPageBreak(doc, yPosition, 60);
-    this.addSectionHeader(doc, title, yPosition);
-    yPosition += 20;
-
-    languages.forEach((lang) => {
-      const languageLevel = `${this.sanitizeText(lang.language)} – ${this.sanitizeText(lang.level)}`;
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans')
-        .text(languageLevel, 50, yPosition);
-      yPosition += 18;
-    });
-
-    return yPosition + 10;
-  }
-
-  private addReferencesSection(
-    doc: InstanceType<typeof PDFDocument>,
-    references: any[],
-    title: string,
-    colors: any,
-    yPosition: number
-  ): number {
-    yPosition = this.checkPageBreak(doc, yPosition, 80);
-    this.addSectionHeader(doc, title, yPosition);
-    yPosition += 20;
-
-    references.forEach((ref) => {
-      yPosition = this.checkPageBreak(doc, yPosition, 40);
-
-      const name = this.sanitizeText(ref.name);
-      doc
-        .fontSize(11)
-        .fillColor(colors.black)
-        .font('NotoSans-Bold')
-        .text(name, 50, yPosition);
-      yPosition += 15;
-
-      const companyContact = `${this.sanitizeText(ref.company)} – ${this.sanitizeText(ref.contact)}`;
-      doc
-        .fontSize(10)
-        .fillColor(colors.black)
-        .font('NotoSans')
-        .text(companyContact, 50, yPosition);
-      yPosition += 25;
-    });
-
-    return yPosition;
+    switch (contentType) {
+      case 'text':
+        return this.addTextContent(
+          doc,
+          content,
+          colors,
+          xPosition,
+          yPosition,
+          columnWidth
+        );
+      case 'experience':
+        return this.addExperienceContent(
+          doc,
+          content,
+          colors,
+          xPosition,
+          yPosition,
+          columnWidth
+        );
+      case 'education':
+        return this.addEducationContent(
+          doc,
+          content,
+          colors,
+          xPosition,
+          yPosition,
+          columnWidth
+        );
+      case 'technicalSkills':
+        return this.addTechnicalSkillsContent(
+          doc,
+          content,
+          colors,
+          xPosition,
+          yPosition,
+          columnWidth
+        );
+      case 'skills':
+        return this.addSkillsContent(
+          doc,
+          content,
+          colors,
+          xPosition,
+          yPosition,
+          columnWidth
+        );
+      case 'projects':
+        return this.addProjectsContent(
+          doc,
+          content,
+          colors,
+          xPosition,
+          yPosition,
+          columnWidth
+        );
+      case 'certificates':
+        return this.addCertificatesContent(
+          doc,
+          content,
+          colors,
+          xPosition,
+          yPosition,
+          columnWidth
+        );
+      case 'languages':
+        return this.addLanguagesContent(
+          doc,
+          content,
+          colors,
+          xPosition,
+          yPosition,
+          columnWidth
+        );
+      case 'references':
+        return this.addReferencesContent(
+          doc,
+          content,
+          colors,
+          xPosition,
+          yPosition,
+          columnWidth
+        );
+      default:
+        return 25;
+    }
   }
 
   private checkPageBreak(
@@ -800,25 +760,6 @@ export class CVTemplateMinimalistTurkishService {
       return 50;
     }
     return yPosition;
-  }
-
-  private updateYPosition(currentY: number, increment: number): number {
-    return currentY + increment;
-  }
-
-  private addSectionHeader(
-    doc: InstanceType<typeof PDFDocument>,
-    title: string,
-    yPosition: number
-  ): void {
-    doc
-      .fontSize(12)
-      .fillColor('#000000')
-      .font('NotoSans-Bold')
-      .text(title, 50, yPosition, {
-        underline: true,
-        width: 515,
-      });
   }
 
   private calculateTextHeight(
@@ -836,5 +777,395 @@ export class CVTemplateMinimalistTurkishService {
       logger.error('Error calculating text height:', error);
       return 20;
     }
+  }
+
+  // Content rendering methods for two-column layout
+  private addTextContent(
+    doc: InstanceType<typeof PDFDocument>,
+    text: string,
+    colors: any,
+    xPosition: number,
+    yPosition: number,
+    columnWidth: number
+  ): number {
+    const content = this.sanitizeText(text);
+    doc
+      .fontSize(10)
+      .fillColor(colors.black)
+      .font('NotoSans')
+      .text(content, xPosition, yPosition, {
+        width: columnWidth,
+        align: 'justify',
+        lineGap: 2,
+      });
+
+    return this.calculateTextHeight(doc, content, {
+      width: columnWidth,
+      lineGap: 2,
+    });
+  }
+
+  private addExperienceContent(
+    doc: InstanceType<typeof PDFDocument>,
+    experiences: any[],
+    colors: any,
+    xPosition: number,
+    yPosition: number,
+    columnWidth: number
+  ): number {
+    let currentY = yPosition;
+
+    experiences.forEach((exp, index) => {
+      if (index > 0) currentY += 12; // Reduced space between entries
+
+      // Job title with date range on the right
+      const jobTitle = this.sanitizeText(exp.jobTitle);
+      const jobTitleY = currentY;
+      doc
+        .fontSize(11)
+        .fillColor(colors.black)
+        .font('NotoSans-Bold')
+        .text(jobTitle, xPosition, jobTitleY);
+
+      // Date range on the right side of the same row
+      const startDate = DateFormatter.formatDate(
+        this.sanitizeText(exp.startDate)
+      );
+      let dateRange: string;
+
+      if (
+        exp.isCurrent ||
+        !exp.endDate ||
+        exp.endDate.toLowerCase().includes('günümüz') ||
+        exp.endDate.toLowerCase().includes('current')
+      ) {
+        const currentText = 'Present'; // Always use English for consistency
+        dateRange = `${startDate} – ${currentText}`;
+      } else {
+        const endDate = DateFormatter.formatDate(
+          this.sanitizeText(exp.endDate)
+        );
+        dateRange = `${startDate} – ${endDate}`;
+      }
+
+      const dateWidth = doc.widthOfString(dateRange);
+      doc
+        .fontSize(10)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(dateRange, xPosition + columnWidth - dateWidth, jobTitleY);
+
+      currentY += 15;
+
+      // Company - Location (with short space below job title)
+      const companyLocation = `${this.sanitizeText(exp.company)} - ${this.sanitizeText(exp.location)}`;
+      doc
+        .fontSize(10)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(companyLocation, xPosition, currentY);
+      currentY += 22; // Even more space before description
+
+      // Description with more spacing
+      const description = this.sanitizeText(exp.description);
+      doc
+        .fontSize(10)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(description, xPosition, currentY, {
+          width: columnWidth,
+          align: 'justify',
+          lineGap: 2,
+        });
+
+      currentY +=
+        this.calculateTextHeight(doc, description, {
+          width: columnWidth,
+          lineGap: 2,
+        }) + 10; // Extra space after description
+    });
+
+    return currentY - yPosition;
+  }
+
+  private addEducationContent(
+    doc: InstanceType<typeof PDFDocument>,
+    educations: any[],
+    colors: any,
+    xPosition: number,
+    yPosition: number,
+    columnWidth: number
+  ): number {
+    let currentY = yPosition;
+
+    educations.forEach((edu, index) => {
+      if (index > 0) currentY += 12; // Consistent spacing with experience
+
+      // Degree with graduation date on the right
+      const degree = this.sanitizeText(edu.degree);
+      const degreeY = currentY;
+      doc
+        .fontSize(11)
+        .fillColor(colors.black)
+        .font('NotoSans-Bold')
+        .text(degree, xPosition, degreeY);
+
+      // Education date range on the right side of the same row
+      const startDate = DateFormatter.formatDate(
+        this.sanitizeText(edu.startDate)
+      );
+      const graduationDate = DateFormatter.formatGraduationDate(
+        this.sanitizeText(edu.graduationDate)
+      );
+      const educationDateRange = `${startDate} – ${graduationDate}`;
+      const dateWidth = doc.widthOfString(educationDateRange);
+      doc
+        .fontSize(10)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(educationDateRange, xPosition + columnWidth - dateWidth, degreeY);
+
+      currentY += 15;
+
+      // University - Location (with short space below degree)
+      const universityLocation = `${this.sanitizeText(edu.university)} - ${this.sanitizeText(edu.location)}`;
+      doc
+        .fontSize(10)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(universityLocation, xPosition, currentY);
+      currentY += 18; // More space before details
+
+      // Details if available
+      if (edu.details) {
+        const details = this.sanitizeText(edu.details);
+        doc
+          .fontSize(10)
+          .fillColor(colors.black)
+          .font('NotoSans')
+          .text(details, xPosition, currentY, {
+            width: columnWidth,
+            align: 'justify',
+            lineGap: 2,
+          });
+
+        currentY +=
+          this.calculateTextHeight(doc, details, {
+            width: columnWidth,
+            lineGap: 2,
+          }) + 10; // Extra space after details
+      }
+    });
+
+    return currentY - yPosition;
+  }
+
+  private addTechnicalSkillsContent(
+    doc: InstanceType<typeof PDFDocument>,
+    skills: any,
+    colors: any,
+    xPosition: number,
+    yPosition: number,
+    columnWidth: number
+  ): number {
+    let currentY = yPosition;
+
+    const skillCategories = [
+      { key: 'frontend', label: 'Frontend:' },
+      { key: 'backend', label: 'Backend:' },
+      { key: 'database', label: 'Database:' },
+      { key: 'tools', label: 'Tools:' },
+    ];
+
+    skillCategories.forEach((category, index) => {
+      if (skills[category.key] && skills[category.key].length > 0) {
+        if (index > 0) currentY += 5; // Space between skill categories
+
+        doc
+          .fontSize(10)
+          .fillColor(colors.black)
+          .font('NotoSans-Bold')
+          .text(category.label, xPosition, currentY);
+
+        const skillsText = skills[category.key].join(', ');
+        doc.font('NotoSans').text(skillsText, xPosition + 70, currentY, {
+          width: columnWidth - 70,
+        });
+        currentY += 18; // More space between lines
+      }
+    });
+
+    return currentY - yPosition;
+  }
+
+  private addSkillsContent(
+    doc: InstanceType<typeof PDFDocument>,
+    skills: string[],
+    colors: any,
+    xPosition: number,
+    yPosition: number,
+    columnWidth: number
+  ): number {
+    let currentY = yPosition;
+    const skillsPerLine = 3;
+
+    for (let i = 0; i < skills.length; i += skillsPerLine) {
+      const lineSkills = skills.slice(i, i + skillsPerLine);
+      const skillsText = lineSkills.join(' • ');
+
+      doc
+        .fontSize(10)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(skillsText, xPosition, currentY, {
+          width: columnWidth,
+          align: 'left',
+        });
+
+      currentY += 15;
+    }
+
+    return currentY - yPosition;
+  }
+
+  private addProjectsContent(
+    doc: InstanceType<typeof PDFDocument>,
+    projects: any[],
+    colors: any,
+    xPosition: number,
+    yPosition: number,
+    columnWidth: number
+  ): number {
+    let currentY = yPosition;
+
+    projects.forEach((project, index) => {
+      if (index > 0) currentY += 12; // Consistent spacing with other sections
+
+      const projectName = this.sanitizeText(project.name);
+      doc
+        .fontSize(11)
+        .fillColor(colors.black)
+        .font('NotoSans-Bold')
+        .text(projectName, xPosition, currentY);
+      currentY += 18; // Reduced space after project name
+
+      // Handle technologies as either string or array
+      const technologies = Array.isArray(project.technologies)
+        ? project.technologies.join(', ')
+        : this.sanitizeText(project.technologies);
+      doc
+        .fontSize(10)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(technologies, xPosition, currentY);
+      currentY += 20; // Normal space before description
+
+      const description = this.sanitizeText(project.description);
+      doc
+        .fontSize(10)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(description, xPosition, currentY, {
+          width: columnWidth,
+          align: 'justify',
+          lineGap: 2,
+        });
+
+      currentY += this.calculateTextHeight(doc, description, {
+        width: columnWidth,
+        lineGap: 2,
+      });
+    });
+
+    return currentY - yPosition;
+  }
+
+  private addCertificatesContent(
+    doc: InstanceType<typeof PDFDocument>,
+    certificates: any[],
+    colors: any,
+    xPosition: number,
+    yPosition: number,
+    columnWidth: number
+  ): number {
+    let currentY = yPosition;
+
+    certificates.forEach((cert, index) => {
+      if (index > 0) currentY += 15;
+
+      const certName = this.sanitizeText(cert.name);
+      doc
+        .fontSize(11)
+        .fillColor(colors.black)
+        .font('NotoSans-Bold')
+        .text(certName, xPosition, currentY);
+      currentY += 15;
+
+      const issuerDate = `${this.sanitizeText(cert.issuer)} – ${DateFormatter.formatDate(this.sanitizeText(cert.date))}`;
+      doc
+        .fontSize(10)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(issuerDate, xPosition, currentY);
+      currentY += 15;
+    });
+
+    return currentY - yPosition;
+  }
+
+  private addLanguagesContent(
+    doc: InstanceType<typeof PDFDocument>,
+    languages: any[],
+    colors: any,
+    xPosition: number,
+    yPosition: number,
+    columnWidth: number
+  ): number {
+    let currentY = yPosition;
+
+    languages.forEach((lang) => {
+      const languageLevel = `${this.sanitizeText(lang.language)} – ${this.sanitizeText(lang.level)}`;
+      doc
+        .fontSize(10)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(languageLevel, xPosition, currentY);
+      currentY += 15;
+    });
+
+    return currentY - yPosition;
+  }
+
+  private addReferencesContent(
+    doc: InstanceType<typeof PDFDocument>,
+    references: any[],
+    colors: any,
+    xPosition: number,
+    yPosition: number,
+    columnWidth: number
+  ): number {
+    let currentY = yPosition;
+
+    references.forEach((ref, index) => {
+      if (index > 0) currentY += 12; // Reduced space between references
+
+      const name = this.sanitizeText(ref.name);
+      doc
+        .fontSize(11)
+        .fillColor(colors.black)
+        .font('NotoSans-Bold')
+        .text(name, xPosition, currentY);
+      currentY += 15;
+
+      const companyContact = `${this.sanitizeText(ref.company)} – ${this.sanitizeText(ref.contact)}`;
+      doc
+        .fontSize(10)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(companyContact, xPosition, currentY);
+      currentY += 20;
+    });
+
+    return currentY - yPosition;
   }
 }
