@@ -58,9 +58,11 @@ export class FontLoader {
       // Noto Sans fonts - Google'ın en zarif ve kapsamlı Türkçe destekli fontu
       const notoSansRegular = await FontLoader.loadFont('NotoSans-Regular');
       const notoSansBold = await FontLoader.loadFont('NotoSans-Bold');
+      const notoSansItalic = await FontLoader.loadFont('NotoSans-Italic');
 
       doc.registerFont('NotoSans', notoSansRegular);
       doc.registerFont('NotoSans-Bold', notoSansBold);
+      doc.registerFont('NotoSans-Italic', notoSansItalic);
 
       // Varsayılan fontu ayarla
       doc.font('NotoSans');

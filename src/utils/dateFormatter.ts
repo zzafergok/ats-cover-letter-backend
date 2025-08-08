@@ -36,6 +36,41 @@ export class DateFormatter {
   }
 
   /**
+   * Uzun ay formatı - Simple Classic template için
+   * Örnek: "2023-06-15" → "June 2023"
+   */
+  static formatDateLong(dateString: string): string {
+    if (!dateString || typeof dateString !== 'string') {
+      return '';
+    }
+
+    // "Present", "Current" gibi özel durumlar
+    const lowerDate = dateString.toLowerCase().trim();
+    if (lowerDate === 'present' || lowerDate === 'current' || lowerDate === '') {
+      return 'Present';
+    }
+    
+    try {
+      // Farklı tarih formatlarını destekle
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        // Geçersiz tarih ise orijinalini döndür
+        return dateString;
+      }
+      
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      
+      return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    } catch (error) {
+      // Hata durumunda orijinal string'i döndür
+      return dateString;
+    }
+  }
+
+  /**
    * Tarih aralığı formatla
    * Örnek: formatDateRange("2020-01", "2023-06") → "Jan 2020 – Jun 2023"
    */
