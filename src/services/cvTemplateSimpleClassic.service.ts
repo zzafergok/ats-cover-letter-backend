@@ -6,38 +6,40 @@ import { DateFormatter } from '../utils/dateFormatter';
 
 export interface CVSimpleClassicData {
   personalInfo: {
-    firstName: string;
-    lastName: string;
     address: string;
     city: string;
     email: string;
-    jobTitle?: string;
-    linkedin?: string;
-    website?: string;
+    firstName: string;
     github?: string;
+    jobTitle?: string;
+    lastName: string;
+    linkedin?: string;
     medium?: string;
     phone: string;
+    website?: string;
   };
   objective: string;
   experience: Array<{
-    jobTitle: string;
     company: string;
+    description: string;
+    endDate: string;
+    isCurrent: boolean;
+    jobTitle: string;
     location: string;
     startDate: string;
-    endDate: string;
-    description: string;
   }>;
   education: Array<{
     degree: string;
-    university: string;
-    location: string;
-    graduationDate: string;
     details?: string;
+    field: string;
+    graduationDate: string;
+    location: string;
+    startDate: string;
+    university: string;
   }>;
   // Global version fields
   communication?: string;
   leadership?: string;
-  skills?: string[];
   // Turkey version fields
   technicalSkills?: {
     frontend?: string[];
@@ -45,6 +47,7 @@ export interface CVSimpleClassicData {
     database?: string[];
     tools?: string[];
   };
+  skills?: string[];
   projects?: Array<{
     name: string;
     description: string;
@@ -396,7 +399,7 @@ export class CVTemplateSimpleClassicService {
     ].filter(Boolean);
 
     const startY = doc.y;
-    
+
     // Left side contact info
     leftContactInfo.forEach((info, index) => {
       doc
@@ -430,7 +433,7 @@ export class CVTemplateSimpleClassicService {
   ): void {
     const text = this.sanitizeText(objective);
     const estimatedHeight = Math.max(60, text.length / 5); // Rough estimation
-    
+
     this.addSectionTitle(doc, title, colors.green, estimatedHeight);
     doc.moveDown(0.4);
 
@@ -439,7 +442,7 @@ export class CVTemplateSimpleClassicService {
       width: margins.right - margins.left,
       lineGap: 2,
     });
-    
+
     if (doc.y + contentHeight > 750) {
       doc.addPage();
       this.addVerticalBorders(doc, colors.green);
@@ -563,10 +566,12 @@ export class CVTemplateSimpleClassicService {
 
       // Calculate required space for education item
       const details = edu.details ? this.sanitizeText(edu.details) : '';
-      const detailsHeight = details ? this.calculateTextHeight(doc, details, {
-        width: margins.right - margins.left,
-        lineGap: 2,
-      }) : 0;
+      const detailsHeight = details
+        ? this.calculateTextHeight(doc, details, {
+            width: margins.right - margins.left,
+            lineGap: 2,
+          })
+        : 0;
       const requiredSpace = 60 + detailsHeight;
 
       // Check if entire education item fits
@@ -579,13 +584,19 @@ export class CVTemplateSimpleClassicService {
       // Date range for education with long format
       let dateRange = '';
       if (edu.startDate) {
-        const startDate = DateFormatter.formatDateLong(this.sanitizeText(edu.startDate));
-        const endDate = DateFormatter.formatDateLong(this.sanitizeText(edu.graduationDate));
+        const startDate = DateFormatter.formatDateLong(
+          this.sanitizeText(edu.startDate)
+        );
+        const endDate = DateFormatter.formatDateLong(
+          this.sanitizeText(edu.graduationDate)
+        );
         dateRange = `${startDate} - ${endDate}`;
       } else {
-        dateRange = DateFormatter.formatDateLong(this.sanitizeText(edu.graduationDate));
+        dateRange = DateFormatter.formatDateLong(
+          this.sanitizeText(edu.graduationDate)
+        );
       }
-      
+
       doc
         .fontSize(9)
         .fillColor(colors.gray)
@@ -675,7 +686,7 @@ export class CVTemplateSimpleClassicService {
     if (skills.backend?.length) lineCount++;
     if (skills.database?.length) lineCount++;
     if (skills.tools?.length) lineCount++;
-    
+
     const skillsHeight = lineCount * 20; // Approximate height per skill line
     const requiredSpace = 40 + skillsHeight; // Title + skills + margins
 
@@ -749,15 +760,19 @@ export class CVTemplateSimpleClassicService {
     // Calculate rough space needed for projects section
     let totalProjectsHeight = 0;
     projects.forEach((project) => {
-      const technologies = Array.isArray(project.technologies) 
-        ? project.technologies 
+      const technologies = Array.isArray(project.technologies)
+        ? project.technologies
         : project.technologies.split(',').map((t: string) => t.trim());
       const techRows = Math.ceil(technologies.length / 4);
       const techHeight = techRows * 15;
-      const descriptionHeight = this.calculateTextHeight(doc, project.description, {
-        width: margins.right - margins.left,
-        lineGap: 2
-      });
+      const descriptionHeight = this.calculateTextHeight(
+        doc,
+        project.description,
+        {
+          width: margins.right - margins.left,
+          lineGap: 2,
+        }
+      );
       totalProjectsHeight += 40 + techHeight + descriptionHeight; // Name + tech + description + margins
     });
     const requiredSpace = 40 + Math.min(totalProjectsHeight, 120); // Title + first project or estimate
@@ -769,15 +784,19 @@ export class CVTemplateSimpleClassicService {
       if (index > 0) doc.moveDown(0.6);
 
       // Calculate space for this project item
-      const technologies = Array.isArray(project.technologies) 
-        ? project.technologies 
+      const technologies = Array.isArray(project.technologies)
+        ? project.technologies
         : project.technologies.split(',').map((t: string) => t.trim());
       const techRows = Math.ceil(technologies.length / 4);
       const techHeight = techRows * 15;
-      const descriptionHeight = this.calculateTextHeight(doc, project.description, {
-        width: margins.right - margins.left,
-        lineGap: 2
-      });
+      const descriptionHeight = this.calculateTextHeight(
+        doc,
+        project.description,
+        {
+          width: margins.right - margins.left,
+          lineGap: 2,
+        }
+      );
       const projectRequiredSpace = 40 + techHeight + descriptionHeight;
 
       // Check if entire project item fits
@@ -788,7 +807,7 @@ export class CVTemplateSimpleClassicService {
       }
 
       const projectName = this.sanitizeText(project.name);
-      
+
       // Project name
       doc
         .fontSize(9)
@@ -802,12 +821,12 @@ export class CVTemplateSimpleClassicService {
       if (technologies && technologies.length > 0) {
         const columnSpacing = 104; // 415 / 4 ≈ 104
         const startY = doc.y;
-        
+
         technologies.forEach((tech: string, techIndex: number) => {
           const column = techIndex % 4;
           const row = Math.floor(techIndex / 4);
-          const xPosition = margins.left + (column * columnSpacing);
-          const currentYPosition = startY + (row * 15);
+          const xPosition = margins.left + column * columnSpacing;
+          const currentYPosition = startY + row * 15;
 
           doc
             .fontSize(9)
@@ -817,7 +836,7 @@ export class CVTemplateSimpleClassicService {
         });
 
         const totalRows = Math.ceil(technologies.length / 4);
-        doc.y = startY + (totalRows * 15);
+        doc.y = startY + totalRows * 15;
         doc.moveDown(0.4);
       }
 
@@ -935,7 +954,9 @@ export class CVTemplateSimpleClassicService {
 
       const certName = this.sanitizeText(cert.name);
       const issuer = this.sanitizeText(cert.issuer);
-      const certDate = DateFormatter.formatDateLong(this.sanitizeText(cert.date));
+      const certDate = DateFormatter.formatDateLong(
+        this.sanitizeText(cert.date)
+      );
 
       const currentY = doc.y;
       doc
@@ -1057,13 +1078,13 @@ export class CVTemplateSimpleClassicService {
     const currentFontSize = 9; // Default font size for content
     const lineGap = options.lineGap || 0;
     const lineHeight = currentFontSize + lineGap;
-    
+
     // Simple estimation: count words and estimate line wrapping
     const words = text.split(' ');
     const avgCharWidth = currentFontSize * 0.6; // Rough estimation
     let currentLineLength = 0;
     let lineCount = 1;
-    
+
     for (const word of words) {
       const wordLength = word.length * avgCharWidth;
       if (currentLineLength + wordLength > options.width) {
@@ -1073,7 +1094,7 @@ export class CVTemplateSimpleClassicService {
         currentLineLength += wordLength + avgCharWidth; // Add space
       }
     }
-    
+
     return lineCount * lineHeight;
   }
 
@@ -1085,7 +1106,7 @@ export class CVTemplateSimpleClassicService {
   ): void {
     // Check if section title + minimum content fits
     this.checkPageBreak(doc, requiredSpace);
-    
+
     doc
       .fontSize(14)
       .fillColor(color)

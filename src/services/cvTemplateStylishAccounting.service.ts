@@ -7,33 +7,36 @@ import { shortenUrlForDisplay } from '../utils/urlShortener';
 
 export interface CVStylishAccountingData {
   personalInfo: {
-    firstName: string;
-    lastName: string;
     address: string;
     city: string;
     email: string;
-    jobTitle?: string;
-    linkedin?: string;
-    website?: string;
+    firstName: string;
     github?: string;
+    jobTitle?: string;
+    lastName: string;
+    linkedin?: string;
     medium?: string;
     phone: string;
+    website?: string;
   };
   objective: string;
   experience: Array<{
-    jobTitle: string;
     company: string;
+    description: string;
+    endDate: string;
+    isCurrent: boolean;
+    jobTitle: string;
     location: string;
     startDate: string;
-    endDate: string;
-    description: string;
   }>;
   education: Array<{
     degree: string;
-    university: string;
-    location: string;
-    graduationDate: string;
     details?: string;
+    field: string;
+    graduationDate: string;
+    location: string;
+    startDate: string;
+    university: string;
   }>;
   // Global version fields
   communication?: string;
@@ -45,6 +48,7 @@ export interface CVStylishAccountingData {
     database?: string[];
     tools?: string[];
   };
+  skills?: string[];
   projects?: Array<{
     name: string;
     description: string;
@@ -806,7 +810,7 @@ export class CVTemplateStylishAccountingService {
 
     // Display skills in 2 columns with proper spacing
     let currentYPos = yPosition;
-    
+
     for (let i = 0; i < skillsArray.length; i += 2) {
       // Check if we need a new page for this row
       if (currentYPos + 25 > 720) {
@@ -850,9 +854,14 @@ export class CVTemplateStylishAccountingService {
           .fontSize(11)
           .fillColor(colors.text)
           .font('NotoSans')
-          .text(skill2, 50 + columnWidth + dotSize + dotSpacing + 3, currentYPos, {
-            width: availableTextWidth,
-          });
+          .text(
+            skill2,
+            50 + columnWidth + dotSize + dotSpacing + 3,
+            currentYPos,
+            {
+              width: availableTextWidth,
+            }
+          );
       }
 
       currentYPos += 18; // Move to next row

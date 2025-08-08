@@ -7,34 +7,36 @@ import { DateFormatter } from '../utils/dateFormatter';
 
 export interface CVOfficeManagerData {
   personalInfo: {
-    firstName: string;
-    lastName: string;
-    jobTitle?: string;
-    linkedin?: string;
     address: string;
     city: string;
-    state: string;
-    zipCode: string;
-    phone: string;
     email: string;
+    firstName: string;
+    github?: string;
+    jobTitle?: string;
+    lastName: string;
+    linkedin?: string;
+    medium?: string;
+    phone: string;
+    website?: string;
   };
   objective: string;
   experience: Array<{
-    jobTitle: string;
     company: string;
+    description: string;
+    endDate: string;
+    isCurrent: boolean;
+    jobTitle: string;
     location: string;
     startDate: string;
-    endDate: string;
-    description: string;
   }>;
   education: Array<{
     degree: string;
-    university: string;
-    location: string;
-    startDate?: string;
-    graduationDate: string;
     details?: string;
-    field?: string;
+    field: string;
+    graduationDate: string;
+    location: string;
+    startDate: string;
+    university: string;
   }>;
   // Global version fields
   communication?: string;
@@ -46,6 +48,7 @@ export interface CVOfficeManagerData {
     database?: string[];
     tools?: string[];
   };
+  skills?: string[];
   projects?: Array<{
     name: string;
     description: string;
