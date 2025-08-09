@@ -1,77 +1,13 @@
 import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream';
+
 import logger from '../config/logger';
+
 import { FontLoader } from '../utils/fontLoader';
 import { DateFormatter } from '../utils/dateFormatter';
+import { getSectionHeaders } from '../utils/cvSectionHeaders';
 
-export interface CVSimpleClassicData {
-  personalInfo: {
-    address: string;
-    city: string;
-    email: string;
-    firstName: string;
-    github?: string;
-    jobTitle?: string;
-    lastName: string;
-    linkedin?: string;
-    medium?: string;
-    phone: string;
-    website?: string;
-  };
-  objective: string;
-  experience: Array<{
-    company: string;
-    description: string;
-    endDate: string;
-    isCurrent: boolean;
-    jobTitle: string;
-    location: string;
-    startDate: string;
-  }>;
-  education: Array<{
-    degree: string;
-    details?: string;
-    field: string;
-    graduationDate: string;
-    location: string;
-    startDate: string;
-    university: string;
-  }>;
-  // Global version fields
-  communication?: string;
-  leadership?: string;
-  // Turkey version fields
-  technicalSkills?: {
-    frontend?: string[];
-    backend?: string[];
-    database?: string[];
-    tools?: string[];
-  };
-  skills?: string[];
-  projects?: Array<{
-    name: string;
-    description: string;
-    technologies: string;
-    link?: string;
-  }>;
-  certificates?: Array<{
-    name: string;
-    issuer: string;
-    date: string;
-  }>;
-  languages?: Array<{
-    language: string;
-    level: string;
-  }>;
-  references?: Array<{
-    name: string;
-    company: string;
-    contact: string;
-  }>;
-  // Version control
-  version?: 'global' | 'turkey';
-  language?: 'turkish' | 'english';
-}
+import { CVTemplateData } from '../types';
 
 export class CVTemplateSimpleClassicService {
   private static instance: CVTemplateSimpleClassicService;
@@ -108,38 +44,7 @@ export class CVTemplateSimpleClassicService {
     return text.trim();
   }
 
-  private getSectionHeaders(language: 'turkish' | 'english') {
-    if (language === 'turkish') {
-      return {
-        objective: 'HEDEF',
-        experience: 'DENEYİM',
-        education: 'EĞİTİM',
-        technicalSkills: 'TEKNİK BECERİLER',
-        projects: 'PROJELER',
-        certificates: 'SERTİFİKALAR',
-        languages: 'DİLLER',
-        communication: 'İLETİŞİM',
-        leadership: 'LİDERLİK',
-        references: 'REFERANSLAR',
-      };
-    } else {
-      return {
-        objective: 'OBJECTIVE',
-        experience: 'EXPERIENCE',
-        education: 'EDUCATION',
-        technicalSkills: 'TECHNICAL SKILLS',
-        projects: 'PROJECTS',
-        certificates: 'CERTIFICATES',
-        languages: 'LANGUAGES',
-        communication: 'COMMUNICATION',
-        leadership: 'LEADERSHIP',
-        skills: 'SKILLS',
-        references: 'REFERENCES',
-      };
-    }
-  }
-
-  async generatePDF(data: CVSimpleClassicData): Promise<Buffer> {
+  async generatePDF(data: CVTemplateData): Promise<Buffer> {
     // Set default version if not specified
     if (!data.version) {
       data.version = 'global';
@@ -215,10 +120,10 @@ export class CVTemplateSimpleClassicService {
 
   private generateContent(
     doc: InstanceType<typeof PDFDocument>,
-    data: CVSimpleClassicData
+    data: CVTemplateData
   ): void {
     const colors = { black: '#000000', gray: '#666666', green: '#5e7a5a' };
-    const headers = this.getSectionHeaders(data.language!);
+    const headers = getSectionHeaders(data.language!);
     const margins = { left: 100, right: 515 };
 
     // Add vertical borders
@@ -357,7 +262,7 @@ export class CVTemplateSimpleClassicService {
 
   private addHeader(
     doc: InstanceType<typeof PDFDocument>,
-    data: CVSimpleClassicData,
+    data: CVTemplateData,
     colors: any
   ): void {
     const margins = { left: 75, right: 515 };

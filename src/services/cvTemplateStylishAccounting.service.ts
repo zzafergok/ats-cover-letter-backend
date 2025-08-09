@@ -1,78 +1,14 @@
 import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream';
+
 import logger from '../config/logger';
+
 import { FontLoader } from '../utils/fontLoader';
 import { DateFormatter } from '../utils/dateFormatter';
 import { shortenUrlForDisplay } from '../utils/urlShortener';
+import { getSectionHeaders } from '../utils/cvSectionHeaders';
 
-export interface CVStylishAccountingData {
-  personalInfo: {
-    address: string;
-    city: string;
-    email: string;
-    firstName: string;
-    github?: string;
-    jobTitle?: string;
-    lastName: string;
-    linkedin?: string;
-    medium?: string;
-    phone: string;
-    website?: string;
-  };
-  objective: string;
-  experience: Array<{
-    company: string;
-    description: string;
-    endDate: string;
-    isCurrent: boolean;
-    jobTitle: string;
-    location: string;
-    startDate: string;
-  }>;
-  education: Array<{
-    degree: string;
-    details?: string;
-    field: string;
-    graduationDate: string;
-    location: string;
-    startDate: string;
-    university: string;
-  }>;
-  // Global version fields
-  communication?: string;
-  leadership?: string;
-  // Turkey version fields
-  technicalSkills?: {
-    frontend?: string[];
-    backend?: string[];
-    database?: string[];
-    tools?: string[];
-  };
-  skills?: string[];
-  projects?: Array<{
-    name: string;
-    description: string;
-    technologies: string;
-    link?: string;
-  }>;
-  certificates?: Array<{
-    name: string;
-    issuer: string;
-    date: string;
-  }>;
-  languages?: Array<{
-    language: string;
-    level: string;
-  }>;
-  references?: Array<{
-    name: string;
-    company: string;
-    contact: string;
-  }>;
-  // Version control
-  version?: 'global' | 'turkey';
-  language?: 'turkish' | 'english';
-}
+import { CVTemplateData } from '../types';
 
 export class CVTemplateStylishAccountingService {
   private static instance: CVTemplateStylishAccountingService;
@@ -94,37 +30,7 @@ export class CVTemplateStylishAccountingService {
     return text.trim();
   }
 
-  private getSectionHeaders(language: 'turkish' | 'english') {
-    if (language === 'turkish') {
-      return {
-        objective: 'HEDEF',
-        experience: 'DENEYİM',
-        education: 'EĞİTİM',
-        technicalSkills: 'TEKNİK BECERİLER',
-        projects: 'PROJELER',
-        certificates: 'SERTİFİKALAR',
-        languages: 'DİLLER',
-        communication: 'İLETİŞİM',
-        leadership: 'LİDERLİK',
-        references: 'REFERANSLAR',
-      };
-    } else {
-      return {
-        objective: 'OBJECTIVE',
-        experience: 'EXPERIENCE',
-        education: 'EDUCATION',
-        technicalSkills: 'TECHNICAL SKILLS',
-        projects: 'PROJECTS',
-        certificates: 'CERTIFICATES',
-        languages: 'LANGUAGES',
-        communication: 'COMMUNICATION',
-        leadership: 'LEADERSHIP',
-        references: 'REFERENCES',
-      };
-    }
-  }
-
-  async generatePDF(data: CVStylishAccountingData): Promise<Buffer> {
+  async generatePDF(data: CVTemplateData): Promise<Buffer> {
     // Set default version if not specified
     if (!data.version) {
       data.version = 'global';
@@ -180,7 +86,7 @@ export class CVTemplateStylishAccountingService {
 
   private generateContent(
     doc: InstanceType<typeof PDFDocument>,
-    data: CVStylishAccountingData
+    data: CVTemplateData
   ): void {
     // Define colors and get section headers - Preserving Stylish Accounting green
     const colors = {
@@ -189,7 +95,7 @@ export class CVTemplateStylishAccountingService {
       background: '#dcf0e8', // RGB(220,240,232) converted to hex
       grey: '#666666',
     };
-    const headers = this.getSectionHeaders(data.language!);
+    const headers = getSectionHeaders(data.language!);
 
     // Calculate text row width (4/5 of line width)
     const lineWidth = 495; // From 50 to 545 (495px)
@@ -358,7 +264,7 @@ export class CVTemplateStylishAccountingService {
 
   private addHeader(
     doc: InstanceType<typeof PDFDocument>,
-    data: CVStylishAccountingData,
+    data: CVTemplateData,
     colors: any,
     textRowWidth: number,
     yPosition: number

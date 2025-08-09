@@ -1,78 +1,14 @@
 /* eslint-disable prefer-const */
 import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream';
+
 import logger from '../config/logger';
+
 import { FontLoader } from '../utils/fontLoader';
 import { DateFormatter } from '../utils/dateFormatter';
+import { getSectionHeaders } from '../utils/cvSectionHeaders';
 
-export interface CVOfficeManagerData {
-  personalInfo: {
-    address: string;
-    city: string;
-    email: string;
-    firstName: string;
-    github?: string;
-    jobTitle?: string;
-    lastName: string;
-    linkedin?: string;
-    medium?: string;
-    phone: string;
-    website?: string;
-  };
-  objective: string;
-  experience: Array<{
-    company: string;
-    description: string;
-    endDate: string;
-    isCurrent: boolean;
-    jobTitle: string;
-    location: string;
-    startDate: string;
-  }>;
-  education: Array<{
-    degree: string;
-    details?: string;
-    field: string;
-    graduationDate: string;
-    location: string;
-    startDate: string;
-    university: string;
-  }>;
-  // Global version fields
-  communication?: string;
-  leadership?: string;
-  // Turkey version fields
-  technicalSkills?: {
-    frontend?: string[];
-    backend?: string[];
-    database?: string[];
-    tools?: string[];
-  };
-  skills?: string[];
-  projects?: Array<{
-    name: string;
-    description: string;
-    technologies: string;
-    link?: string;
-  }>;
-  certificates?: Array<{
-    name: string;
-    issuer: string;
-    date: string;
-  }>;
-  languages?: Array<{
-    language: string;
-    level: string;
-  }>;
-  references?: Array<{
-    name: string;
-    company: string;
-    contact: string;
-  }>;
-  // Version control
-  version?: 'global' | 'turkey';
-  language?: 'turkish' | 'english';
-}
+import { CVTemplateData } from '../types';
 
 export class CVTemplateOfficeManagerService {
   private static instance: CVTemplateOfficeManagerService;
@@ -110,37 +46,7 @@ export class CVTemplateOfficeManagerService {
     return text.trim();
   }
 
-  private getSectionHeaders(language: 'turkish' | 'english') {
-    if (language === 'turkish') {
-      return {
-        objective: 'HEDEF',
-        experience: 'DENEYİM',
-        education: 'EĞİTİM',
-        technicalSkills: 'TEKNİK BECERİLER',
-        projects: 'PROJELER',
-        certificates: 'SERTİFİKALAR',
-        languages: 'DİLLER',
-        communication: 'İLETİŞİM',
-        leadership: 'LİDERLİK',
-        references: 'REFERANSLAR',
-      };
-    } else {
-      return {
-        objective: 'OBJECTIVE',
-        experience: 'EXPERIENCE',
-        education: 'EDUCATION',
-        technicalSkills: 'TECHNICAL SKILLS',
-        projects: 'PROJECTS',
-        certificates: 'CERTIFICATES',
-        languages: 'LANGUAGES',
-        communication: 'COMMUNICATION',
-        leadership: 'LEADERSHIP',
-        references: 'REFERENCES',
-      };
-    }
-  }
-
-  async generatePDF(data: CVOfficeManagerData): Promise<Buffer> {
+  async generatePDF(data: CVTemplateData): Promise<Buffer> {
     if (!data.version) {
       data.version = 'global';
     }
@@ -208,10 +114,10 @@ export class CVTemplateOfficeManagerService {
 
   private generateContent(
     doc: InstanceType<typeof PDFDocument>,
-    data: CVOfficeManagerData
+    data: CVTemplateData
   ): void {
     const colors = { black: '#000000', gray: '#333333' };
-    const headers = this.getSectionHeaders(data.language!);
+    const headers = getSectionHeaders(data.language!);
     const margins = { left: 50, right: 545 };
 
     doc.x = margins.left;
@@ -340,7 +246,7 @@ export class CVTemplateOfficeManagerService {
 
   private addHeader(
     doc: InstanceType<typeof PDFDocument>,
-    data: CVOfficeManagerData,
+    data: CVTemplateData,
     colors: any
   ): void {
     const firstName = this.sanitizeText(data.personalInfo.firstName);

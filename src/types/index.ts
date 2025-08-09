@@ -118,3 +118,6 @@ export interface ContactMessageRequest {
   subject: string;
   message: string;
 }
+
+// CV Template Types
+export * from './cvTemplate.types';

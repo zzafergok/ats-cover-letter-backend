@@ -1,78 +1,14 @@
 import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream';
+
 import logger from '../config/logger';
+
 import { FontLoader } from '../utils/fontLoader';
 import { DateFormatter } from '../utils/dateFormatter';
 import { shortenUrlForDisplay } from '../utils/urlShortener';
+import { getSectionHeaders } from '../utils/cvSectionHeaders';
 
-export interface CVMinimalistTurkishData {
-  personalInfo: {
-    address: string;
-    city: string;
-    email: string;
-    firstName: string;
-    github?: string;
-    jobTitle?: string;
-    lastName: string;
-    linkedin?: string;
-    medium?: string;
-    phone: string;
-    website?: string;
-  };
-  objective: string;
-  experience: Array<{
-    company: string;
-    description: string;
-    endDate: string;
-    isCurrent: boolean;
-    jobTitle: string;
-    location: string;
-    startDate: string;
-  }>;
-  education: Array<{
-    degree: string;
-    details?: string;
-    field: string;
-    graduationDate: string;
-    location: string;
-    startDate: string;
-    university: string;
-  }>;
-  // Global version fields
-  communication?: string;
-  leadership?: string;
-  // Turkey version fields
-  technicalSkills?: {
-    frontend?: string[];
-    backend?: string[];
-    database?: string[];
-    tools?: string[];
-  };
-  skills?: string[];
-  projects?: Array<{
-    name: string;
-    description: string;
-    technologies: string;
-    link?: string;
-  }>;
-  certificates?: Array<{
-    name: string;
-    issuer: string;
-    date: string;
-  }>;
-  languages?: Array<{
-    language: string;
-    level: string;
-  }>;
-  references?: Array<{
-    name: string;
-    company: string;
-    contact: string;
-  }>;
-  // Version control
-  version?: 'global' | 'turkey';
-  language?: 'turkish' | 'english';
-}
+import { CVTemplateData } from '../types';
 
 export class CVTemplateMinimalistTurkishService {
   private static instance: CVTemplateMinimalistTurkishService;
@@ -109,38 +45,7 @@ export class CVTemplateMinimalistTurkishService {
     return text.trim();
   }
 
-  private getSectionHeaders(language: 'turkish' | 'english') {
-    if (language === 'turkish') {
-      return {
-        objective: 'HEDEF',
-        experience: 'DENEYİM',
-        education: 'EĞİTİM',
-        technicalSkills: 'TEKNİK BECERİLER',
-        projects: 'PROJELER',
-        certificates: 'SERTİFİKALAR',
-        languages: 'DİLLER',
-        communication: 'İLETİŞİM',
-        leadership: 'LİDERLİK',
-        references: 'REFERANSLAR',
-      };
-    } else {
-      return {
-        objective: 'OBJECTIVE',
-        experience: 'EXPERIENCE',
-        education: 'EDUCATION',
-        technicalSkills: 'TECHNICAL SKILLS',
-        projects: 'PROJECTS',
-        certificates: 'CERTIFICATES',
-        languages: 'LANGUAGES',
-        communication: 'COMMUNICATION',
-        leadership: 'LEADERSHIP',
-        skills: 'SKILLS',
-        references: 'REFERENCES',
-      };
-    }
-  }
-
-  async generatePDF(data: CVMinimalistTurkishData): Promise<Buffer> {
+  async generatePDF(data: CVTemplateData): Promise<Buffer> {
     // Set default version if not specified
     if (!data.version) {
       data.version = 'global';
@@ -219,10 +124,10 @@ export class CVTemplateMinimalistTurkishService {
 
   private generateContent(
     doc: InstanceType<typeof PDFDocument>,
-    data: CVMinimalistTurkishData
+    data: CVTemplateData
   ): void {
     const colors = { black: '#000000' };
-    const headers = this.getSectionHeaders(data.language!);
+    const headers = getSectionHeaders(data.language!);
 
     // Page dimensions: A4 = 595x842 points
     const pageWidth = 545; // 595 - 50 margin
@@ -504,7 +409,7 @@ export class CVTemplateMinimalistTurkishService {
 
   private addMainHeader(
     doc: InstanceType<typeof PDFDocument>,
-    data: CVMinimalistTurkishData,
+    data: CVTemplateData,
     colors: any,
     xPosition: number,
     yPosition: number,
@@ -537,7 +442,11 @@ export class CVTemplateMinimalistTurkishService {
       { key: 'medium', value: data.personalInfo.medium },
     ];
 
-    const urlInfoParts: Array<{ display: string; url: string; platform: string }> = [];
+    const urlInfoParts: Array<{
+      display: string;
+      url: string;
+      platform: string;
+    }> = [];
 
     socialFields.forEach((field) => {
       if (field.value) {
@@ -571,13 +480,15 @@ export class CVTemplateMinimalistTurkishService {
     if (data.personalInfo.website) {
       const websiteDisplay = this.sanitizeText(data.personalInfo.website);
       // Check if website is not already in urlInfoParts (to avoid duplicates)
-      const websiteExists = urlInfoParts.find(info => info.display === websiteDisplay);
+      const websiteExists = urlInfoParts.find(
+        (info) => info.display === websiteDisplay
+      );
       if (!websiteExists) {
         // Ensure website has proper protocol
-        const websiteUrl = data.personalInfo.website.startsWith('http') 
-          ? data.personalInfo.website 
+        const websiteUrl = data.personalInfo.website.startsWith('http')
+          ? data.personalInfo.website
           : `https://${data.personalInfo.website}`;
-        
+
         urlInfoParts.push({
           display: websiteDisplay,
           url: websiteUrl,

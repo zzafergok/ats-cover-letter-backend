@@ -1,77 +1,13 @@
 import PDFDocument from 'pdfkit';
 import { PassThrough } from 'stream';
+
 import logger from '../config/logger';
+
 import { FontLoader } from '../utils/fontLoader';
 import { DateFormatter } from '../utils/dateFormatter';
+import { getSectionHeaders } from '../utils/cvSectionHeaders';
 
-export interface CVBasicHRData {
-  personalInfo: {
-    address: string;
-    city: string;
-    email: string;
-    firstName: string;
-    github?: string;
-    jobTitle?: string;
-    lastName: string;
-    linkedin?: string;
-    medium?: string;
-    phone: string;
-    website?: string;
-  };
-  objective: string;
-  experience: Array<{
-    company: string;
-    description: string;
-    endDate: string;
-    isCurrent: boolean;
-    jobTitle: string;
-    location: string;
-    startDate: string;
-  }>;
-  education: Array<{
-    degree: string;
-    details?: string;
-    field: string;
-    graduationDate: string;
-    location: string;
-    startDate: string;
-    university: string;
-  }>;
-  // Global version fields
-  communication?: string;
-  leadership?: string;
-  // Turkey version fields
-  technicalSkills?: {
-    frontend?: string[];
-    backend?: string[];
-    database?: string[];
-    tools?: string[];
-  };
-  skills?: string[];
-  projects?: Array<{
-    name: string;
-    description: string;
-    technologies: string;
-    link?: string;
-  }>;
-  certificates?: Array<{
-    name: string;
-    issuer: string;
-    date: string;
-  }>;
-  languages?: Array<{
-    language: string;
-    level: string;
-  }>;
-  references?: Array<{
-    name: string;
-    company: string;
-    contact: string;
-  }>;
-  // Version control
-  version?: 'global' | 'turkey';
-  language?: 'turkish' | 'english';
-}
+import { CVTemplateData } from '../types';
 
 export class CVTemplateBasicHRService {
   private static instance: CVTemplateBasicHRService;
@@ -98,37 +34,8 @@ export class CVTemplateBasicHRService {
   /**
    * Dil bazında section başlıklarını getir
    */
-  private getSectionHeaders(language: 'turkish' | 'english') {
-    if (language === 'turkish') {
-      return {
-        objective: 'HEDEF',
-        experience: 'DENEYİM',
-        education: 'EĞİTİM',
-        technicalSkills: 'TEKNİK BECERİLER',
-        projects: 'PROJELER',
-        certificates: 'SERTİFİKALAR',
-        languages: 'DİLLER',
-        communication: 'İLETİŞİM',
-        leadership: 'LİDERLİK',
-        references: 'REFERANSLAR',
-      };
-    } else {
-      return {
-        objective: 'OBJECTIVE',
-        experience: 'EXPERIENCE',
-        education: 'EDUCATION',
-        technicalSkills: 'TECHNICAL SKILLS',
-        projects: 'PROJECTS',
-        certificates: 'CERTIFICATES',
-        languages: 'LANGUAGES',
-        communication: 'COMMUNICATION',
-        leadership: 'LEADERSHIP',
-        references: 'REFERENCES',
-      };
-    }
-  }
 
-  async generatePDF(data: CVBasicHRData): Promise<Buffer> {
+  async generatePDF(data: CVTemplateData): Promise<Buffer> {
     // Set default version if not specified
     if (!data.version) {
       data.version = 'global';
@@ -162,7 +69,7 @@ export class CVTemplateBasicHRService {
           // Define colors and get section headers
           const greenColor = '#4a7c59'; // Matching template green color
           const blackColor = '#000000';
-          const headers = this.getSectionHeaders(data.language!);
+          const headers = getSectionHeaders(data.language!);
 
           let yPosition = 50;
 

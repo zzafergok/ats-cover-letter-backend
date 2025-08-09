@@ -1,20 +1,24 @@
 import { PrismaClient } from '@prisma/client';
-import { CVTemplateBasicHRService, CVBasicHRData } from './cvTemplateBasicHR.service';
-import { CVTemplateOfficeManagerService, CVOfficeManagerData } from './cvTemplateOfficeManager.service';
-import { CVTemplateSimpleClassicService, CVSimpleClassicData } from './cvTemplateSimpleClassic.service';
-import { CVTemplateStylishAccountingService, CVStylishAccountingData } from './cvTemplateStylishAccounting.service';
-import { CVTemplateMinimalistTurkishService, CVMinimalistTurkishData } from './cvTemplateMinimalistTurkish.service';
+
+import { CVTemplateBasicHRService } from './cvTemplateBasicHR.service';
+import { CVTemplateOfficeManagerService } from './cvTemplateOfficeManager.service';
+import { CVTemplateSimpleClassicService } from './cvTemplateSimpleClassic.service';
+import { CVTemplateStylishAccountingService } from './cvTemplateStylishAccounting.service';
+import { CVTemplateMinimalistTurkishService } from './cvTemplateMinimalistTurkish.service';
+
 import { UserLimitService } from './userLimit.service';
-import logger from '../config/logger';
+
 import {
   SERVICE_MESSAGES,
   formatMessage,
   createErrorMessage,
 } from '../constants/messages';
+import logger from '../config/logger';
+import { CVTemplateData } from '../types';
 
 const prisma = new PrismaClient();
 
-export type CVTemplateType = 
+export type CVTemplateType =
   | 'basic_hr'
   | 'office_manager'
   | 'simple_classic'
@@ -23,7 +27,7 @@ export type CVTemplateType =
 
 export interface CVGenerationRequest {
   templateType: CVTemplateType;
-  data: CVBasicHRData | CVOfficeManagerData | CVSimpleClassicData | CVStylishAccountingData | CVMinimalistTurkishData;
+  data: CVTemplateData;
 }
 
 export interface CVGenerationResponse {
@@ -47,8 +51,10 @@ export class CVGeneratorService {
     this.basicHRService = CVTemplateBasicHRService.getInstance();
     this.officeManagerService = CVTemplateOfficeManagerService.getInstance();
     this.simpleClassicService = CVTemplateSimpleClassicService.getInstance();
-    this.stylishAccountingService = CVTemplateStylishAccountingService.getInstance();
-    this.minimalistTurkishService = CVTemplateMinimalistTurkishService.getInstance();
+    this.stylishAccountingService =
+      CVTemplateStylishAccountingService.getInstance();
+    this.minimalistTurkishService =
+      CVTemplateMinimalistTurkishService.getInstance();
   }
 
   public static getInstance(): CVGeneratorService {
@@ -128,10 +134,7 @@ export class CVGeneratorService {
       }
     } catch (error) {
       logger.error(
-        createErrorMessage(
-          SERVICE_MESSAGES.CV.GENERATION_ERROR,
-          error as Error
-        )
+        createErrorMessage(SERVICE_MESSAGES.CV.GENERATION_ERROR, error as Error)
       );
       throw error;
     }
@@ -165,7 +168,10 @@ export class CVGeneratorService {
   async getUserCVs(
     userId: string,
     userRole: string
-  ): Promise<{ cvs: Omit<CVGenerationResponse, 'pdfBuffer'>[]; limitInfo: any }> {
+  ): Promise<{
+    cvs: Omit<CVGenerationResponse, 'pdfBuffer'>[];
+    limitInfo: any;
+  }> {
     const cvs = await prisma.generatedCv.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -277,53 +283,58 @@ export class CVGeneratorService {
   ): Promise<Buffer> {
     switch (templateType) {
       case 'basic_hr':
-        return await this.basicHRService.generatePDF(data as CVBasicHRData);
-      
+        return await this.basicHRService.generatePDF(data);
+
       case 'office_manager':
-        return await this.officeManagerService.generatePDF(data as CVOfficeManagerData);
-      
+        return await this.officeManagerService.generatePDF(data);
+
       case 'simple_classic':
-        return await this.simpleClassicService.generatePDF(data as CVSimpleClassicData);
-      
+        return await this.simpleClassicService.generatePDF(data);
+
       case 'stylish_accounting':
-        return await this.stylishAccountingService.generatePDF(data as CVStylishAccountingData);
-      
+        return await this.stylishAccountingService.generatePDF(data);
+
       case 'minimalist_turkish':
-        return await this.minimalistTurkishService.generatePDF(data as CVMinimalistTurkishData);
-      
+        return await this.minimalistTurkishService.generatePDF(data);
+
       default:
         throw new Error(`Unsupported template type: ${templateType}`);
     }
   }
 
   // Utility method to get available templates
-  getAvailableTemplates(): { id: CVTemplateType; name: string; description: string }[] {
+  getAvailableTemplates(): {
+    id: CVTemplateType;
+    name: string;
+    description: string;
+  }[] {
     return [
       {
         id: 'basic_hr',
         name: 'Basic HR Resume',
-        description: 'Clean and professional HR-focused resume template'
+        description: 'Clean and professional HR-focused resume template',
       },
       {
         id: 'office_manager',
         name: 'Office Manager Resume',
-        description: 'Modern template designed for office management positions'
+        description: 'Modern template designed for office management positions',
       },
       {
         id: 'simple_classic',
         name: 'Simple Classic Resume',
-        description: 'Classic design with green accents and clean layout'
+        description: 'Classic design with green accents and clean layout',
       },
       {
         id: 'stylish_accounting',
         name: 'Stylish Accounting Resume',
-        description: 'Professional template optimized for accounting and finance roles'
+        description:
+          'Professional template optimized for accounting and finance roles',
       },
       {
         id: 'minimalist_turkish',
         name: 'Minimalist Turkish Resume',
-        description: 'Clean, minimalist Turkish resume template'
-      }
+        description: 'Clean, minimalist Turkish resume template',
+      },
     ];
   }
 
