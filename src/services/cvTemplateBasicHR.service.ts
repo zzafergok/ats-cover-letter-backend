@@ -157,14 +157,26 @@ export class CVTemplateBasicHRService {
               const companyLocation = `${this.sanitizeText(exp.company)} | ${this.sanitizeText(exp.location)}`;
               doc.font('NotoSans').text(companyLocation, 50, yPosition + 15);
 
-              // Date range - right aligned like template with formatted dates
+              // Date range - right aligned like template with formatted dates and isCurrent check
               const startDate = DateFormatter.formatDate(
                 this.sanitizeText(exp.startDate)
               );
-              const endDate = DateFormatter.formatDate(
-                this.sanitizeText(exp.endDate)
-              );
-              const dateRange = `${startDate} – ${endDate}`;
+              let dateRange = '';
+              if (
+                exp.isCurrent ||
+                !exp.endDate ||
+                exp.endDate.toLowerCase().includes('günümüz') ||
+                exp.endDate.toLowerCase().includes('current')
+              ) {
+                // Check language for current job text
+                const currentText = data.language === 'turkish' ? 'devam ediyor' : 'Present';
+                dateRange = `${startDate} – ${currentText}`;
+              } else {
+                const endDate = DateFormatter.formatDate(
+                  this.sanitizeText(exp.endDate)
+                );
+                dateRange = `${startDate} – ${endDate}`;
+              }
               const dateWidth = doc.widthOfString(dateRange);
               const dateStartX = 545 - dateWidth; // Position from right edge
 
@@ -224,17 +236,21 @@ export class CVTemplateBasicHRService {
               const universityLocation = `${this.sanitizeText(edu.university)} | ${this.sanitizeText(edu.location)}`;
               doc.font('NotoSans').text(universityLocation, 50, yPosition + 15);
 
-              // Graduation date - right aligned with formatted date
+              // Date range - right aligned with formatted dates
+              const startDate = DateFormatter.formatDate(
+                this.sanitizeText(edu.startDate)
+              );
               const graduationDate = DateFormatter.formatGraduationDate(
                 this.sanitizeText(edu.graduationDate)
               );
-              const gradDateWidth = doc.widthOfString(graduationDate);
-              const gradDateStartX = 545 - gradDateWidth; // Position from right edge
+              const dateRange = `${startDate} - ${graduationDate}`;
+              const dateWidth = doc.widthOfString(dateRange);
+              const dateStartX = 545 - dateWidth; // Position from right edge
 
               doc
                 .fontSize(11)
                 .fillColor(blackColor)
-                .text(graduationDate, gradDateStartX, yPosition + 15);
+                .text(dateRange, dateStartX, yPosition + 15);
 
               yPosition += 35;
 
@@ -372,6 +388,45 @@ export class CVTemplateBasicHRService {
                 width: 495,
                 lineGap: 2,
               }) + 20;
+          }
+
+          // Skills Section - Global version only
+          if (data.version !== 'turkey' && data.skills && data.skills.length > 0) {
+            // Check if section fits on current page
+            const sectionMinHeight = 60; // Header + minimum content
+            if (yPosition + sectionMinHeight > 720) {
+              doc.addPage();
+              yPosition = 50;
+            }
+
+            this.addSectionHeader(
+              doc,
+              headers.skills || 'SKILLS',
+              yPosition,
+              greenColor
+            );
+            yPosition += 25;
+
+            // Calculate 3-column layout for skills
+            const totalRows = Math.ceil(data.skills.length / 3);
+            const skillsHeight = totalRows * 18; // 18px per row for better spacing
+            const columnSpacing = 165; // Spacing between columns (495/3 = 165)
+            const startY = yPosition;
+
+            data.skills.forEach((skill, index) => {
+              const column = index % 3;
+              const row = Math.floor(index / 3);
+              const xPosition = 50 + column * columnSpacing;
+              const currentYPosition = startY + row * 18;
+
+              doc
+                .fontSize(11)
+                .fillColor(blackColor)
+                .font('NotoSans')
+                .text(this.sanitizeText(skill), xPosition, currentYPosition);
+            });
+
+            yPosition = startY + skillsHeight + 20;
           }
 
           // Projects Section - Turkey version
