@@ -572,7 +572,7 @@ export class CVTemplateStylishAccountingService {
         }) + 15;
 
       // Check for page break
-      if (yPosition > 720) {
+      if (yPosition > 760) {
         doc.addPage();
         // Set background color for new page
         doc.rect(0, 0, 595.28, 841.89).fillColor(colors.background).fill();
@@ -598,20 +598,30 @@ export class CVTemplateStylishAccountingService {
     yPosition += 25;
 
     education.forEach((edu) => {
-      // Degree - bold
+      // Degree, field, university and location
       const degree = this.sanitizeText(edu.degree);
+      const field = edu.field ? this.sanitizeText(edu.field) : '';
+      const university = this.sanitizeText(edu.university);
+      const location = this.sanitizeText(edu.location);
+
       doc
         .fontSize(12)
         .fillColor(colors.text)
         .font('NotoSans-Bold')
-        .text(degree, 50, yPosition);
+        .text(degree, 50, yPosition, { continued: true });
 
-      // University and location - regular font (1pt smaller)
-      const universityLocation = `${this.sanitizeText(edu.university)} | ${this.sanitizeText(edu.location)}`;
+      if (field) {
+        doc
+          .fillColor(colors.grey)
+          .font('NotoSans-Bold')
+          .fontSize(11)
+          .text(`, ${field}`, { continued: true })
+          .fillColor(colors.text);
+      }
+
       doc
-        .fontSize(11)
         .font('NotoSans')
-        .text(universityLocation, 50, yPosition + 15);
+        .text(`, ${university} | ${location}`, { continued: false });
 
       // Education date range - right aligned with long format (startDate - endDate)
       let dateRange = '';
@@ -660,7 +670,7 @@ export class CVTemplateStylishAccountingService {
       }
 
       // Check for page break
-      if (yPosition > 720) {
+      if (yPosition > 760) {
         doc.addPage();
         // Set background color for new page
         doc.rect(0, 0, 595.28, 841.89).fillColor(colors.background).fill();
@@ -684,7 +694,7 @@ export class CVTemplateStylishAccountingService {
   ): number {
     // Check if section fits on current page
     const sectionMinHeight = 80;
-    if (yPosition + sectionMinHeight > 720) {
+    if (yPosition + sectionMinHeight > 760) {
       doc.addPage();
       // Set background color for new page
       doc.rect(0, 0, 595.28, 841.89).fillColor(colors.background).fill();
@@ -719,7 +729,7 @@ export class CVTemplateStylishAccountingService {
 
     for (let i = 0; i < skillsArray.length; i += 2) {
       // Check if we need a new page for this row
-      if (currentYPos + 25 > 720) {
+      if (currentYPos + 25 > 760) {
         doc.addPage();
         doc.rect(0, 0, 595.28, 841.89).fillColor(colors.background).fill();
         currentYPos = 50;
@@ -791,7 +801,7 @@ export class CVTemplateStylishAccountingService {
   ): number {
     // Check if section fits on current page
     const sectionMinHeight = 80;
-    if (yPosition + sectionMinHeight > 720) {
+    if (yPosition + sectionMinHeight > 760) {
       doc.addPage();
       // Set background color for new page
       doc.rect(0, 0, 595.28, 841.89).fillColor(colors.background).fill();
@@ -847,7 +857,7 @@ export class CVTemplateStylishAccountingService {
   ): number {
     // Check if section fits on current page
     const sectionMinHeight = 60;
-    if (yPosition + sectionMinHeight > 720) {
+    if (yPosition + sectionMinHeight > 760) {
       doc.addPage();
       // Set background color for new page
       doc.rect(0, 0, 595.28, 841.89).fillColor(colors.background).fill();
@@ -890,7 +900,7 @@ export class CVTemplateStylishAccountingService {
   ): number {
     // Check if section fits on current page
     const sectionMinHeight = 80;
-    if (yPosition + sectionMinHeight > 720) {
+    if (yPosition + sectionMinHeight > 760) {
       doc.addPage();
       // Set background color for new page
       doc.rect(0, 0, 595.28, 841.89).fillColor(colors.background).fill();
@@ -941,7 +951,7 @@ export class CVTemplateStylishAccountingService {
         }) + 15;
 
       // Check for page break
-      if (yPosition > 720) {
+      if (yPosition > 760) {
         doc.addPage();
         // Set background color for new page
         doc.rect(0, 0, 595.28, 841.89).fillColor(colors.background).fill();
@@ -965,7 +975,7 @@ export class CVTemplateStylishAccountingService {
   ): number {
     // Check if section fits on current page
     const sectionMinHeight = 60;
-    if (yPosition + sectionMinHeight > 720) {
+    if (yPosition + sectionMinHeight > 760) {
       doc.addPage();
       // Set background color for new page
       doc.rect(0, 0, 595.28, 841.89).fillColor(colors.background).fill();
@@ -1008,7 +1018,7 @@ export class CVTemplateStylishAccountingService {
   ): number {
     // Check if section fits on current page
     const sectionMinHeight = 80;
-    if (yPosition + sectionMinHeight > 720) {
+    if (yPosition + sectionMinHeight > 760) {
       doc.addPage();
       // Set background color for new page
       doc.rect(0, 0, 595.28, 841.89).fillColor(colors.background).fill();
@@ -1062,7 +1072,7 @@ export class CVTemplateStylishAccountingService {
   ): number {
     // Check if section fits on current page
     const sectionMinHeight = 60;
-    if (yPosition + sectionMinHeight > 720) {
+    if (yPosition + sectionMinHeight > 760) {
       doc.addPage();
       // Set background color for new page
       doc.rect(0, 0, 595.28, 841.89).fillColor(colors.background).fill();
@@ -1111,7 +1121,7 @@ export class CVTemplateStylishAccountingService {
   ): number {
     // Check if section fits on current page
     const sectionMinHeight = 80;
-    if (yPosition + sectionMinHeight > 720) {
+    if (yPosition + sectionMinHeight > 760) {
       doc.addPage();
       // Set background color for new page
       doc.rect(0, 0, 595.28, 841.89).fillColor(colors.background).fill();

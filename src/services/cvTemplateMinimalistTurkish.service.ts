@@ -666,7 +666,7 @@ export class CVTemplateMinimalistTurkishService {
     yPosition: number,
     requiredSpace: number
   ): number {
-    if (yPosition + requiredSpace > 720) {
+    if (yPosition + requiredSpace > 760) {
       doc.addPage();
       return 50;
     }

@@ -6,6 +6,7 @@ import logger from '../config/logger';
 
 import { FontLoader } from '../utils/fontLoader';
 import { DateFormatter } from '../utils/dateFormatter';
+import { shortenUrlForDisplay } from '../utils/urlShortener';
 import { getSectionHeaders } from '../utils/cvSectionHeaders';
 
 import { CVTemplateData } from '../types';
@@ -204,6 +205,19 @@ export class CVTemplateOfficeManagerService {
         doc.moveDown(1);
       }
     } else {
+      if (data.skills && data.skills.length > 0) {
+        this.addSectionSeparator(doc, margins);
+        doc.moveDown(1);
+        this.addSkillsSection(
+          doc,
+          data.skills,
+          headers.skills || 'SKILLS',
+          colors,
+          margins
+        );
+        doc.moveDown(1);
+      }
+
       if (data.communication) {
         this.addSectionSeparator(doc, margins);
         doc.moveDown(1);
@@ -231,7 +245,7 @@ export class CVTemplateOfficeManagerService {
       }
     }
 
-    if (data.references && data.references.length > 0 && doc.y < 720) {
+    if (data.references && data.references.length > 0 && doc.y < 760) {
       this.addSectionSeparator(doc, margins);
       doc.moveDown(1);
       this.addReferencesSection(
@@ -268,33 +282,185 @@ export class CVTemplateOfficeManagerService {
     ).toUpperCase();
     doc.fontSize(14).font('NotoSans-Bold').text(jobTitle, 50, doc.y);
 
-    const email = this.sanitizeText(data.personalInfo.email);
-    const phone = this.sanitizeText(data.personalInfo.phone);
-    const linkedin = data.personalInfo.linkedin
-      ? this.sanitizeText(data.personalInfo.linkedin)
-      : 'LinkedIn profile';
+    // Contact information and social links preparation
+    const contactInfo = [
+      `${this.sanitizeText(data.personalInfo.address)},${this.sanitizeText(data.personalInfo.city)}`,
+      this.sanitizeText(data.personalInfo.phone),
+      this.sanitizeText(data.personalInfo.email),
+    ].filter(Boolean);
+
+    const socialLinks: Array<{
+      display: string;
+      url: string;
+    }> = [];
+
+    const socialFields = ['linkedin', 'github', 'medium'] as const;
+    socialFields.forEach((field) => {
+      const fieldValue = (data.personalInfo as any)[field];
+      if (fieldValue) {
+        try {
+          const shortUrl = shortenUrlForDisplay(fieldValue);
+          socialLinks.push({
+            display: this.sanitizeText(shortUrl.displayText),
+            url: shortUrl.fullUrl,
+          });
+        } catch (error) {
+          logger.warn(`Failed to shorten URL for ${field}:`, error);
+        }
+      }
+    });
+
+    // Add website without shortening
+    if (data.personalInfo.website) {
+      socialLinks.push({
+        display: this.sanitizeText(data.personalInfo.website),
+        url: this.sanitizeText(data.personalInfo.website),
+      });
+    }
 
     doc.moveDown(0.4);
     this.addSeparator(doc, margins);
     doc.moveDown(0.6);
 
-    const contactY = doc.y;
-
-    // Email - left aligned
-    doc.fontSize(11).font('NotoSans').text(email, margins.left, contactY);
-
-    // Phone - center aligned
-    const phoneWidth = doc.widthOfString(phone);
-    const centerX = (margins.left + margins.right) / 2 - phoneWidth / 2;
-    doc.text(phone, centerX, contactY);
-
-    // LinkedIn - right aligned, full URL
-    const linkedinWidth = doc.widthOfString(linkedin);
-    const linkedinStartX = margins.right - linkedinWidth;
-    doc.text(linkedin, linkedinStartX, contactY);
+    // Use office manager template style for contact info
+    this.renderContactInfoOfficeManagerStyle(
+      doc,
+      contactInfo,
+      socialLinks,
+      doc.y,
+      margins,
+      colors.black
+    );
 
     doc.moveDown(0.6);
     this.addSeparator(doc, margins);
+  }
+
+  private renderContactInfoOfficeManagerStyle(
+    doc: InstanceType<typeof PDFDocument>,
+    contactInfoParts: string[],
+    urlInfoParts: Array<{ display: string; url: string }>,
+    startY: number,
+    margins: any,
+    textColor: string
+  ): void {
+    const fontSize = 11;
+    const fontFamily = 'NotoSans';
+
+    doc.fontSize(fontSize).font(fontFamily).fillColor(textColor);
+
+    // Combine all parts
+    const allParts = [
+      ...contactInfoParts,
+      ...urlInfoParts.map((link) => link.display),
+    ];
+
+    let currentY = startY;
+    let itemIndex = 0;
+
+    // Calculate available widths for each column layout
+    const totalWidth = margins.right - margins.left;
+    const columnGap = 20; // Space between columns
+    
+    // 3-column: each column gets 1/3 of total width minus gaps
+    const threeColumnWidth = (totalWidth - 2 * columnGap) / 3;
+    // 2-column: each column gets 1/2 of total width minus gap
+    const twoColumnWidth = (totalWidth - columnGap) / 2;
+
+    while (itemIndex < allParts.length) {
+      const remainingItems = allParts.slice(itemIndex);
+      
+      // Try 3-column layout first
+      let itemsForThisRow = Math.min(3, remainingItems.length);
+      let canFit3Columns = true;
+      
+      // Check if all 3 items can fit in 3-column layout
+      if (itemsForThisRow === 3) {
+        for (let i = 0; i < 3; i++) {
+          const itemWidth = doc.widthOfString(remainingItems[i]);
+          if (itemWidth > threeColumnWidth) {
+            canFit3Columns = false;
+            break;
+          }
+        }
+      }
+      
+      // If 3-column doesn't work, try 2-column
+      let canFit2Columns = false;
+      if (!canFit3Columns && remainingItems.length >= 2) {
+        itemsForThisRow = 2;
+        canFit2Columns = true;
+        
+        for (let i = 0; i < 2; i++) {
+          const itemWidth = doc.widthOfString(remainingItems[i]);
+          if (itemWidth > twoColumnWidth) {
+            canFit2Columns = false;
+            break;
+          }
+        }
+      }
+      
+      // If neither 3-column nor 2-column works, use 1-column
+      if (!canFit3Columns && !canFit2Columns) {
+        itemsForThisRow = 1;
+      }
+
+      // Render the row with determined layout
+      const rowItems = remainingItems.slice(0, itemsForThisRow);
+      
+      rowItems.forEach((part, columnIndex) => {
+        let xPosition = margins.left;
+
+        if (itemsForThisRow === 1) {
+          // Single column - center aligned
+          const partWidth = doc.widthOfString(part);
+          xPosition = (margins.left + margins.right) / 2 - partWidth / 2;
+        } else if (itemsForThisRow === 2) {
+          // Two columns
+          if (columnIndex === 0) {
+            xPosition = margins.left;
+          } else {
+            const partWidth = doc.widthOfString(part);
+            xPosition = margins.right - partWidth;
+          }
+        } else if (itemsForThisRow === 3) {
+          // Three columns
+          if (columnIndex === 0) {
+            xPosition = margins.left;
+          } else if (columnIndex === 1) {
+            const partWidth = doc.widthOfString(part);
+            xPosition = (margins.left + margins.right) / 2 - partWidth / 2;
+          } else {
+            const partWidth = doc.widthOfString(part);
+            xPosition = margins.right - partWidth;
+          }
+        }
+
+        doc.text(part, xPosition, currentY);
+
+        // Add hyperlink if this is a URL
+        const urlInfo = urlInfoParts.find((ui) => ui.display === part);
+        if (urlInfo) {
+          const actualPartWidth = doc.widthOfString(part);
+          doc.link(
+            xPosition,
+            currentY - 2,
+            actualPartWidth,
+            fontSize + 4,
+            urlInfo.url
+          );
+        }
+      });
+
+      // Move to next row and update item index
+      itemIndex += itemsForThisRow;
+      if (itemIndex < allParts.length) {
+        currentY += 18;
+      }
+    }
+
+    // Update doc.y to after contact info with proper spacing
+    doc.y = currentY + 18;
   }
 
   private addSeparator(
@@ -559,6 +725,40 @@ export class CVTemplateOfficeManagerService {
         lineGap: 2,
       });
     doc.moveDown(0.6);
+  }
+
+  private addSkillsSection(
+    doc: InstanceType<typeof PDFDocument>,
+    skills: string[],
+    title: string,
+    colors: any,
+    margins: any
+  ): void {
+    this.addSectionTitle(doc, title, colors.black);
+    doc.moveDown(0.4);
+
+    // Office manager template stilinde skills gösterimi - bullet points ile
+    const skillsPerRow = 3;
+    const columnWidth = (margins.right - margins.left) / skillsPerRow;
+    const startY = doc.y;
+
+    skills.forEach((skill, index) => {
+      const column = index % skillsPerRow;
+      const row = Math.floor(index / skillsPerRow);
+      const xPosition = margins.left + column * columnWidth;
+      const yPosition = startY + row * 18;
+
+      doc
+        .fontSize(11)
+        .fillColor(colors.black)
+        .font('NotoSans')
+        .text(`• ${this.sanitizeText(skill)}`, xPosition, yPosition);
+    });
+
+    // Move doc.y to after the skills section
+    const totalRows = Math.ceil(skills.length / skillsPerRow);
+    doc.y = startY + totalRows * 18;
+    doc.moveDown(0.4);
   }
 
   private addLeadershipSection(

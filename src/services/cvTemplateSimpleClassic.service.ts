@@ -5,6 +5,7 @@ import logger from '../config/logger';
 
 import { FontLoader } from '../utils/fontLoader';
 import { DateFormatter } from '../utils/dateFormatter';
+import { shortenUrlForDisplay } from '../utils/urlShortener';
 import { getSectionHeaders } from '../utils/cvSectionHeaders';
 
 import { CVTemplateData } from '../types';
@@ -287,21 +288,35 @@ export class CVTemplateSimpleClassicService {
       `${this.sanitizeText(data.personalInfo.address)} | ${this.sanitizeText(data.personalInfo.city)}`,
     ];
 
-    // Links - Right side
-    const rightLinks = [
-      data.personalInfo.linkedin
-        ? this.sanitizeText(data.personalInfo.linkedin)
-        : '',
-      data.personalInfo.website
-        ? this.sanitizeText(data.personalInfo.website)
-        : '',
-      data.personalInfo.github
-        ? this.sanitizeText(data.personalInfo.github)
-        : '',
-      data.personalInfo.medium
-        ? this.sanitizeText(data.personalInfo.medium)
-        : '',
-    ].filter(Boolean);
+    // Links - Right side with URL shortening and hyperlink info
+    const socialLinks: Array<{
+      display: string;
+      url: string;
+    }> = [];
+    
+    const socialFields = ['linkedin', 'github', 'medium'] as const;
+    socialFields.forEach((field) => {
+      const fieldValue = (data.personalInfo as any)[field];
+      if (fieldValue) {
+        try {
+          const shortUrl = shortenUrlForDisplay(fieldValue);
+          socialLinks.push({
+            display: this.sanitizeText(shortUrl.displayText),
+            url: shortUrl.fullUrl,
+          });
+        } catch (error) {
+          logger.warn(`Failed to shorten URL for ${field}:`, error);
+        }
+      }
+    });
+
+    // Add website without shortening
+    if (data.personalInfo.website) {
+      socialLinks.push({
+        display: this.sanitizeText(data.personalInfo.website),
+        url: this.sanitizeText(data.personalInfo.website),
+      });
+    }
 
     const startY = doc.y;
 
@@ -314,18 +329,24 @@ export class CVTemplateSimpleClassicService {
         .text(info, margins.left, startY + index * 12);
     });
 
-    // Right side links
-    rightLinks.forEach((link, index) => {
-      const linkWidth = doc.widthOfString(link);
+    // Right side links with hyperlinks
+    socialLinks.forEach((link, index) => {
+      const linkWidth = doc.widthOfString(link.display);
+      const xPosition = margins.right - linkWidth;
+      const yPosition = startY + index * 12;
+      
       doc
         .fontSize(9)
         .fillColor(colors.black)
         .font('NotoSans')
-        .text(link, margins.right - linkWidth, startY + index * 12);
+        .text(link.display, xPosition, yPosition, {
+          link: link.url,
+          underline: false,
+        });
     });
 
     // Move to next position
-    const maxLines = Math.max(leftContactInfo.length, rightLinks.length);
+    const maxLines = Math.max(leftContactInfo.length, socialLinks.length);
     doc.y = startY + maxLines * 12;
   }
 
@@ -348,7 +369,7 @@ export class CVTemplateSimpleClassicService {
       lineGap: 2,
     });
 
-    if (doc.y + contentHeight > 750) {
+    if (doc.y + contentHeight > 775) {
       doc.addPage();
       this.addVerticalBorders(doc, colors.green);
       doc.y = 60;
@@ -389,7 +410,7 @@ export class CVTemplateSimpleClassicService {
       const requiredSpace = 80 + descriptionHeight; // Header + description + margins
 
       // Check if entire experience item fits
-      if (doc.y + requiredSpace > 750) {
+      if (doc.y + requiredSpace > 775) {
         doc.addPage();
         this.addVerticalBorders(doc, colors.green);
         doc.y = 60;
@@ -480,7 +501,7 @@ export class CVTemplateSimpleClassicService {
       const requiredSpace = 60 + detailsHeight;
 
       // Check if entire education item fits
-      if (doc.y + requiredSpace > 750) {
+      if (doc.y + requiredSpace > 775) {
         doc.addPage();
         this.addVerticalBorders(doc, colors.green);
         doc.y = 60;
@@ -510,8 +531,9 @@ export class CVTemplateSimpleClassicService {
 
       doc.moveDown(0.3);
 
-      // Degree and university with location
+      // Degree, field, university and location
       const degree = this.sanitizeText(edu.degree);
+      const field = edu.field ? this.sanitizeText(edu.field) : '';
       const university = this.sanitizeText(edu.university);
       const location = this.sanitizeText(edu.location);
 
@@ -519,9 +541,17 @@ export class CVTemplateSimpleClassicService {
         .fontSize(10)
         .fillColor(colors.black)
         .font('NotoSans-Bold')
-        .text(`${degree}, `, margins.left, doc.y, { continued: true })
+        .text(`${degree}`, margins.left, doc.y, { continued: true });
+
+      if (field) {
+        doc
+          .font('NotoSans')
+          .text(`, ${field}`, { continued: true });
+      }
+
+      doc
         .font('NotoSans-Italic')
-        .text(`${university}`, { continued: true })
+        .text(`, ${university}`, { continued: true })
         .font('NotoSans')
         .text(` | ${location}`, { continued: false });
 
@@ -705,7 +735,7 @@ export class CVTemplateSimpleClassicService {
       const projectRequiredSpace = 40 + techHeight + descriptionHeight;
 
       // Check if entire project item fits
-      if (doc.y + projectRequiredSpace > 750) {
+      if (doc.y + projectRequiredSpace > 775) {
         doc.addPage();
         this.addVerticalBorders(doc, colors.green);
         doc.y = 60;
@@ -778,7 +808,7 @@ export class CVTemplateSimpleClassicService {
     doc.moveDown(0.4);
 
     // Check if content fits, if not move to next page
-    if (doc.y + contentHeight > 750) {
+    if (doc.y + contentHeight > 775) {
       doc.addPage();
       this.addVerticalBorders(doc, colors.green);
       doc.y = 60;
@@ -814,7 +844,7 @@ export class CVTemplateSimpleClassicService {
     doc.moveDown(0.4);
 
     // Check if content fits, if not move to next page
-    if (doc.y + contentHeight > 750) {
+    if (doc.y + contentHeight > 775) {
       doc.addPage();
       this.addVerticalBorders(doc, colors.green);
       doc.y = 60;
@@ -851,7 +881,7 @@ export class CVTemplateSimpleClassicService {
 
       // Check if certificate item fits
       const certRequiredSpace = 35; // Height for one certificate
-      if (doc.y + certRequiredSpace > 750) {
+      if (doc.y + certRequiredSpace > 775) {
         doc.addPage();
         this.addVerticalBorders(doc, colors.green);
         doc.y = 60;
@@ -911,7 +941,7 @@ export class CVTemplateSimpleClassicService {
     doc.moveDown(0.4);
 
     // Check if content fits, if not move to next page
-    if (doc.y + contentHeight > 750) {
+    if (doc.y + contentHeight > 775) {
       doc.addPage();
       this.addVerticalBorders(doc, colors.green);
       doc.y = 60;
@@ -947,7 +977,7 @@ export class CVTemplateSimpleClassicService {
 
       // Check if reference item fits
       const refRequiredSpace = 20; // Height for one reference
-      if (doc.y + refRequiredSpace > 750) {
+      if (doc.y + refRequiredSpace > 775) {
         doc.addPage();
         this.addVerticalBorders(doc, colors.green);
         doc.y = 60;
@@ -968,7 +998,7 @@ export class CVTemplateSimpleClassicService {
     doc: InstanceType<typeof PDFDocument>,
     requiredSpace: number
   ): void {
-    if (doc.y + requiredSpace > 750) {
+    if (doc.y + requiredSpace > 775) {
       doc.addPage();
       this.addVerticalBorders(doc, '#5e7a5a');
       doc.y = 60;
