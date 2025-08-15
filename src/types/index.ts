@@ -80,7 +80,6 @@ export interface ApiResponse<T = any> {
   errors?: any[];
 }
 
-
 // Cover Letter Types
 export interface CoverLetterGenerateRequest {
   positionTitle: string;
@@ -121,3 +120,6 @@ export interface ContactMessageRequest {
 
 // CV Template Types
 export * from './cvTemplate.types';
+
+// Salary Calculation Types
+export * from './salary.types';
