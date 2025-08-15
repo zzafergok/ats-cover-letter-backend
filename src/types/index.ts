@@ -123,3 +123,9 @@ export * from './cvTemplate.types';
 
 // Salary Calculation Types
 export * from './salary.types';
+
+// User Profile Types
+export * from './userProfile.types';
+
+// ATS Optimization Types
+export * from './ats.types';

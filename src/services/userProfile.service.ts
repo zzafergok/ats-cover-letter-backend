@@ -5,6 +5,8 @@ import {
   formatMessage,
   createErrorMessage,
 } from '../constants/messages';
+import { CVTemplateData } from '../types/cvTemplate.types';
+import { DateTransformOptions } from '../types/userProfile.types';
 
 const prisma = new PrismaClient();
 
@@ -590,5 +592,253 @@ export class UserProfileService {
       profileData.city &&
       profileData.aboutMe
     );
+  }
+
+  // CVTemplate Transformation Methods
+  async getUserProfileAsCVTemplate(userId: string): Promise<CVTemplateData> {
+    try {
+      const userProfile = await this.getUserProfile(userId);
+      return this.transformToCVTemplate(userProfile);
+    } catch (error) {
+      logger.error('Failed to get user profile as CV template', error);
+      throw error;
+    }
+  }
+
+  private transformToCVTemplate(userProfile: any): CVTemplateData {
+    return {
+      personalInfo: {
+        address: userProfile.address || '',
+        city: userProfile.city || '',
+        email: userProfile.email || '',
+        firstName: userProfile.firstName || '',
+        lastName: userProfile.lastName || '',
+        phone: userProfile.phone || '',
+        github: userProfile.github,
+        linkedin: userProfile.linkedin,
+        website: userProfile.portfolioWebsite,
+        jobTitle: this.extractJobTitleFromExperience(userProfile.experiences),
+      },
+      objective: userProfile.aboutMe || '',
+      experience: this.transformExperiences(userProfile.experiences || []),
+      education: this.transformEducations(userProfile.educations || []),
+      skills: this.transformSkills(userProfile.skills || []),
+      technicalSkills: this.categorizeTechnicalSkills(userProfile.skills || []),
+      certificates: this.transformCertificates(userProfile.certificates || []),
+      projects: [], // Will be populated when we add projects feature
+      languages: this.extractLanguageSkills(userProfile.skills || []),
+      references: [], // Will be populated when we add references feature
+      version: 'turkey',
+      language: 'turkish',
+    };
+  }
+
+  private extractJobTitleFromExperience(
+    experiences: any[]
+  ): string | undefined {
+    if (!experiences || experiences.length === 0) return undefined;
+
+    // Get the most recent experience (first in array due to ordering)
+    const mostRecent =
+      experiences.find((exp) => exp.isCurrent) || experiences[0];
+    return mostRecent?.position;
+  }
+
+  private transformExperiences(experiences: any[]): any[] {
+    return experiences.map((exp) => ({
+      company: exp.companyName,
+      jobTitle: exp.position,
+      location: exp.location || '',
+      startDate: this.formatDate({
+        month: exp.startMonth,
+        year: exp.startYear,
+      }),
+      endDate: exp.isCurrent
+        ? 'Present'
+        : this.formatDate({ month: exp.endMonth, year: exp.endYear }),
+      isCurrent: exp.isCurrent,
+      description: exp.description || '',
+    }));
+  }
+
+  private transformEducations(educations: any[]): any[] {
+    return educations.map((edu) => ({
+      university: edu.schoolName,
+      degree: edu.degree || '',
+      field: edu.fieldOfStudy || '',
+      location: '', // Not available in current schema
+      startDate: this.formatDate({ year: edu.startYear }),
+      graduationDate: edu.isCurrent
+        ? 'Present'
+        : this.formatDate({ year: edu.endYear }),
+      details: edu.description,
+    }));
+  }
+
+  private transformSkills(skills: any[]): string[] {
+    return skills
+      .filter((skill) => skill.category !== 'LANGUAGE')
+      .map((skill) => skill.name);
+  }
+
+  private categorizeTechnicalSkills(skills: any[]) {
+    const technicalSkills = skills.filter(
+      (skill) =>
+        skill.category === 'TECHNICAL' ||
+        skill.category === 'TOOL' ||
+        skill.category === 'FRAMEWORK'
+    );
+
+    const categorized = {
+      frontend: [] as string[],
+      backend: [] as string[],
+      database: [] as string[],
+      tools: [] as string[],
+    };
+
+    technicalSkills.forEach((skill) => {
+      // Simple categorization - can be enhanced with AI later
+      const skillName = skill.name.toLowerCase();
+
+      if (this.isFrontendSkill(skillName)) {
+        categorized.frontend.push(skill.name);
+      } else if (this.isBackendSkill(skillName)) {
+        categorized.backend.push(skill.name);
+      } else if (this.isDatabaseSkill(skillName)) {
+        categorized.database.push(skill.name);
+      } else {
+        categorized.tools.push(skill.name);
+      }
+    });
+
+    return categorized;
+  }
+
+  private isFrontendSkill(skill: string): boolean {
+    const frontendKeywords = [
+      'react',
+      'vue',
+      'angular',
+      'javascript',
+      'typescript',
+      'html',
+      'css',
+      'sass',
+      'less',
+      'webpack',
+      'vite',
+      'next.js',
+      'nuxt',
+    ];
+    return frontendKeywords.some((keyword) => skill.includes(keyword));
+  }
+
+  private isBackendSkill(skill: string): boolean {
+    const backendKeywords = [
+      'node.js',
+      'express',
+      'nestjs',
+      'python',
+      'django',
+      'flask',
+      'java',
+      'spring',
+      'php',
+      'laravel',
+      'ruby',
+      'rails',
+      '.net',
+      'go',
+      'rust',
+    ];
+    return backendKeywords.some((keyword) => skill.includes(keyword));
+  }
+
+  private isDatabaseSkill(skill: string): boolean {
+    const databaseKeywords = [
+      'mysql',
+      'postgresql',
+      'mongodb',
+      'redis',
+      'elasticsearch',
+      'oracle',
+      'sqlite',
+      'prisma',
+      'typeorm',
+      'sequelize',
+    ];
+    return databaseKeywords.some((keyword) => skill.includes(keyword));
+  }
+
+  private transformCertificates(certificates: any[]): any[] {
+    return certificates.map((cert) => ({
+      name: cert.certificateName,
+      issuer: cert.issuer || '',
+      date: this.formatDate({ month: cert.issueMonth, year: cert.issueYear }),
+    }));
+  }
+
+  private extractLanguageSkills(skills: any[]) {
+    return skills
+      .filter((skill) => skill.category === 'LANGUAGE')
+      .map((skill) => ({
+        language: skill.name,
+        level: this.mapSkillLevelToLanguageLevel(skill.level),
+      }));
+  }
+
+  private mapSkillLevelToLanguageLevel(level?: string): string {
+    switch (level) {
+      case 'BEGINNER':
+        return 'A1-A2';
+      case 'INTERMEDIATE':
+        return 'B1-B2';
+      case 'ADVANCED':
+        return 'C1';
+      case 'EXPERT':
+        return 'C2';
+      default:
+        return 'Intermediate';
+    }
+  }
+
+  private formatDate(options: DateTransformOptions): string {
+    if (!options.year) return '';
+
+    if (options.month) {
+      return `${options.year}-${options.month.toString().padStart(2, '0')}`;
+    }
+
+    return options.year.toString();
+  }
+
+  // Reverse transformation: CVTemplate to UserProfile data
+  async updateUserProfileFromCVTemplate(
+    userId: string,
+    cvData: CVTemplateData
+  ) {
+    try {
+      // Update basic user info
+      await this.updateUserProfile(userId, {
+        firstName: cvData.personalInfo.firstName,
+        lastName: cvData.personalInfo.lastName,
+        phone: cvData.personalInfo.phone,
+        address: cvData.personalInfo.address,
+        city: cvData.personalInfo.city,
+        github: cvData.personalInfo.github,
+        linkedin: cvData.personalInfo.linkedin,
+        portfolioWebsite: cvData.personalInfo.website,
+        aboutMe: cvData.objective,
+      });
+
+      // Note: Experiences, education, etc. would need individual update calls
+      // This method can be expanded as needed
+
+      logger.info('User profile updated from CV template', { userId });
+      return { success: true };
+    } catch (error) {
+      logger.error('Failed to update user profile from CV template', error);
+      throw error;
+    }
   }
 }

@@ -63,3 +63,27 @@ export const createResponse = <T = any>(
     };
   }
 };
+
+// Success response helper
+export const createSuccessResponse = <T = any>(
+  data?: T,
+  message?: string
+): ApiResponse<T> => {
+  return {
+    success: true,
+    data,
+    message,
+  };
+};
+
+// Error response helper
+export const createErrorResponse = (
+  message: string,
+  error?: Error
+): ApiResponse => {
+  return {
+    success: false,
+    error: message,
+    message,
+  };
+};

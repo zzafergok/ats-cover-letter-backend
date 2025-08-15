@@ -9,10 +9,12 @@
 5. [CV Template Generation Services](#cv-template-generation-services)
 6. [Cover Letter Services](#cover-letter-services)
 7. [Template Services](#template-services)
-8. [Contact Services](#contact-services)
-9. [Data Services](#data-services)
-10. [Error Handling](#error-handling)
-11. [Data Models](#data-models)
+8. [ATS Optimization Services](#ats-optimization-services)
+9. [Salary Calculation Services](#salary-calculation-services)
+10. [Contact Services](#contact-services)
+11. [Data Services](#data-services)
+12. [Error Handling](#error-handling)
+13. [Data Models](#data-models)
 
 ## Base Information
 
@@ -47,10 +49,11 @@ All API responses follow this structure:
 
 ```json
 {
-  "email": "user@example.com",
-  "password": "StrongPass123",
-  "name": "John Doe",
-  "role": "USER"
+  "email": "user@example.com", // Valid email address for user registration
+  "password": "StrongPass123", // Minimum 8 characters with letters and numbers
+  "firstName": "John", // User's first name (2-50 characters)
+  "lastName": "Doe", // User's last name (2-50 characters)
+  "role": "USER" // User role (USER or ADMIN, defaults to USER)
 }
 ```
 
@@ -68,11 +71,7 @@ All API responses follow this structure:
 }
 ```
 
-**Validation Requirements**:
-
-- Email: Valid email format
-- Password: Minimum 8 characters, at least one letter and one number
-- Name: 2-50 characters (full name)
+**NOT**: Bu servis yeni kullanıcı kaydı için kullanılır. Kayıt sonrası email doğrulama gereklidir ve kullanıcı giriş yapabilmek için email adresini doğrulamalıdır.
 
 ### 2. User Login
 
@@ -84,8 +83,8 @@ All API responses follow this structure:
 
 ```json
 {
-  "email": "user@example.com",
-  "password": "StrongPass123"
+  "email": "user@example.com", // Registered user email address
+  "password": "StrongPass123" // User password
 }
 ```
 
@@ -103,12 +102,14 @@ All API responses follow this structure:
       "role": "USER",
       "emailVerified": true
     },
-    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
-    "expiresIn": 14400
+    "accessToken": "eyJhbGciOiJIUzI1NiIs...", // JWT access token for API requests
+    "refreshToken": "eyJhbGciOiJIUzI1NiIs...", // Refresh token for token renewal
+    "expiresIn": 14400 // Access token expiration time in seconds (4 hours)
   }
 }
 ```
+
+**NOT**: Ana giriş servisi. Başarılı giriş sonrası access token ve refresh token alınır. Access token 4 saat, refresh token 7 gün geçerlidir.
 
 ### 3. Email Verification
 
@@ -119,25 +120,13 @@ All API responses follow this structure:
 
 ```json
 {
-  "token": "verification-token-from-email"
+  "token": "verification-token-from-email" // Email verification token sent to user's email
 }
 ```
 
-### 4. Resend Email Verification
+**NOT**: Email doğrulama servisi. Kullanıcı kayıt olduktan sonra gelen email'deki token ile hesabını aktif eder.
 
-**Endpoint**: `POST /auth/resend-verification`  
-**Authentication**: None  
-**Rate Limit**: Applied
-
-**Request Body**:
-
-```json
-{
-  "email": "user@example.com"
-}
-```
-
-### 5. Refresh Token
+### 4. Refresh Token
 
 **Endpoint**: `POST /auth/refresh`  
 **Authentication**: None
@@ -146,21 +135,20 @@ All API responses follow this structure:
 
 ```json
 {
-  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs..." // Valid refresh token
 }
 ```
 
-### 6. Logout
+**NOT**: Access token yenilemek için kullanılır. Access token süresi dolduğunda bu servis ile yeni token alınır.
+
+### 5. Logout
 
 **Endpoint**: `POST /auth/logout`  
 **Authentication**: Bearer Token Required
 
-### 7. Logout All Sessions
+**NOT**: Kullanıcı çıkışı yapar ve mevcut session'ı sonlandırır. Güvenlik için önemlidir.
 
-**Endpoint**: `POST /auth/logout-all`  
-**Authentication**: Bearer Token Required
-
-### 8. Forgot Password
+### 6. Forgot Password
 
 **Endpoint**: `POST /auth/forgot-password`  
 **Authentication**: None  
@@ -170,11 +158,13 @@ All API responses follow this structure:
 
 ```json
 {
-  "email": "user@example.com"
+  "email": "user@example.com" // Registered user email for password reset
 }
 ```
 
-### 9. Reset Password
+**NOT**: Şifre sıfırlama servisi. Kullanıcının email adresine şifre sıfırlama linki gönderir.
+
+### 7. Reset Password
 
 **Endpoint**: `POST /auth/reset-password`  
 **Authentication**: None  
@@ -184,50 +174,13 @@ All API responses follow this structure:
 
 ```json
 {
-  "token": "reset-token-from-email",
-  "newPassword": "NewStrongPass123",
-  "confirmPassword": "NewStrongPass123"
+  "token": "reset-token-from-email", // Password reset token from email
+  "newPassword": "NewStrongPass123", // New password (min 8 chars)
+  "confirmPassword": "NewStrongPass123" // Password confirmation (must match)
 }
 ```
 
-### 10. Get Current User
-
-**Endpoint**: `GET /auth/me`  
-**Authentication**: Bearer Token Required
-
-### 11. Update User Profile (Auth)
-
-**Endpoint**: `PUT /auth/profile`  
-**Authentication**: Bearer Token Required
-
-**Request Body**:
-
-```json
-{
-  "name": "John Doe",
-  "email": "john.doe@example.com"
-}
-```
-
-### 12. Change Password
-
-**Endpoint**: `PUT /auth/change-password`  
-**Authentication**: Bearer Token Required
-
-**Request Body**:
-
-```json
-{
-  "currentPassword": "OldPass123",
-  "newPassword": "NewPass123",
-  "confirmPassword": "NewPass123"
-}
-```
-
-### 13. Get User Sessions
-
-**Endpoint**: `GET /auth/sessions`  
-**Authentication**: Bearer Token Required
+**NOT**: Şifre sıfırlama işlemini tamamlar. Email'den gelen token ile yeni şifre belirlenir.
 
 ---
 
@@ -245,25 +198,27 @@ All API responses follow this structure:
   "success": true,
   "data": {
     "id": "uuid",
-    "firstName": "John",
-    "lastName": "Doe",
-    "phone": "+1234567890",
-    "address": "123 Main St",
-    "city": "New York",
-    "github": "https://github.com/johndoe",
-    "linkedin": "https://linkedin.com/in/johndoe",
-    "portfolioWebsite": "https://johndoe.dev",
-    "aboutMe": "Experienced developer...",
-    "avatarColor": "#3B82F6",
-    "education": [],
-    "experience": [],
-    "courses": [],
-    "certificates": [],
-    "hobbies": [],
-    "skills": []
+    "firstName": "John", // User's first name
+    "lastName": "Doe", // User's last name
+    "phone": "+1234567890", // Contact phone number
+    "address": "123 Main St", // Physical address
+    "city": "New York", // City of residence
+    "github": "https://github.com/johndoe", // GitHub profile URL
+    "linkedin": "https://linkedin.com/in/johndoe", // LinkedIn profile URL
+    "portfolioWebsite": "https://johndoe.dev", // Personal website URL
+    "aboutMe": "Experienced developer...", // Professional summary/bio
+    "avatarColor": "#3B82F6", // Avatar background color
+    "educations": [], // Array of education records
+    "experiences": [], // Array of work experience records
+    "courses": [], // Array of course/training records
+    "certificates": [], // Array of certification records
+    "hobbies": [], // Array of hobby/interest records
+    "skills": [] // Array of skill records
   }
 }
 ```
+
+**NOT**: Kullanıcının tüm profil bilgilerini getirir. CV oluşturmak ve profil yönetimi için temel servistir.
 
 ### 2. Update User Profile
 
@@ -274,18 +229,20 @@ All API responses follow this structure:
 
 ```json
 {
-  "firstName": "John",
-  "lastName": "Doe",
-  "phone": "+1234567890",
-  "address": "123 Main St",
-  "city": "New York",
-  "github": "https://github.com/johndoe",
-  "linkedin": "https://linkedin.com/in/johndoe",
-  "portfolioWebsite": "https://johndoe.dev",
-  "aboutMe": "Experienced developer with 5 years...",
-  "avatarColor": "#FF5733"
+  "firstName": "John", // Updated first name
+  "lastName": "Doe", // Updated last name
+  "phone": "+1234567890", // Updated phone number
+  "address": "123 Main St", // Updated address
+  "city": "New York", // Updated city
+  "github": "https://github.com/johndoe", // Updated GitHub URL
+  "linkedin": "https://linkedin.com/in/johndoe", // Updated LinkedIn URL
+  "portfolioWebsite": "https://johndoe.dev", // Updated website URL
+  "aboutMe": "Experienced developer with 5 years...", // Updated bio/summary
+  "avatarColor": "#FF5733" // Updated avatar color
 }
 ```
+
+**NOT**: Kullanıcının temel profil bilgilerini günceller. Tüm alanlar opsiyoneldir, sadece değişen alanlar gönderilebilir.
 
 ### 3. Add Education
 
@@ -296,32 +253,24 @@ All API responses follow this structure:
 
 ```json
 {
-  "schoolName": "Stanford University",
-  "degree": "Bachelor of Science",
-  "fieldOfStudy": "Computer Science",
-  "educationType": "LISANS",
-  "grade": 3.8,
-  "gradeSystem": "GPA_4",
-  "startYear": 2018,
-  "endYear": 2022,
-  "isCurrent": false,
-  "description": "Focused on software engineering..."
+  "schoolName": "Stanford University", // Name of educational institution
+  "degree": "Bachelor of Science", // Degree type obtained
+  "fieldOfStudy": "Computer Science", // Field/major of study
+  "educationType": "LISANS", // Education level type
+  "grade": 3.8, // Grade/GPA achieved
+  "gradeSystem": "GPA_4", // Grading system used
+  "startYear": 2018, // Year education started
+  "endYear": 2022, // Year education ended (optional if current)
+  "isCurrent": false, // Whether currently studying
+  "description": "Focused on software engineering..." // Additional details
 }
 ```
 
 **Education Types**: `LISE` (High School), `ONLISANS` (Associate), `LISANS` (Bachelor's), `YUKSEKLISANS` (Master's/PhD)
 
-### 4. Update Education
+**NOT**: Kullanıcının eğitim geçmişi eklemek için kullanılır. CV oluşturmada eğitim bölümünü besler.
 
-**Endpoint**: `PUT /user-profile/education/:id`  
-**Authentication**: Bearer Token Required
-
-### 5. Delete Education
-
-**Endpoint**: `DELETE /user-profile/education/:id`  
-**Authentication**: Bearer Token Required
-
-### 6. Add Experience
+### 4. Add Experience
 
 **Endpoint**: `POST /user-profile/experience`  
 **Authentication**: Bearer Token Required
@@ -330,80 +279,27 @@ All API responses follow this structure:
 
 ```json
 {
-  "companyName": "TechCorp Inc.",
-  "position": "Senior Software Engineer",
-  "employmentType": "FULL_TIME",
-  "workMode": "REMOTE",
-  "location": "San Francisco, CA",
-  "startMonth": 6,
-  "startYear": 2022,
-  "endMonth": 12,
-  "endYear": 2023,
-  "isCurrent": false,
-  "description": "Led development of microservices...",
-  "achievements": "Improved system performance by 40%..."
+  "companyName": "TechCorp Inc.", // Company name
+  "position": "Senior Software Engineer", // Job title/position
+  "employmentType": "FULL_TIME", // Type of employment
+  "workMode": "REMOTE", // Work arrangement mode
+  "location": "San Francisco, CA", // Work location
+  "startMonth": 6, // Start month (1-12)
+  "startYear": 2022, // Start year
+  "endMonth": 12, // End month (optional if current)
+  "endYear": 2023, // End year (optional if current)
+  "isCurrent": false, // Whether currently working
+  "description": "Led development of microservices...", // Job responsibilities
+  "achievements": "Improved system performance by 40%..." // Key achievements
 }
 ```
 
 **Employment Types**: `FULL_TIME`, `PART_TIME`, `CONTRACT`, `FREELANCE`, `INTERNSHIP`, `TEMPORARY`  
 **Work Modes**: `ONSITE`, `REMOTE`, `HYBRID`
 
-### 7. Update Experience
+**NOT**: İş deneyimi eklemek için kullanılır. CV'de deneyim bölümünü oluşturur ve ATS optimizasyonunda kritik rol oynar.
 
-**Endpoint**: `PUT /user-profile/experience/:id`  
-**Authentication**: Bearer Token Required
-
-### 8. Delete Experience
-
-**Endpoint**: `DELETE /user-profile/experience/:id`  
-**Authentication**: Bearer Token Required
-
-### 9. Add Course
-
-**Endpoint**: `POST /user-profile/course`  
-**Authentication**: Bearer Token Required
-
-### 10. Update Course
-
-**Endpoint**: `PUT /user-profile/course/:id`  
-**Authentication**: Bearer Token Required
-
-### 11. Delete Course
-
-**Endpoint**: `DELETE /user-profile/course/:id`  
-**Authentication**: Bearer Token Required
-
-### 12. Add Certificate
-
-**Endpoint**: `POST /user-profile/certificate`  
-**Authentication**: Bearer Token Required
-
-### 13. Update Certificate
-
-**Endpoint**: `PUT /user-profile/certificate/:id`  
-**Authentication**: Bearer Token Required
-
-### 14. Delete Certificate
-
-**Endpoint**: `DELETE /user-profile/certificate/:id`  
-**Authentication**: Bearer Token Required
-
-### 15. Add Hobby
-
-**Endpoint**: `POST /user-profile/hobby`  
-**Authentication**: Bearer Token Required
-
-### 16. Update Hobby
-
-**Endpoint**: `PUT /user-profile/hobby/:id`  
-**Authentication**: Bearer Token Required
-
-### 17. Delete Hobby
-
-**Endpoint**: `DELETE /user-profile/hobby/:id`  
-**Authentication**: Bearer Token Required
-
-### 18. Add Skill
+### 5. Add Skill
 
 **Endpoint**: `POST /user-profile/skill`  
 **Authentication**: Bearer Token Required
@@ -412,26 +308,18 @@ All API responses follow this structure:
 
 ```json
 {
-  "name": "React.js",
-  "category": "TECHNICAL",
-  "level": "ADVANCED",
-  "yearsOfExperience": 3,
-  "description": "Frontend development with React..."
+  "name": "React.js", // Skill name
+  "category": "TECHNICAL", // Skill category
+  "level": "ADVANCED", // Proficiency level
+  "yearsOfExperience": 3, // Years of experience with this skill
+  "description": "Frontend development with React..." // Additional details
 }
 ```
 
 **Skill Categories**: `TECHNICAL`, `SOFT_SKILL`, `LANGUAGE`, `TOOL`, `FRAMEWORK`, `OTHER`  
 **Skill Levels**: `BEGINNER`, `INTERMEDIATE`, `ADVANCED`, `EXPERT`
 
-### 19. Update Skill
-
-**Endpoint**: `PUT /user-profile/skill/:id`  
-**Authentication**: Bearer Token Required
-
-### 20. Delete Skill
-
-**Endpoint**: `DELETE /user-profile/skill/:id`  
-**Authentication**: Bearer Token Required
+**NOT**: Beceri ekleme servisi. ATS optimizasyonunda anahtar kelime eşleştirmesi için kritik öneme sahiptir.
 
 ---
 
@@ -447,7 +335,7 @@ All API responses follow this structure:
 **Form Data**:
 
 ```
-cvFile: <PDF file>
+cvFile: <PDF file> // PDF format CV file (max 10MB)
 ```
 
 **Success Response** (201):
@@ -456,12 +344,12 @@ cvFile: <PDF file>
 {
   "success": true,
   "data": {
-    "id": "uuid",
-    "originalName": "john_doe_cv.pdf",
-    "fileName": "processed_filename.pdf",
-    "size": 1024567,
-    "uploadedAt": "2024-01-01T00:00:00.000Z",
-    "status": "PROCESSING"
+    "id": "uuid", // Unique upload identifier
+    "originalName": "john_doe_cv.pdf", // Original filename
+    "fileName": "processed_filename.pdf", // System generated filename
+    "size": 1024567, // File size in bytes
+    "uploadedAt": "2024-01-01T00:00:00.000Z", // Upload timestamp
+    "status": "PROCESSING" // Processing status
   },
   "message": "CV başarıyla yüklendi"
 }
@@ -472,6 +360,8 @@ cvFile: <PDF file>
 - Format: PDF only
 - Max size: 10MB
 - Content must be extractable text
+
+**NOT**: CV dosyası yükleme servisi. Yüklenen PDF'den metin çıkarımı yapılır ve ATS analizi için hazırlanır.
 
 ### 2. Get CV Uploads
 
@@ -490,8 +380,8 @@ cvFile: <PDF file>
       "fileName": "processed_filename.pdf",
       "size": 1024567,
       "uploadedAt": "2024-01-01T00:00:00.000Z",
-      "status": "COMPLETED",
-      "extractedText": "John Doe\\nSoftware Engineer..."
+      "status": "COMPLETED", // Processing completion status
+      "extractedText": "John Doe\\nSoftware Engineer..." // Extracted text content
     }
   ]
 }
@@ -499,15 +389,7 @@ cvFile: <PDF file>
 
 **Status Values**: `PROCESSING`, `COMPLETED`, `FAILED`
 
-### 3. Get CV Upload Status
-
-**Endpoint**: `GET /cv-upload/upload/status/:id`  
-**Authentication**: Bearer Token Required
-
-### 4. Delete CV Upload
-
-**Endpoint**: `DELETE /cv-upload/uploads/:id`  
-**Authentication**: Bearer Token Required
+**NOT**: Kullanıcının yüklediği CV'leri listeler. ATS analizi için CV seçiminde kullanılır.
 
 ---
 
@@ -525,28 +407,10 @@ cvFile: <PDF file>
   "success": true,
   "data": [
     {
-      "id": "basic_hr",
-      "name": "Basic HR Resume",
-      "description": "Professional resume template suitable for HR and corporate positions",
-      "language": "English"
-    },
-    {
-      "id": "office_manager",
-      "name": "Office Manager Resume",
-      "description": "Template designed for office management and administrative roles",
-      "language": "English"
-    },
-    {
-      "id": "simple_classic",
-      "name": "Simple Classic Resume",
-      "description": "Clean and traditional resume format",
-      "language": "English"
-    },
-    {
-      "id": "stylish_accounting",
-      "name": "Stylish Accounting Resume",
-      "description": "Modern template for accounting and finance professionals",
-      "language": "English"
+      "id": "basic_hr", // Template identifier
+      "name": "Basic HR Resume", // Template display name
+      "description": "Professional resume template suitable for HR and corporate positions", // Template description
+      "language": "English" // Template language
     },
     {
       "id": "minimalist_turkish",
@@ -558,6 +422,8 @@ cvFile: <PDF file>
 }
 ```
 
+**NOT**: Mevcut CV şablonlarını listeler. Kullanıcı şablon seçimi için kullanılır.
+
 ### 2. Generate CV from Template
 
 **Endpoint**: `POST /cv-generator/generate`  
@@ -568,44 +434,33 @@ cvFile: <PDF file>
 
 ```json
 {
-  "templateType": "basic_hr",
+  "templateType": "basic_hr", // Selected template identifier
   "data": {
     "personalInfo": {
-      "fullName": "John Doe",
-      "address": "123 Main St",
-      "city": "New York",
-      "state": "NY",
-      "zipCode": "10001",
-      "phone": "+1-555-0123",
-      "email": "john.doe@example.com"
+      "fullName": "John Doe", // Full name for CV header
+      "address": "123 Main St", // Address information
+      "city": "New York", // City information
+      "phone": "+1-555-0123", // Contact phone
+      "email": "john.doe@example.com" // Contact email
     },
-    "objective": "Experienced HR professional seeking challenging opportunities...",
+    "objective": "Experienced HR professional seeking challenging opportunities...", // Professional summary
     "experience": [
       {
-        "jobTitle": "Senior HR Manager",
-        "company": "Tech Corp",
-        "location": "New York, NY",
-        "startDate": "Jan 2020",
-        "endDate": "Present",
-        "description": "Led recruitment and talent management initiatives..."
+        "jobTitle": "Senior HR Manager", // Position title
+        "company": "Tech Corp", // Company name
+        "location": "New York, NY", // Work location
+        "startDate": "Jan 2020", // Start date
+        "endDate": "Present", // End date or "Present"
+        "description": "Led recruitment and talent management initiatives..." // Job description
       }
     ],
     "education": [
       {
-        "degree": "Master of Business Administration",
-        "university": "Columbia University",
-        "location": "New York, NY",
-        "graduationDate": "May 2018",
-        "details": "Concentration in Human Resources Management"
-      }
-    ],
-    "communication": "Excellent verbal and written communication skills...",
-    "leadership": "Proven track record of leading cross-functional teams...",
-    "references": [
-      {
-        "name": "Jane Smith",
-        "company": "Previous Company Inc.",
-        "contact": "jane.smith@example.com | +1-555-0456"
+        "degree": "Master of Business Administration", // Degree type
+        "university": "Columbia University", // Institution name
+        "location": "New York, NY", // Institution location
+        "graduationDate": "May 2018", // Graduation date
+        "details": "Concentration in Human Resources Management" // Additional details
       }
     ]
   }
@@ -620,79 +475,19 @@ cvFile: <PDF file>
 - `stylish_accounting` - Stylish Accounting Resume template
 - `minimalist_turkish` - Minimalist Turkish Resume template
 
-**Success Response** (201):
+**NOT**: Seçilen şablon ile CV oluşturur. Kullanıcı profil verilerini PDF formatında şablona işler.
 
-```json
-{
-  "success": true,
-  "message": "CV generated successfully",
-  "data": {
-    "id": "uuid",
-    "templateType": "basic_hr",
-    "generationStatus": "COMPLETED",
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
-  }
-}
-```
-
-### 3. Get User's Generated CVs
-
-**Endpoint**: `GET /cv-generator`  
-**Authentication**: Bearer Token Required
-
-**Success Response** (200):
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "uuid",
-      "templateType": "basic_hr",
-      "generationStatus": "COMPLETED",
-      "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
-    }
-  ],
-  "limitInfo": {
-    "current": 2,
-    "maximum": 10,
-    "canCreate": true,
-    "type": "generatedCvs"
-  }
-}
-```
-
-### 4. Get Specific Generated CV
-
-**Endpoint**: `GET /cv-generator/:cvId`  
-**Authentication**: Bearer Token Required
-
-### 5. Download Generated CV PDF
+### 3. Download Generated CV PDF
 
 **Endpoint**: `GET /cv-generator/:cvId/download`  
 **Authentication**: Bearer Token Required  
 **Response**: PDF file download
 
-**Success Response**: Direct PDF file download with filename format: `cv_{templateType}_{cvId}.pdf`
-
-### 6. Regenerate CV
-
-**Endpoint**: `POST /cv-generator/:cvId/regenerate`  
-**Authentication**: Bearer Token Required  
-**Rate Limit**: ATS Generation limiter applied
-
-### 7. Delete Generated CV
-
-**Endpoint**: `DELETE /cv-generator/:cvId`  
-**Authentication**: Bearer Token Required
+**NOT**: Oluşturulan CV'yi PDF formatında indirir. Kullanıcı CV'sini bilgisayarına kaydedebilir.
 
 ---
 
 ## Cover Letter Services
-
-### Basic Cover Letters
 
 ### 1. Create Cover Letter
 
@@ -703,11 +498,11 @@ cvFile: <PDF file>
 
 ```json
 {
-  "cvUploadId": "uuid-of-uploaded-cv",
-  "positionTitle": "Senior Software Engineer",
-  "companyName": "TechCorp Inc.",
-  "jobDescription": "We are looking for a senior software engineer with experience in React, Node.js, and cloud technologies...",
-  "language": "ENGLISH"
+  "cvUploadId": "uuid-of-uploaded-cv", // Reference to uploaded CV
+  "positionTitle": "Senior Software Engineer", // Target job position
+  "companyName": "TechCorp Inc.", // Target company name
+  "jobDescription": "We are looking for a senior software engineer with experience in React, Node.js, and cloud technologies...", // Job posting description
+  "language": "ENGLISH" // Cover letter language
 }
 ```
 
@@ -719,54 +514,20 @@ cvFile: <PDF file>
 {
   "success": true,
   "data": {
-    "id": "uuid",
-    "content": "Dear Hiring Manager,\\n\\nI am writing to express my strong interest...",
-    "positionTitle": "Senior Software Engineer",
-    "companyName": "TechCorp Inc.",
-    "language": "ENGLISH",
-    "createdAt": "2024-01-01T00:00:00.000Z"
+    "id": "uuid", // Cover letter identifier
+    "content": "Dear Hiring Manager,\\n\\nI am writing to express my strong interest...", // Generated content
+    "positionTitle": "Senior Software Engineer", // Position applied for
+    "companyName": "TechCorp Inc.", // Company applied to
+    "language": "ENGLISH", // Language used
+    "createdAt": "2024-01-01T00:00:00.000Z" // Creation timestamp
   },
   "message": "Cover letter başarıyla oluşturuldu"
 }
 ```
 
-### 2. Get Cover Letter
+**NOT**: AI destekli otomatik kapak mektubu oluşturur. CV ve iş ilanı analiz edilerek kişiselleştirilmiş içerik üretir.
 
-**Endpoint**: `GET /cover-letter-basic/:id`  
-**Authentication**: Bearer Token Required
-
-### 3. Update Cover Letter
-
-**Endpoint**: `PUT /cover-letter-basic/:id`  
-**Authentication**: Bearer Token Required
-
-**Request Body**:
-
-```json
-{
-  "updatedContent": "Dear Hiring Manager,\\n\\nI am writing to express my strong interest in the Senior Software Engineer position..."
-}
-```
-
-### 4. Get User Cover Letters
-
-**Endpoint**: `GET /cover-letter-basic`  
-**Authentication**: Bearer Token Required
-
-### 5. Delete Cover Letter
-
-**Endpoint**: `DELETE /cover-letter-basic/:id`  
-**Authentication**: Bearer Token Required
-
-### 6. Download Cover Letter PDF
-
-**Endpoint**: `GET /cover-letter-basic/:id/download/pdf`  
-**Authentication**: Bearer Token Required  
-**Response**: PDF file download
-
-### Detailed Cover Letters
-
-### 1. Create Detailed Cover Letter
+### 2. Create Detailed Cover Letter
 
 **Endpoint**: `POST /cover-letter-detailed`  
 **Authentication**: Bearer Token Required
@@ -775,41 +536,435 @@ cvFile: <PDF file>
 
 ```json
 {
-  "positionTitle": "Senior Software Engineer",
-  "companyName": "TechCorp Inc.",
-  "jobDescription": "We are looking for a senior software engineer with experience in React, Node.js, and cloud technologies...",
-  "language": "ENGLISH",
-  "whyPosition": "I am passionate about software engineering and have 5 years of experience...",
-  "whyCompany": "TechCorp's innovative approach to solving complex problems aligns with my career goals...",
-  "workMotivation": "I am motivated by challenging projects and continuous learning opportunities..."
+  "positionTitle": "Senior Software Engineer", // Target position
+  "companyName": "TechCorp Inc.", // Target company
+  "jobDescription": "We are looking for a senior software engineer...", // Job description
+  "language": "ENGLISH", // Language preference
+  "whyPosition": "I am passionate about software engineering and have 5 years of experience...", // Why interested in position
+  "whyCompany": "TechCorp's innovative approach to solving complex problems aligns with my career goals...", // Why interested in company
+  "workMotivation": "I am motivated by challenging projects and continuous learning opportunities..." // Work motivation
 }
 ```
 
-### 2. Get Detailed Cover Letter
+**NOT**: Detaylı kapak mektubu oluşturur. Kullanıcının motivasyon ve hedeflerini içeren daha kişiselleştirilmiş içerik üretir.
 
-**Endpoint**: `GET /cover-letter-detailed/:id`  
-**Authentication**: Bearer Token Required
+---
 
-### 3. Update Detailed Cover Letter
+## ATS Optimization Services
 
-**Endpoint**: `PUT /cover-letter-detailed/:id`  
-**Authentication**: Bearer Token Required
+### 1. Analyze Job Posting
 
-### 4. Get User Detailed Cover Letters
-
-**Endpoint**: `GET /cover-letter-detailed`  
-**Authentication**: Bearer Token Required
-
-### 5. Delete Detailed Cover Letter
-
-**Endpoint**: `DELETE /cover-letter-detailed/:id`  
-**Authentication**: Bearer Token Required
-
-### 6. Download Detailed Cover Letter PDF
-
-**Endpoint**: `GET /cover-letter-detailed/:id/download/pdf`  
+**Endpoint**: `POST /ats/analyze-job-posting`  
 **Authentication**: Bearer Token Required  
-**Response**: PDF file download
+**Rate Limit**: ATS API limiter applied
+
+**Request Body**:
+
+```json
+{
+  "jobPostingText": "We are looking for a Senior Software Engineer with 5+ years of experience in React, Node.js, AWS...", // Job posting content text
+  "jobPostingUrl": "https://company.com/careers/senior-engineer", // Alternative: job posting URL (optional)
+  "companyName": "TechCorp Inc.", // Company name (optional, will be extracted if not provided)
+  "positionTitle": "Senior Software Engineer" // Position title (optional, will be extracted if not provided)
+}
+```
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "jobAnalysis": {
+      "id": "job_analysis_uuid", // Analysis identifier
+      "userId": "user_uuid", // User who performed analysis
+      "companyName": "TechCorp Inc.", // Extracted/provided company name
+      "positionTitle": "Senior Software Engineer", // Extracted/provided position
+      "requiredSkills": ["React", "Node.js", "AWS", "JavaScript", "TypeScript"], // Required technical skills
+      "preferredSkills": ["Docker", "Kubernetes", "GraphQL"], // Preferred additional skills
+      "requiredExperience": [
+        {
+          "skillArea": "Frontend Development", // Skill domain
+          "minimumYears": 5, // Minimum experience required
+          "isRequired": true, // Whether this experience is mandatory
+          "description": "React and modern JavaScript frameworks" // Experience description
+        }
+      ],
+      "keywords": [
+        {
+          "keyword": "React", // Important keyword for ATS
+          "category": "TECHNICAL", // Keyword category
+          "importance": "HIGH", // Keyword importance level
+          "frequency": 3 // Number of times mentioned
+        }
+      ],
+      "atsKeywords": ["software engineer", "react developer", "full stack"], // ATS-optimized keywords
+      "seniorityLevel": "SENIOR", // Detected seniority level
+      "industryType": "Technology", // Industry classification
+      "analysisStatus": "COMPLETED", // Analysis completion status
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  },
+  "message": "Job posting analyzed successfully"
+}
+```
+
+**NOT**: İş ilanını analiz eder ve ATS optimizasyonu için gerekli anahtar kelimeleri, becerileri, deneyim gereksinimlerini çıkarır. ATS optimizasyon sürecinin ilk adımıdır.
+
+### 2. Analyze CV-Job Match
+
+**Endpoint**: `POST /ats/analyze-match/:jobAnalysisId`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: ATS API limiter applied
+
+**Request Body**:
+
+```json
+{
+  "useUserProfile": true, // Use current user profile data for analysis
+  "cvData": null // Alternative: provide specific CV data object (optional if useUserProfile is true)
+}
+```
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "matchAnalysis": {
+      "id": "match_analysis_uuid", // Match analysis identifier
+      "userId": "user_uuid", // User identifier
+      "jobAnalysisId": "job_analysis_uuid", // Reference to job analysis
+      "overallScore": 75, // Overall match percentage (0-100)
+      "skillsMatch": {
+        "score": 80, // Skills match score (0-100)
+        "totalRequired": 10, // Total required skills
+        "matched": 8, // Number of matched skills
+        "missing": ["Docker", "Kubernetes"], // Missing required skills
+        "extra": ["Python", "Django"] // Additional skills user has
+      },
+      "experienceMatch": {
+        "score": 70, // Experience match score (0-100)
+        "totalYearsRequired": 5, // Total years experience required
+        "totalYearsUser": 6, // User's total relevant experience
+        "relevantExperiences": [
+          {
+            "company": "Previous Corp", // Company name
+            "position": "Software Engineer", // Position held
+            "relevanceScore": 0.9, // How relevant this experience is (0-1)
+            "matchingSkills": ["React", "Node.js"] // Skills from this role that match job
+          }
+        ]
+      },
+      "keywordMatch": {
+        "score": 65, // Keyword optimization score (0-100)
+        "totalKeywords": 20, // Total important keywords in job
+        "matchedKeywords": 13, // Keywords found in user's CV
+        "missingHighPriority": ["AWS", "microservices"], // Missing high-priority keywords
+        "missingMediumPriority": ["CI/CD", "agile"] // Missing medium-priority keywords
+      },
+      "missingSkills": ["Docker", "Kubernetes", "AWS"], // All missing skills
+      "recommendations": [
+        {
+          "type": "SKILL_GAP", // Recommendation type
+          "priority": "HIGH", // Priority level
+          "title": "Add Missing Technical Skills", // Recommendation title
+          "description": "Include Docker, Kubernetes in your skills section", // Detailed description
+          "estimatedImpact": 15 // Expected score improvement
+        }
+      ],
+      "matchStatus": "COMPLETED"
+    }
+  }
+}
+```
+
+**NOT**: CV ile iş ilanını karşılaştırır ve uyum skorunu hesaplar. Eksik becerileri ve anahtar kelimeleri tespit eder, iyileştirme önerileri sunar.
+
+### 3. Optimize CV
+
+**Endpoint**: `POST /ats/optimize/:matchAnalysisId`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: ATS API limiter applied
+
+**Request Body**:
+
+```json
+{
+  "optimizationLevel": "ADVANCED", // Optimization intensity level
+  "targetSections": [
+    {
+      "section": "SKILLS", // Section to optimize
+      "priority": "HIGH" // Optimization priority for this section
+    },
+    {
+      "section": "EXPERIENCE", // Experience section optimization
+      "priority": "MEDIUM" // Priority level
+    }
+  ],
+  "preserveOriginal": true // Whether to keep backup of original content
+}
+```
+
+**Optimization Levels**:
+
+- `BASIC` - Basic keyword optimization and skill additions
+- `ADVANCED` - Enhanced descriptions with AI-generated content
+- `COMPREHENSIVE` - Complete CV restructuring with ATS best practices
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "optimization": {
+      "id": "optimization_uuid", // Optimization result identifier
+      "userId": "user_uuid", // User identifier
+      "matchAnalysisId": "match_analysis_uuid", // Reference to match analysis
+      "beforeScore": 75, // Original match score
+      "afterScore": 89, // Optimized match score
+      "improvementPercentage": 19, // Percentage improvement
+      "changes": [
+        {
+          "section": "skills", // Section that was changed
+          "changeType": "ADDED", // Type of change made
+          "newValue": "Docker, Kubernetes, AWS", // New content added
+          "reason": "Added missing skills identified in job requirements", // Reason for change
+          "keywords": ["Docker", "Kubernetes", "AWS"] // Keywords added
+        }
+      ],
+      "atsCompliance": {
+        "score": 92, // ATS compliance score (0-100)
+        "passedChecks": ["Contact Information", "Keyword Optimization"], // Passed compliance checks
+        "failedChecks": [], // Failed compliance checks
+        "recommendations": [
+          {
+            "category": "Format Enhancement", // Recommendation category
+            "recommendation": "Use consistent date formatting", // Specific recommendation
+            "impact": "MEDIUM" // Expected impact level
+          }
+        ]
+      },
+      "optimizationStatus": "COMPLETED"
+    }
+  }
+}
+```
+
+**NOT**: CV'yi iş ilanına göre optimize eder. Eksik anahtar kelimeleri ekler, deneyim açıklamalarını geliştirir ve ATS uyumluluğunu artırır.
+
+### 4. Complete ATS Analysis
+
+**Endpoint**: `POST /ats/complete-analysis`  
+**Authentication**: Bearer Token Required  
+**Rate Limit**: ATS API limiter applied
+
+**Request Body**:
+
+```json
+{
+  "jobPostingAnalysis": {
+    "jobPostingText": "We are looking for a Senior Software Engineer...", // Job posting content
+    "companyName": "TechCorp Inc.", // Company name
+    "positionTitle": "Senior Software Engineer" // Position title
+  },
+  "optimizationLevel": "COMPREHENSIVE", // Desired optimization level
+  "targetSections": [
+    {
+      "section": "OBJECTIVE", // Section to optimize
+      "priority": "HIGH" // Priority level
+    }
+  ]
+}
+```
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "jobAnalysis": {}, // Complete job analysis result
+    "matchAnalysis": {}, // Complete match analysis result
+    "optimization": {} // Complete optimization result
+  },
+  "message": "Complete ATS analysis and optimization completed successfully"
+}
+```
+
+**NOT**: Tam ATS analiz sürecini çalıştırır: İş ilanı analizi → CV eşleştirme → CV optimizasyonu. Tek istekle tüm süreci tamamlar.
+
+### 5. Apply Optimization to Profile
+
+**Endpoint**: `POST /ats/apply-optimization/:optimizationId`  
+**Authentication**: Bearer Token Required
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "applied": true // Whether optimization was successfully applied
+  },
+  "message": "Optimization applied to user profile successfully"
+}
+```
+
+**NOT**: Optimize edilmiş CV değişikliklerini kullanıcı profiline uygular. Optimizasyon sonuçlarını kalıcı hale getirir.
+
+### 6. Get User ATS Analyses
+
+**Endpoint**: `GET /ats/my-analyses`  
+**Authentication**: Bearer Token Required
+
+**Query Parameters**:
+
+- `page=1` // Page number for pagination
+- `limit=10` // Number of results per page
+- `type=optimization` // Filter by analysis type (job_analysis, match_analysis, optimization)
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "analyses": [
+      {
+        "id": "analysis_uuid", // Analysis identifier
+        "type": "optimization", // Analysis type
+        "companyName": "TechCorp Inc.", // Company name
+        "positionTitle": "Senior Software Engineer", // Position
+        "score": 89, // Final score achieved
+        "createdAt": "2024-01-01T00:00:00.000Z" // Analysis date
+      }
+    ],
+    "pagination": {
+      "page": 1, // Current page
+      "limit": 10, // Results per page
+      "total": 25, // Total number of analyses
+      "totalPages": 3 // Total number of pages
+    }
+  }
+}
+```
+
+**NOT**: Kullanıcının geçmiş ATS analiz ve optimizasyon geçmişini listeler. İlerleme takibi için kullanılır.
+
+---
+
+## Salary Calculation Services
+
+### 1. Calculate Net Salary
+
+**Endpoint**: `POST /salary/calculate`  
+**Authentication**: Bearer Token Required
+
+**Request Body**:
+
+```json
+{
+  "grossSalary": 50000, // Gross annual salary amount
+  "allowances": {
+    "meal": 2000, // Monthly meal allowance
+    "transportation": 1000, // Monthly transportation allowance
+    "other": 500 // Other monthly allowances
+  },
+  "personalInfo": {
+    "isMarried": false, // Marital status for tax calculation
+    "dependentCount": 0, // Number of dependents
+    "disabilityRate": 0 // Disability percentage (if applicable)
+  },
+  "year": 2024 // Tax year for calculation
+}
+```
+
+**Success Response** (200):
+
+```json
+{
+  "success": true,
+  "data": {
+    "grossSalary": 50000, // Input gross salary
+    "totalAllowances": 3500, // Total monthly allowances
+    "taxableIncome": 46500, // Income subject to tax
+    "incomeTax": 6200, // Calculated income tax
+    "socialSecurityTax": 4650, // Social security contributions
+    "unemploymentTax": 465, // Unemployment insurance
+    "netSalary": 42185, // Final net salary
+    "monthlyNetSalary": 3515, // Monthly net salary
+    "taxRate": 13.3, // Effective tax rate percentage
+    "breakdown": {
+      "grossAnnual": 50000, // Annual gross
+      "grossMonthly": 4167, // Monthly gross
+      "totalDeductions": 7815, // Total deductions
+      "netAnnual": 42185, // Annual net
+      "netMonthly": 3515 // Monthly net
+    }
+  }
+}
+```
+
+**NOT**: Türkiye vergi sistemi kullanarak brüt maaştan net maaş hesaplama yapar. 2024 vergi oranları ve kesintileri uygulanır.
+
+### 2. Calculate Gross from Net
+
+**Endpoint**: `POST /salary/calculate-gross`  
+**Authentication**: Bearer Token Required
+
+**Request Body**:
+
+```json
+{
+  "targetNetSalary": 35000, // Desired annual net salary
+  "allowances": {
+    "meal": 2000, // Monthly meal allowance
+    "transportation": 1000 // Monthly transportation allowance
+  },
+  "personalInfo": {
+    "isMarried": true, // Marital status
+    "dependentCount": 2 // Number of dependents
+  },
+  "year": 2024 // Tax year
+}
+```
+
+**NOT**: Hedef net maaşa ulaşmak için gerekli brüt maaşı hesaplar. Ters maaş hesaplama işlemi yapar.
+
+### 3. Compare Salary Scenarios
+
+**Endpoint**: `POST /salary/compare`  
+**Authentication**: Bearer Token Required
+
+**Request Body**:
+
+```json
+{
+  "scenarios": [
+    {
+      "name": "Current Job", // Scenario name
+      "grossSalary": 45000, // Gross salary for this scenario
+      "allowances": { "meal": 1500 }, // Allowances
+      "location": "Istanbul" // Work location
+    },
+    {
+      "name": "New Job Offer",
+      "grossSalary": 55000,
+      "allowances": { "meal": 2000, "transportation": 1200 },
+      "location": "Ankara"
+    }
+  ],
+  "personalInfo": {
+    "isMarried": false,
+    "dependentCount": 0
+  }
+}
+```
+
+**NOT**: Farklı maaş tekliflerini karşılaştırır. Net maaş, vergi yükü ve toplam faydaları analiz eder.
 
 ---
 
@@ -823,11 +978,9 @@ cvFile: <PDF file>
 
 **Query Parameters**:
 
-- `industry` (optional): Filter by industry (`TECHNOLOGY` | `FINANCE` | `HEALTHCARE` | `EDUCATION` | `MARKETING`)
-- `category` (optional): Filter by category
-- `language` (optional): Filter by language (`TURKISH` | `ENGLISH`)
-
-**Example**: `GET /templates?industry=TECHNOLOGY&language=ENGLISH`
+- `industry=TECHNOLOGY` // Filter by industry type
+- `category=SOFTWARE_DEVELOPER` // Filter by job category
+- `language=ENGLISH` // Filter by language
 
 **Success Response** (200):
 
@@ -836,35 +989,22 @@ cvFile: <PDF file>
   "success": true,
   "data": [
     {
-      "id": "uuid",
-      "title": "Software Developer Template",
-      "content": "Dear Hiring Manager,\\n\\nI am writing to express my interest...",
-      "category": "SOFTWARE_DEVELOPER",
-      "language": "ENGLISH",
-      "industry": "TECHNOLOGY",
-      "description": "General software developer position template"
+      "id": "uuid", // Template identifier
+      "title": "Software Developer Template", // Template title
+      "content": "Dear Hiring Manager,\\n\\nI am writing to express my interest...", // Template content
+      "category": "SOFTWARE_DEVELOPER", // Job category
+      "language": "ENGLISH", // Template language
+      "industry": "TECHNOLOGY", // Industry type
+      "description": "General software developer position template" // Template description
     }
   ],
   "message": "Templates retrieved successfully"
 }
 ```
 
-### 2. Get Template Categories
+**NOT**: Kapak mektubu şablonlarını listeler. Sektör, kategori ve dile göre filtreleme imkanı sunar.
 
-**Endpoint**: `GET /templates/categories`  
-**Authentication**: Bearer Token Required
-
-### 3. Get Templates by Industry
-
-**Endpoint**: `GET /templates/industry/:industry`  
-**Authentication**: Bearer Token Required
-
-### 4. Get Template by ID
-
-**Endpoint**: `GET /templates/:templateId`  
-**Authentication**: Bearer Token Required
-
-### 5. Create Cover Letter from Template
+### 2. Create Cover Letter from Template
 
 **Endpoint**: `POST /templates/create-cover-letter`  
 **Authentication**: Bearer Token Required
@@ -873,21 +1013,18 @@ cvFile: <PDF file>
 
 ```json
 {
-  "templateId": "uuid-of-template",
-  "positionTitle": "Senior Software Engineer",
-  "companyName": "TechCorp Inc.",
+  "templateId": "uuid-of-template", // Selected template ID
+  "positionTitle": "Senior Software Engineer", // Target position
+  "companyName": "TechCorp Inc.", // Target company
   "personalizations": {
-    "whyPosition": "I am passionate about software engineering...",
-    "whyCompany": "TechCorp's innovative approach aligns with my goals...",
-    "additionalSkills": "React, Node.js, AWS, Docker"
+    "whyPosition": "I am passionate about software engineering...", // Personal motivation
+    "whyCompany": "TechCorp's innovative approach aligns with my goals...", // Company interest
+    "additionalSkills": "React, Node.js, AWS, Docker" // Additional skills to highlight
   }
 }
 ```
 
-### 6. Initialize Templates (Admin Only)
-
-**Endpoint**: `POST /templates/initialize`  
-**Authentication**: Bearer Token Required (Admin Role)
+**NOT**: Seçilen şablondan kişiselleştirilmiş kapak mektubu oluşturur. Şablon içeriğini kullanıcı bilgileri ile birleştirir.
 
 ---
 
@@ -903,34 +1040,17 @@ cvFile: <PDF file>
 
 ```json
 {
-  "type": "CONTACT",
-  "name": "John Doe",
-  "email": "john@example.com",
-  "subject": "Question about your service",
-  "message": "I would like to know more about your CV generation service..."
+  "type": "CONTACT", // Message type
+  "name": "John Doe", // Sender's name
+  "email": "john@example.com", // Sender's email
+  "subject": "Question about your service", // Message subject
+  "message": "I would like to know more about your CV generation service..." // Message content
 }
 ```
 
 **Message Types**: `CONTACT`, `SUPPORT`
 
-**Success Response** (200):
-
-```json
-{
-  "success": true,
-  "message": "Mesajınız başarıyla gönderildi"
-}
-```
-
-### 2. Get Messages (Admin)
-
-**Endpoint**: `GET /contact/messages`  
-**Authentication**: Bearer Token Required
-
-### 3. Check Contact Limit
-
-**Endpoint**: `GET /contact/limit`  
-**Authentication**: None
+**NOT**: İletişim formu servisi. Kullanıcıların sistem hakkında soru sorması ve destek alması için kullanılır.
 
 ---
 
@@ -950,45 +1070,18 @@ cvFile: <PDF file>
   "success": true,
   "data": [
     {
-      "id": "1",
-      "name": "Akören Çok Programlı Lisesi",
-      "city": "ADANA",
-      "district": "ALADAĞ",
-      "type": ""
+      "id": "1", // School identifier
+      "name": "Akören Çok Programlı Lisesi", // School name
+      "city": "ADANA", // City
+      "district": "ALADAĞ", // District
+      "type": "" // School type
     }
   ],
   "message": "Liseler başarıyla getirildi"
 }
 ```
 
-#### 2. Search High Schools
-
-**Endpoint**: `GET /high-schools/search`  
-**Authentication**: None
-
-**Query Parameters**:
-
-- `q` (required): Search term
-
-#### 3. Get High Schools by City
-
-**Endpoint**: `GET /high-schools/city/:city`  
-**Authentication**: None
-
-#### 4. Get High School by ID
-
-**Endpoint**: `GET /high-schools/:id`  
-**Authentication**: None
-
-#### 5. Get High Schools Statistics
-
-**Endpoint**: `GET /high-schools/stats`  
-**Authentication**: None
-
-#### 6. Reload High Schools Data
-
-**Endpoint**: `POST /high-schools/reload`  
-**Authentication**: None
+**NOT**: Türkiye'deki tüm liseleri listeler. Eğitim bilgisi girerken okul seçimi için kullanılır.
 
 ### Universities Service
 
@@ -1004,10 +1097,10 @@ cvFile: <PDF file>
   "success": true,
   "data": [
     {
-      "id": "1",
-      "name": "Adana Alparslan Türkeş Bilim ve Teknoloji Üniversitesi",
-      "city": "Adana",
-      "type": "STATE"
+      "id": "1", // University identifier
+      "name": "Adana Alparslan Türkeş Bilim ve Teknoloji Üniversitesi", // University name
+      "city": "Adana", // City
+      "type": "STATE" // University type
     }
   ],
   "message": "Üniversiteler başarıyla getirildi"
@@ -1016,77 +1109,16 @@ cvFile: <PDF file>
 
 **University Types**: `STATE`, `FOUNDATION`, `PRIVATE`
 
-#### 2. Search Universities
+**NOT**: Türkiye'deki tüm üniversiteleri listeler. Yükseköğretim bilgisi için kullanılır.
 
-**Endpoint**: `GET /universities/search`  
-**Authentication**: None
-
-#### 3. Get Universities by City
-
-**Endpoint**: `GET /universities/city/:city`  
-**Authentication**: None
-
-#### 4. Get Universities by Type
-
-**Endpoint**: `GET /universities/type/:type`  
-**Authentication**: None
-
-#### 5. Get University by ID
-
-**Endpoint**: `GET /universities/:id`  
-**Authentication**: None
-
-#### 6. Get Universities Statistics
-
-**Endpoint**: `GET /universities/stats`  
-**Authentication**: None
-
-#### 7. Force Refresh Universities Data
-
-**Endpoint**: `POST /universities/refresh`  
-**Authentication**: None
-
-### Locations Service (Provinces & Districts)
+### Locations Service
 
 #### 1. Get All Provinces
 
 **Endpoint**: `GET /locations/provinces`  
 **Authentication**: None
 
-#### 2. Search Provinces
-
-**Endpoint**: `GET /locations/provinces/search`  
-**Authentication**: None
-
-#### 3. Get Province by Code
-
-**Endpoint**: `GET /locations/provinces/code/:code`  
-**Authentication**: None
-
-#### 4. Get Province by Name
-
-**Endpoint**: `GET /locations/provinces/name/:name`  
-**Authentication**: None
-
-#### 5. Get Districts by Province Code
-
-**Endpoint**: `GET /locations/districts/province-code/:code`  
-**Authentication**: None
-
-#### 6. Get Districts by Province Name
-
-**Endpoint**: `GET /locations/districts/province-name/:name`  
-**Authentication**: None
-
-#### 7. Search Districts
-
-**Endpoint**: `GET /locations/districts/search`  
-**Authentication**: None
-
-#### 8. Get Locations Statistics
-
-**Endpoint**: `GET /locations/stats`  
-**Authentication**: None
+**NOT**: Türkiye'nin tüm illerini listeler. Adres ve lokasyon bilgileri için kullanılır.
 
 ---
 
@@ -1097,8 +1129,8 @@ cvFile: <PDF file>
 ```json
 {
   "success": false,
-  "error": "Error message",
-  "message": "User-friendly message"
+  "error": "Error message", // Technical error message
+  "message": "User-friendly message" // User-friendly error description
 }
 ```
 
@@ -1110,12 +1142,8 @@ cvFile: <PDF file>
   "message": "Validation failed",
   "errors": [
     {
-      "field": "email",
-      "message": "Please provide a valid email address"
-    },
-    {
-      "field": "password",
-      "message": "Password must be at least 8 characters"
+      "field": "email", // Field that failed validation
+      "message": "Please provide a valid email address" // Validation error message
     }
   ]
 }
@@ -1138,171 +1166,78 @@ cvFile: <PDF file>
 
 ## Data Models
 
-### User Model
+### ATS Job Analysis Model
 
 ```typescript
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: 'USER' | 'ADMIN';
-  isEmailVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
+interface JobPostingAnalysisResult {
+  id: string; // Unique analysis identifier
+  userId: string; // User who performed analysis
+  companyName: string; // Company name
+  positionTitle: string; // Job position title
+  requiredSkills: string[]; // Required technical skills
+  preferredSkills: string[]; // Preferred additional skills
+  requiredExperience: ExperienceRequirement[]; // Experience requirements
+  educationRequirements: EducationRequirement[]; // Education requirements
+  keywords: JobKeyword[]; // Important keywords for ATS
+  atsKeywords: string[]; // ATS-optimized keywords
+  seniorityLevel: 'ENTRY' | 'JUNIOR' | 'MID' | 'SENIOR' | 'LEAD' | 'EXECUTIVE'; // Job seniority level
+  industryType: string; // Industry classification
+  analysisStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; // Analysis status
+  createdAt: string; // Analysis creation date
 }
 ```
 
-### User Profile Model
+### ATS Match Analysis Model
 
 ```typescript
-interface UserProfile {
-  id: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  github?: string;
-  linkedin?: string;
-  portfolioWebsite?: string;
-  aboutMe?: string;
-  avatarColor?: string;
-  education: Education[];
-  experience: Experience[];
-  courses: Course[];
-  certificates: Certificate[];
-  hobbies: Hobby[];
-  skills: Skill[];
+interface CVJobMatchResult {
+  id: string; // Match analysis identifier
+  userId: string; // User identifier
+  jobAnalysisId: string; // Reference to job analysis
+  overallScore: number; // Overall match percentage (0-100)
+  skillsMatch: SkillsMatchAnalysis; // Skills matching analysis
+  experienceMatch: ExperienceMatchAnalysis; // Experience matching analysis
+  educationMatch: EducationMatchAnalysis; // Education matching analysis
+  keywordMatch: KeywordMatchAnalysis; // Keyword matching analysis
+  missingSkills: string[]; // Skills missing from user's profile
+  missingKeywords: string[]; // Keywords missing from user's CV
+  recommendations: OptimizationRecommendation[]; // Improvement recommendations
+  matchStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; // Analysis status
+  createdAt: string; // Analysis creation date
 }
 ```
 
-### CV Upload Model
+### ATS Optimization Model
 
 ```typescript
-interface CVUpload {
-  id: string;
-  originalName: string;
-  fileName: string;
-  size: number;
-  uploadedAt: string;
-  status: 'PROCESSING' | 'COMPLETED' | 'FAILED';
-  extractedText?: string;
+interface ATSOptimizationResult {
+  id: string; // Optimization identifier
+  userId: string; // User identifier
+  matchAnalysisId: string; // Reference to match analysis
+  beforeScore: number; // Original match score
+  afterScore: number; // Optimized match score
+  improvementPercentage: number; // Percentage improvement
+  changes: OptimizationChange[]; // List of changes made
+  atsCompliance: ATSComplianceCheck; // ATS compliance analysis
+  optimizationStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'; // Optimization status
+  createdAt: string; // Optimization creation date
 }
 ```
 
-### Generated CV Model
+### Salary Calculation Model
 
 ```typescript
-interface GeneratedCv {
-  id: string;
-  userId: string;
-  templateType:
-    | 'basic_hr'
-    | 'office_manager'
-    | 'simple_classic'
-    | 'stylish_accounting'
-    | 'minimalist_turkish';
-  templateData: string;
-  pdfData?: Buffer;
-  generationStatus: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
-  createdAt: string;
-  updatedAt: string;
-}
-```
-
-### Cover Letter Model
-
-```typescript
-interface CoverLetter {
-  id: string;
-  content: string;
-  positionTitle: string;
-  companyName: string;
-  language: 'TURKISH' | 'ENGLISH';
-  createdAt: string;
-  updatedAt: string;
-}
-```
-
-### Education Model
-
-```typescript
-interface Education {
-  id: string;
-  schoolName: string;
-  degree?: string;
-  fieldOfStudy?: string;
-  educationType?: 'LISE' | 'ONLISANS' | 'LISANS' | 'YUKSEKLISANS';
-  grade?: number;
-  gradeSystem: 'PERCENTAGE' | 'GPA_4';
-  startYear: number;
-  endYear?: number;
-  isCurrent: boolean;
-  description?: string;
-}
-```
-
-### Experience Model
-
-```typescript
-interface Experience {
-  id: string;
-  companyName: string;
-  position: string;
-  employmentType:
-    | 'FULL_TIME'
-    | 'PART_TIME'
-    | 'CONTRACT'
-    | 'FREELANCE'
-    | 'INTERNSHIP'
-    | 'TEMPORARY';
-  workMode: 'ONSITE' | 'REMOTE' | 'HYBRID';
-  location?: string;
-  startMonth: number;
-  startYear: number;
-  endMonth?: number;
-  endYear?: number;
-  isCurrent: boolean;
-  description?: string;
-  achievements?: string;
-}
-```
-
-### Skill Model
-
-```typescript
-interface Skill {
-  id: string;
-  name: string;
-  category?:
-    | 'TECHNICAL'
-    | 'SOFT_SKILL'
-    | 'LANGUAGE'
-    | 'TOOL'
-    | 'FRAMEWORK'
-    | 'OTHER';
-  level?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT';
-  yearsOfExperience?: number;
-  description?: string;
-}
-```
-
-### Cover Letter Template Model
-
-```typescript
-interface CoverLetterTemplate {
-  id: string;
-  title: string;
-  content: string;
-  category: string;
-  language: 'TURKISH' | 'ENGLISH';
-  industry: 'TECHNOLOGY' | 'FINANCE' | 'HEALTHCARE' | 'EDUCATION' | 'MARKETING';
-  description?: string;
-  isActive: boolean;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
+interface SalaryCalculationResult {
+  grossSalary: number; // Gross annual salary
+  totalAllowances: number; // Total monthly allowances
+  taxableIncome: number; // Income subject to taxation
+  incomeTax: number; // Calculated income tax
+  socialSecurityTax: number; // Social security contributions
+  unemploymentTax: number; // Unemployment insurance
+  netSalary: number; // Final net salary
+  monthlyNetSalary: number; // Monthly net salary
+  taxRate: number; // Effective tax rate percentage
+  breakdown: SalaryBreakdown; // Detailed salary breakdown
 }
 ```
 
@@ -1310,59 +1245,34 @@ interface CoverLetterTemplate {
 
 ## Development Notes
 
-### Authentication Flow
+### ATS Optimization Features
 
-1. User registers → Email verification required
-2. User verifies email → Account activated
-3. User logs in → Receives access token and refresh token
-4. Access token expires (4 hours) → Use refresh token to get new access token
-5. Refresh token expires (7 days) → User must log in again
+- **3-Level Optimization**: Basic, Advanced, Comprehensive optimization levels
+- **AI-Powered Analysis**: Claude AI integration for intelligent content enhancement
+- **Real-time Scoring**: 0-100 scoring system for job-CV matching
+- **Keyword Optimization**: Automatic ATS keyword integration
+- **Compliance Checking**: ATS format compliance validation
 
-### Token Expiration Times
+### Salary Calculation Features
 
-- **Access Token**: 4 hours (14400 seconds)
-- **Refresh Token**: 7 days
-- **Email Verification Token**: 24 hours
-- **Password Reset Token**: 1 hour
-
-### File Upload Notes
-
-- CV files must be PDF format
-- Maximum file size: 10MB
-- Files are processed asynchronously
-- Status checking endpoint available for processing updates
-
-### Rate Limiting
-
-- Authentication endpoints have stricter rate limits
-- Upload endpoints have special file-based limits
-- Contact form has per-IP rate limits
-- General API endpoints have standard rate limits
-
-### Template System
-
-- 31 pre-written professional cover letter templates
-- 16 categories across 5 industries: Technology, Finance, Healthcare, Education, Marketing
-- Multi-language support (Turkish & English)
-- Dynamic placeholder replacement system
-
-### CV Template Generation System
-
-- 5 professional PDF templates for direct CV generation
-- Templates: Basic HR, Office Manager, Simple Classic, Stylish Accounting, Minimalist Turkish
-- Each template has its own optimized data structure
-- PDF generation using PDFKit library with custom fonts
-- Binary PDF storage in database
-- User limits enforced based on role
-- Template validation to ensure data integrity
-- Support for Turkish characters and localization
+- **Turkish Tax System**: 2024 tax rates and deductions
+- **Comprehensive Calculations**: Income tax, social security, unemployment insurance
+- **Allowance Support**: Meal, transportation, and other allowances
+- **Scenario Comparison**: Multiple salary offer comparison
+- **Personal Factors**: Marital status, dependents, disability considerations
 
 ### Security Features
 
-- CORS protection
-- Helmet security headers
-- Request size limits (10MB)
-- Input validation and sanitization
-- Password hashing with bcrypt
-- JWT token expiration
-- Session-based authentication
+- **Rate Limiting**: API endpoint specific rate limits
+- **Authentication**: JWT-based authentication system
+- **Data Validation**: Comprehensive input validation
+- **Error Handling**: Structured error responses
+- **CORS Protection**: Cross-origin request security
+
+### Template System
+
+- **31 Professional Templates**: Pre-written cover letter templates
+- **5 CV Templates**: Professional PDF generation templates
+- **Multi-language Support**: Turkish and English templates
+- **Industry-Specific**: Technology, Finance, Healthcare, Education, Marketing
+- **AI Enhancement**: Template content optimization

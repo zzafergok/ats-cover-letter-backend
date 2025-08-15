@@ -46,6 +46,16 @@ model User {
   certificates         Certificate[]
   hobbies              Hobby[]
   skills               Skill[]
+  
+  // ATS Optimization Relations
+  jobAnalyses          JobPostingAnalysis[]
+  cvJobMatches         CVJobMatch[]
+  atsOptimizations     ATSOptimization[]
+  
+  // Additional CV Enhancement Relations
+  projects             Project[]
+  languages            Language[]
+  references           Reference[]
 
   @@map("users")
 }
@@ -435,6 +445,201 @@ enum EducationType {
   ONLISANS
   LISANS
   YUKSEKLISANS
+}
+
+// ATS Optimization Models
+model JobPostingAnalysis {
+  id                    String                @id @default(cuid())
+  userId                String                @map("user_id")
+  
+  // Raw Input
+  jobPostingUrl         String?               @map("job_posting_url")
+  jobPostingText        String                @map("job_posting_text") @db.Text
+  companyName           String                @map("company_name")
+  positionTitle         String                @map("position_title")
+  
+  // Extracted Information (stored as JSON for flexibility)
+  requiredSkills        Json                  @map("required_skills")
+  preferredSkills       Json                  @map("preferred_skills")
+  requiredExperience    Json                  @map("required_experience")
+  educationRequirements Json                  @map("education_requirements")
+  keywords              Json                  
+  
+  // Job Details
+  location              String?
+  workMode              WorkMode?             @map("work_mode")
+  employmentType        EmploymentType?       @map("employment_type")
+  salaryRange           Json?                 @map("salary_range")
+  
+  // ATS Analysis
+  atsKeywords           Json                  @map("ats_keywords")
+  industryType          String?               @map("industry_type")
+  seniorityLevel        SeniorityLevel?       @map("seniority_level")
+  
+  // Status
+  analysisStatus        ProcessingStatus      @default(PENDING) @map("analysis_status")
+  
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cvJobMatches          CVJobMatch[]
+  
+  @@map("job_posting_analyses")
+}
+
+model CVJobMatch {
+  id                    String                @id @default(cuid())
+  userId                String                @map("user_id")
+  jobAnalysisId         String                @map("job_analysis_id")
+  
+  // Overall Match Score (0-100)
+  overallScore          Float                 @map("overall_score")
+  
+  // Detailed Scoring (stored as JSON)
+  skillsMatch           Json                  @map("skills_match")
+  experienceMatch       Json                  @map("experience_match")
+  educationMatch        Json                  @map("education_match")
+  keywordMatch          Json                  @map("keyword_match")
+  
+  // Gaps and Opportunities
+  missingSkills         Json                  @map("missing_skills")
+  missingKeywords       Json                  @map("missing_keywords")
+  weakAreas             Json                  @map("weak_areas")
+  strengthAreas         Json                  @map("strength_areas")
+  
+  // Recommendations
+  recommendations       Json                  
+  
+  // CV Data used for analysis
+  cvDataSnapshot        Json                  @map("cv_data_snapshot")
+  
+  // Status
+  matchStatus           ProcessingStatus      @default(PENDING) @map("match_status")
+  
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobAnalysis           JobPostingAnalysis    @relation(fields: [jobAnalysisId], references: [id], onDelete: Cascade)
+  atsOptimizations      ATSOptimization[]
+  
+  @@map("cv_job_matches")
+}
+
+model ATSOptimization {
+  id                    String                @id @default(cuid())
+  userId                String                @map("user_id")
+  matchAnalysisId       String                @map("match_analysis_id")
+  
+  // Optimization Configuration
+  optimizationLevel     OptimizationLevel     @map("optimization_level")
+  targetSections        Json                  @map("target_sections")
+  preserveOriginal      Boolean               @default(true) @map("preserve_original")
+  
+  // Original and Optimized CV Data
+  originalCV            Json                  @map("original_cv")
+  optimizedCV           Json                  @map("optimized_cv")
+  
+  // Optimization Changes
+  changes               Json                  // Array of OptimizationChange objects
+  addedKeywords         Json                  @map("added_keywords")
+  enhancedSections      Json                  @map("enhanced_sections")
+  
+  // Improvement Metrics
+  beforeScore           Float                 @map("before_score")
+  afterScore            Float                 @map("after_score")
+  improvementPercentage Float                 @map("improvement_percentage")
+  
+  // ATS Compliance
+  atsCompliance         Json                  @map("ats_compliance")
+  
+  // Generated Files
+  pdfPath               String?               @map("pdf_path")
+  fileName              String?               @map("file_name")
+  fileSize              Int?                  @map("file_size")
+  
+  // Status
+  optimizationStatus    ProcessingStatus      @default(PENDING) @map("optimization_status")
+  
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchAnalysis         CVJobMatch            @relation(fields: [matchAnalysisId], references: [id], onDelete: Cascade)
+  
+  @@map("ats_optimizations")
+}
+
+// Additional Project model for CV enhancement
+model Project {
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  name          String    
+  description   String    @db.Text
+  technologies  String    
+  link          String?   
+  startMonth    Int?      @map("start_month")
+  startYear     Int?      @map("start_year")
+  endMonth      Int?      @map("end_month")
+  endYear       Int?      @map("end_year")
+  isCurrent     Boolean   @default(false) @map("is_current")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("projects")
+}
+
+// Language model for better language skill management
+model Language {
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  language      String    
+  level         String    
+  certification String?   
+  description   String?   
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("languages")
+}
+
+// Reference model for professional references
+model Reference {
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  name          String    
+  company       String    
+  position      String?   
+  contact       String    
+  relationship  String?   
+  description   String?   
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("references")
+}
+
+// New enums for ATS system
+enum SeniorityLevel {
+  ENTRY
+  JUNIOR
+  MID
+  SENIOR
+  LEAD
+  EXECUTIVE
+}
+
+enum OptimizationLevel {
+  BASIC
+  ADVANCED
+  COMPREHENSIVE
 }
 
 

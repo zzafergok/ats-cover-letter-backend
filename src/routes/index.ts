@@ -12,6 +12,7 @@ import cvUploadRoutes from './cvUpload.routes';
 import templateRoutes from './template.routes';
 import cvGeneratorRoutes from './cvGenerator';
 import salaryRoutes from './salary';
+import atsRoutes from './ats.routes';
 
 const router = Router();
 
@@ -27,5 +28,6 @@ router.use('/universities', universityRoutes);
 router.use('/locations', locationRoutes);
 router.use('/templates', templateRoutes);
 router.use('/salary', salaryRoutes);
+router.use('/ats', atsRoutes);
 
 export default router;
