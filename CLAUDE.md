@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build` - Compile TypeScript to JavaScript in dist/
 - `npm start` - Run production server from dist/app.js
 - `npm run type-check` - Type check without building
-- `npm run lint` - Run ESLint on src/\*_/_.ts
+- `npm run lint` - Run ESLint on src/**/*.ts
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run health` - Health check the running server
 
