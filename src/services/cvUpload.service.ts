@@ -4,6 +4,7 @@ import pdf from 'pdf-parse';
 import mammoth from 'mammoth';
 
 import logger from '../config/logger';
+import { ClaudeService } from './claude.wrapper.service';
 
 /**
  * CV içeriğini extract et (PDF, DOC, DOCX)
@@ -392,4 +393,28 @@ export function generateDocumentMetadata(text: string): {
     estimatedReadingTime,
     sections,
   };
+}
+
+/**
+ * AI-powered CV parsing using Claude
+ */
+export async function parseWithAI(cvText: string): Promise<any> {
+  try {
+    logger.info('Starting AI-powered CV parsing', {
+      textLength: cvText.length,
+      wordCount: cvText.split(/\s+/).length
+    });
+
+    const claudeService = ClaudeService.getInstance();
+    const aiResult = await claudeService.parseCvContent(cvText);
+
+    logger.info('AI CV parsing completed successfully');
+    return aiResult;
+  } catch (error: any) {
+    logger.error('AI CV parsing failed', {
+      error: error.message,
+      textPreview: cvText.substring(0, 200)
+    });
+    throw new Error('AI parsing başarısız: ' + error.message);
+  }
 }

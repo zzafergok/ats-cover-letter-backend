@@ -25,7 +25,7 @@ export class ClaudeService {
   async generateContent(prompt: string): Promise<string> {
     try {
       const response = await this.anthropic.messages.create({
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
         temperature: 0.3,
         messages: [
@@ -130,5 +130,134 @@ Return only the improved text, no additional explanation.
 `;
 
     return await this.generateContent(prompt);
+  }
+
+  /**
+   * AI-powered CV parsing
+   */
+  async parseCvContent(cvText: string): Promise<any> {
+    const prompt = `
+Analyze the following CV/Resume text and extract all relevant information into a structured JSON format. 
+Be very thorough and extract every piece of information you can find, even if the formatting is poor or inconsistent.
+
+Please extract:
+1. Personal Information (name, email, phone, address, LinkedIn, GitHub, etc.)
+2. Professional Summary/Objective
+3. Work Experience (company, position, dates, responsibilities, achievements)
+4. Education (degree, institution, graduation date, GPA if mentioned)
+5. Skills (technical, soft skills, programming languages, tools, etc.)
+6. Languages (language name and proficiency level)
+7. Certifications and Licenses
+8. Projects (if mentioned)
+9. Awards and Achievements
+10. Volunteer Experience
+11. References (if mentioned)
+
+CV Text:
+"""
+${cvText}
+"""
+
+Respond with ONLY a valid JSON object in this exact format (no markdown, no explanation):
+{
+  "personalInfo": {
+    "fullName": "",
+    "email": "",
+    "phone": "",
+    "address": "",
+    "linkedin": "",
+    "github": "",
+    "website": "",
+    "other": {}
+  },
+  "summary": "",
+  "experience": [
+    {
+      "company": "",
+      "position": "",
+      "startDate": "",
+      "endDate": "",
+      "isCurrent": false,
+      "location": "",
+      "responsibilities": [],
+      "achievements": []
+    }
+  ],
+  "education": [
+    {
+      "institution": "",
+      "degree": "",
+      "field": "",
+      "startDate": "",
+      "endDate": "",
+      "gpa": "",
+      "location": ""
+    }
+  ],
+  "skills": {
+    "technical": [],
+    "soft": [],
+    "programming": [],
+    "tools": [],
+    "other": []
+  },
+  "languages": [
+    {
+      "language": "",
+      "level": ""
+    }
+  ],
+  "certifications": [
+    {
+      "name": "",
+      "issuer": "",
+      "date": "",
+      "credentialId": ""
+    }
+  ],
+  "projects": [
+    {
+      "name": "",
+      "description": "",
+      "technologies": [],
+      "url": ""
+    }
+  ],
+  "awards": [],
+  "volunteer": [],
+  "references": []
+}`;
+
+    try {
+      const response = await this.generateContent(prompt);
+      // Claude sometimes wraps JSON in markdown, so let's clean it
+      const cleanedResponse = response
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      return JSON.parse(cleanedResponse);
+    } catch (error) {
+      logger.error('Failed to parse CV with AI', { error });
+      // Return fallback structure if parsing fails
+      return {
+        personalInfo: {},
+        summary: '',
+        experience: [],
+        education: [],
+        skills: {
+          technical: [],
+          soft: [],
+          programming: [],
+          tools: [],
+          other: [],
+        },
+        languages: [],
+        certifications: [],
+        projects: [],
+        awards: [],
+        volunteer: [],
+        references: [],
+      };
+    }
   }
 }

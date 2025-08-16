@@ -17,7 +17,7 @@ export class UserLimitService {
     return UserLimitService.instance;
   }
   private static readonly USER_LIMITS: UserLimits = {
-    cvUploads: 3,
+    cvUploads: 5,
     savedCvs: 3,
     coverLetters: 3,
     generatedCvs: 5,
@@ -43,8 +43,59 @@ export class UserLimitService {
   async checkCvUploadLimit(
     userId: string
   ): Promise<{ allowed: boolean; message: string }> {
-    // For now, allow all uploads (you can implement actual limit checking here)
-    return { allowed: true, message: 'Upload allowed' };
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+
+    try {
+      // Get user and their upload count
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      });
+
+      if (!user) {
+        return { allowed: false, message: 'Kullanıcı bulunamadı' };
+      }
+
+      // Admin users have unlimited uploads
+      if (user.role === 'ADMIN') {
+        return { allowed: true, message: 'Admin - sınırsız yükleme' };
+      }
+
+      // Count user's CV uploads this month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const uploadCount = await prisma.cvUpload.count({
+        where: {
+          userId,
+          uploadDate: {
+            gte: startOfMonth,
+          },
+        },
+      });
+
+      const limits = UserLimitService.getLimitsForUser(user.role);
+      const canUpload = uploadCount < limits.cvUploads;
+
+      if (canUpload) {
+        return {
+          allowed: true,
+          message: `${uploadCount + 1}/${limits.cvUploads} CV yükleme hakkı kullanılacak`,
+        };
+      } else {
+        return {
+          allowed: false,
+          message: `Aylık CV yükleme limitiniz (${limits.cvUploads}) dolmuş. Gelecek ay tekrar deneyebilirsiniz.`,
+        };
+      }
+    } catch (error) {
+      // console.error('CV upload limit check failed:', error);
+      return { allowed: false, message: 'Limit kontrolü başarısız' };
+    } finally {
+      await prisma.$disconnect();
+    }
   }
 
   /**

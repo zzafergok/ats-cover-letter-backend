@@ -10,6 +10,7 @@ import {
   cleanAndNormalizeText,
   generateDocumentMetadata,
   extractContactInformation,
+  parseWithAI,
 } from '../services/cvUpload.service';
 import { FileCompressionService } from '../services/fileCompression.service';
 import { UserLimitService } from '../services/userLimit.service';
@@ -36,7 +37,8 @@ export class CvUploadController {
       const userId = req.user!.userId;
 
       // Kullanıcı limit kontrolü
-      const limitResult = await this.userLimitService.checkCvUploadLimit(userId);
+      const limitResult =
+        await this.userLimitService.checkCvUploadLimit(userId);
       if (!limitResult.allowed) {
         // Yüklenen dosyayı sil
         if (fs.existsSync(req.file.path)) {
@@ -57,8 +59,11 @@ export class CvUploadController {
       });
 
       // Dosya compression
-      const compressedFileData = await this.fileCompressionService.compressFile(req.file.buffer);
-      const compressionRatio = req.file.size > 0 ? compressedFileData.length / req.file.size : 0;
+      const compressedFileData = await this.fileCompressionService.compressFile(
+        req.file.buffer
+      );
+      const compressionRatio =
+        req.file.size > 0 ? compressedFileData.length / req.file.size : 0;
 
       // Database'e upload kaydı oluştur
       const cvUpload = await this.prisma.cvUpload.create({
@@ -75,26 +80,43 @@ export class CvUploadController {
         },
       });
 
-      // Background'da CV'yi işle
-      this.processCvInBackground(cvUpload.id, req.file.path)
-        .catch(error => {
-          logger.error('Background CV processing failed', { 
-            cvUploadId: cvUpload.id, 
-            error: error.message 
-          });
+      // CV'yi hemen işle (SYNC)
+      try {
+        const extractedData = await this.processCvSync(
+          cvUpload.id,
+          req.file.path
+        );
+
+        res.status(201).json({
+          success: true,
+          message: 'CV başarıyla yüklendi ve işlendi',
+          data: {
+            id: cvUpload.id,
+            fileName: cvUpload.originalName,
+            processingStatus: 'COMPLETED',
+            uploadDate: cvUpload.uploadDate,
+            extractedData: extractedData,
+          },
+        });
+      } catch (processingError: any) {
+        logger.error('CV processing failed', {
+          cvUploadId: cvUpload.id,
+          error: processingError.message,
         });
 
-      res.status(201).json({
-        success: true,
-        message: 'CV başarıyla yüklendi',
-        data: {
-          id: cvUpload.id,
-          fileName: cvUpload.originalName,
-          processingStatus: cvUpload.processingStatus,
-          uploadDate: cvUpload.uploadDate,
-        },
-      });
+        // Processing başarısız oldu, database'i güncelle
+        await this.prisma.cvUpload.update({
+          where: { id: cvUpload.id },
+          data: { processingStatus: 'FAILED' },
+        });
 
+        res.status(500).json({
+          success: false,
+          message:
+            'CV yüklendi ama içerik çıkarılamadı: ' + processingError.message,
+        });
+        return;
+      }
     } catch (error: any) {
       logger.error('CV upload failed', {
         userId: req.user?.userId,
@@ -106,7 +128,9 @@ export class CvUploadController {
         try {
           fs.unlinkSync(req.file.path);
         } catch (unlinkError) {
-          logger.error('Failed to cleanup uploaded file', { error: unlinkError });
+          logger.error('Failed to cleanup uploaded file', {
+            error: unlinkError,
+          });
         }
       }
 
@@ -141,7 +165,6 @@ export class CvUploadController {
         success: true,
         data: cvUploads,
       });
-
     } catch (error: any) {
       logger.error('Failed to get CV uploads', {
         userId: req.user?.userId,
@@ -158,7 +181,10 @@ export class CvUploadController {
   /**
    * CV upload durumunu getir
    */
-  public getCvUploadStatus = async (req: Request, res: Response): Promise<void> => {
+  public getCvUploadStatus = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
       const userId = req.user!.userId;
@@ -186,7 +212,6 @@ export class CvUploadController {
         success: true,
         data: cvUpload,
       });
-
     } catch (error: any) {
       logger.error('Failed to get CV upload status', {
         uploadId: req.params.id,
@@ -203,7 +228,10 @@ export class CvUploadController {
   /**
    * CV upload'ı sil
    */
-  public deleteCvUpload = async (req: Request, res: Response): Promise<void> => {
+  public deleteCvUpload = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { id } = req.params;
       const userId = req.user!.userId;
@@ -220,9 +248,9 @@ export class CvUploadController {
         return;
       }
 
-      // Dosyayı sil
+      // Dosya zaten processing sonrası silinmiş olabilir
       if (cvUpload.filePath && fs.existsSync(cvUpload.filePath)) {
-        fs.unlinkSync(cvUpload.filePath);
+        this.cleanupFile(cvUpload.filePath);
       }
 
       // Database'den sil
@@ -234,7 +262,6 @@ export class CvUploadController {
         success: true,
         message: 'CV başarıyla silindi',
       });
-
     } catch (error: any) {
       logger.error('Failed to delete CV upload', {
         uploadId: req.params.id,
@@ -249,9 +276,90 @@ export class CvUploadController {
   };
 
   /**
+   * CV'yi sync olarak işle
+   */
+  private async processCvSync(
+    cvUploadId: string,
+    filePath: string
+  ): Promise<any> {
+    try {
+      logger.info('Starting CV processing (SYNC)', { cvUploadId });
+
+      // CV içeriğini extract et
+      const extractedText = await extractCvContent(filePath);
+      const markdownContent = convertToMarkdown(extractedText);
+      const cleanedText = cleanAndNormalizeText(extractedText);
+
+      // AI ile CV'yi parse et
+      logger.info('Using AI-powered CV parsing', { cvUploadId });
+      const aiParsedData = await parseWithAI(cleanedText);
+
+      // Fallback olarak eski parsing'i de yap
+      const fallbackSections = extractSections(cleanedText);
+      const keywords = extractKeywords(cleanedText);
+      const fallbackContactInfo = extractContactInformation(cleanedText);
+      const metadata = generateDocumentMetadata(cleanedText);
+
+      // Temiz ve optimize edilmiş response
+      const extractedData = {
+        // AI sonuçları (tek kaynak)
+        personalInfo: aiParsedData.personalInfo || fallbackContactInfo,
+        summary: aiParsedData.summary || fallbackSections.summary || '',
+        experience: aiParsedData.experience || fallbackSections.experience || [],
+        education: aiParsedData.education || fallbackSections.education || [],
+        skills: aiParsedData.skills || { 
+          technical: fallbackSections.skills || [],
+          soft: [],
+          programming: [],
+          tools: [],
+          other: []
+        },
+        languages: aiParsedData.languages || fallbackSections.languages || [],
+        certifications: aiParsedData.certifications || fallbackSections.certifications || [],
+        projects: aiParsedData.projects || [],
+        awards: aiParsedData.awards || [],
+        volunteer: aiParsedData.volunteer || [],
+        references: aiParsedData.references || [],
+        
+        // Metadata
+        keywords,
+        metadata,
+      };
+
+      // Database'i güncelle
+      await this.prisma.cvUpload.update({
+        where: { id: cvUploadId },
+        data: {
+          extractedText,
+          markdownContent,
+          extractedData,
+          processingStatus: 'COMPLETED',
+          filePath: null, // Dosya silindi
+        },
+      });
+
+      logger.info('CV processing completed (SYNC)', { cvUploadId });
+      
+      // Dosyayı sil (data extract edildi artık gerek yok)
+      this.cleanupFile(filePath);
+      
+      return extractedData;
+    } catch (error: any) {
+      logger.error('CV processing failed (SYNC)', {
+        cvUploadId,
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Background'da CV'yi işle
    */
-  private async processCvInBackground(cvUploadId: string, filePath: string): Promise<void> {
+  private async processCvInBackground(
+    cvUploadId: string,
+    filePath: string
+  ): Promise<void> {
     try {
       logger.info('Starting CV processing', { cvUploadId });
 
@@ -288,11 +396,14 @@ export class CvUploadController {
           markdownContent,
           extractedData,
           processingStatus: 'COMPLETED',
+          filePath: null, // Dosya silindi
         },
       });
 
       logger.info('CV processing completed', { cvUploadId });
-
+      
+      // Dosyayı sil (data extract edildi artık gerek yok)
+      this.cleanupFile(filePath);
     } catch (error: any) {
       logger.error('CV processing failed', {
         cvUploadId,
@@ -300,14 +411,34 @@ export class CvUploadController {
       });
 
       // Hata durumunu database'e kaydet
-      await this.prisma.cvUpload.update({
-        where: { id: cvUploadId },
-        data: {
-          processingStatus: 'FAILED',
-        },
-      }).catch(updateError => {
-        logger.error('Failed to update processing status', { updateError });
+      await this.prisma.cvUpload
+        .update({
+          where: { id: cvUploadId },
+          data: {
+            processingStatus: 'FAILED',
+          },
+        })
+        .catch((updateError) => {
+          logger.error('Failed to update processing status', { updateError });
+        });
+    }
+  }
+
+  /**
+   * Dosyayı güvenli şekilde sil
+   */
+  private cleanupFile(filePath: string): void {
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        logger.info('File cleaned up successfully', { filePath });
+      }
+    } catch (error: any) {
+      logger.error('Failed to cleanup file', { 
+        filePath, 
+        error: error.message 
       });
+      // Error'u throw etmeyelim, kritik değil
     }
   }
 }
