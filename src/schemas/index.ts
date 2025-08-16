@@ -297,7 +297,6 @@ export const updateCoverLetterSchema = z.object({
     .min(50, SERVICE_MESSAGES.SCHEMA.COVER_LETTER_MIN_LENGTH.message),
 });
 
-
 // User detailed profile schemas
 export const updateUserDetailedProfileSchema = z.object({
   firstName: z.string().min(2).max(50).optional(),
@@ -307,8 +306,19 @@ export const updateUserDetailedProfileSchema = z.object({
   city: z.string().optional(),
   github: z.string().url().optional().or(z.literal('')),
   linkedin: z.string().url().optional().or(z.literal('')),
+  medium: z.string().url().optional().or(z.literal('')),
   portfolioWebsite: z.string().url().optional().or(z.literal('')),
   aboutMe: z.string().max(1000).optional(),
+  communication: z.string().max(1000).optional(),
+  leadership: z.string().max(1000).optional(),
+  technicalSkills: z
+    .object({
+      frontend: z.array(z.string()).optional(),
+      backend: z.array(z.string()).optional(),
+      database: z.array(z.string()).optional(),
+      tools: z.array(z.string()).optional(),
+    })
+    .optional(),
   avatarColor: z.string().optional(),
 });
 
@@ -411,6 +421,24 @@ export const skillSchema = z.object({
   description: z.string().optional(),
 });
 
+export const projectSchema = z.object({
+  name: z.string().min(1, 'Proje adı gereklidir'),
+  description: z.string().min(1, 'Proje açıklaması gereklidir'),
+  technologies: z.string().min(1, 'Teknolojiler gereklidir'),
+  link: z.string().url().optional().or(z.literal('')),
+});
+
+export const languageSchema = z.object({
+  language: z.string().min(1, 'Dil adı gereklidir'),
+  level: z.string().min(1, 'Seviye gereklidir'),
+});
+
+export const referenceSchema = z.object({
+  name: z.string().min(1, 'Referans adı gereklidir'),
+  company: z.string().min(1, 'Şirket adı gereklidir'),
+  contact: z.string().min(1, 'İletişim bilgisi gereklidir'),
+});
+
 // Detailed cover letter schema
 export const createDetailedCoverLetterSchema = z.object({
   positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
@@ -428,28 +456,31 @@ export const updateDetailedCoverLetterSchema = z.object({
     .min(50, 'Cover letter en az 50 karakter olmalıdır'),
 });
 
-
 // Template schemas
 export const getTemplatesSchema = z.object({
-  industry: z.enum(['TECHNOLOGY', 'FINANCE', 'HEALTHCARE', 'EDUCATION', 'MARKETING']).optional(),
-  category: z.enum([
-    'SOFTWARE_DEVELOPER',
-    'FRONTEND_DEVELOPER', 
-    'BACKEND_DEVELOPER',
-    'FULLSTACK_DEVELOPER',
-    'DATA_SCIENTIST',
-    'FINANCIAL_ANALYST',
-    'INVESTMENT_BANKER',
-    'FINANCIAL_ADVISOR',
-    'ACCOUNTING_SPECIALIST',
-    'RISK_ANALYST',
-    'NURSE',
-    'DOCTOR',
-    'PHARMACIST',
-    'TEACHER',
-    'ACADEMIC_ADMINISTRATOR',
-    'MARKETING_SPECIALIST'
-  ]).optional(),
+  industry: z
+    .enum(['TECHNOLOGY', 'FINANCE', 'HEALTHCARE', 'EDUCATION', 'MARKETING'])
+    .optional(),
+  category: z
+    .enum([
+      'SOFTWARE_DEVELOPER',
+      'FRONTEND_DEVELOPER',
+      'BACKEND_DEVELOPER',
+      'FULLSTACK_DEVELOPER',
+      'DATA_SCIENTIST',
+      'FINANCIAL_ANALYST',
+      'INVESTMENT_BANKER',
+      'FINANCIAL_ADVISOR',
+      'ACCOUNTING_SPECIALIST',
+      'RISK_ANALYST',
+      'NURSE',
+      'DOCTOR',
+      'PHARMACIST',
+      'TEACHER',
+      'ACADEMIC_ADMINISTRATOR',
+      'MARKETING_SPECIALIST',
+    ])
+    .optional(),
   language: z.enum(['TURKISH', 'ENGLISH']).optional(),
 });
 
@@ -457,9 +488,11 @@ export const createCoverLetterFromTemplateSchema = z.object({
   templateId: z.string().min(1, 'Template ID gereklidir'),
   positionTitle: z.string().min(1, 'Pozisyon başlığı gereklidir'),
   companyName: z.string().min(1, 'Şirket adı gereklidir'),
-  personalizations: z.object({
-    whyPosition: z.string().optional(),
-    whyCompany: z.string().optional(),
-    additionalSkills: z.string().optional(),
-  }).optional(),
+  personalizations: z
+    .object({
+      whyPosition: z.string().optional(),
+      whyCompany: z.string().optional(),
+      additionalSkills: z.string().optional(),
+    })
+    .optional(),
 });

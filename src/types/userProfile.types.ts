@@ -9,7 +9,8 @@ export interface StandardizedUserProfileData {
   github?: string;
   linkedin?: string;
   portfolioWebsite?: string; // maps to website in CVTemplate
-  aboutMe?: string; // maps to objective in CVTemplate
+  aboutMe?: string; // keeping for backward compatibility
+  objective?: string; // maps to aboutMe field
   avatarColor?: string;
   jobTitle?: string; // new field to match CVTemplate
   medium?: string; // new field to match CVTemplate
@@ -156,7 +157,7 @@ export interface CompleteUserProfile {
     phone: string;
     website?: string;
   };
-  objective: string; // maps to aboutMe
+  objective: string; // maps to aboutMe in current schema
   experience: StandardizedExperienceData[];
   education: StandardizedEducationData[];
   communication?: string;
@@ -193,7 +194,8 @@ export interface UserProfileData {
   github?: string;
   linkedin?: string;
   portfolioWebsite?: string;
-  aboutMe?: string;
+  aboutMe?: string; // keeping for backward compatibility
+  objective?: string; // maps to aboutMe field
   avatarColor?: string;
 }
 

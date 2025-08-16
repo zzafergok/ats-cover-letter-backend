@@ -28,8 +28,12 @@ model User {
   city              String?  
   github            String?  
   linkedin          String?  
+  medium            String?
   portfolioWebsite  String?  @map("portfolio_website")
   aboutMe           String?  @map("about_me")
+  communication     String?
+  leadership        String?
+  technicalSkills   Json?    @map("technical_skills")
   profileCompleted  Boolean  @default(false) @map("profile_completed")
   avatarColor       String?  @default("#3B82F6") @map("avatar_color")
 

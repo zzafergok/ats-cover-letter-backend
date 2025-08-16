@@ -21,6 +21,14 @@ export interface UserProfileData {
   portfolioWebsite?: string;
   aboutMe?: string;
   avatarColor?: string;
+  communication?: string;
+  leadership?: string;
+  technicalSkills?: {
+    frontend?: string[];
+    backend?: string[];
+    database?: string[];
+    tools?: string[];
+  };
 }
 
 export interface EducationData {
@@ -105,6 +113,27 @@ export interface SkillData {
   description?: string;
 }
 
+export interface ProjectData {
+  id?: string;
+  name: string;
+  description: string;
+  technologies: string;
+  link?: string;
+}
+
+export interface LanguageData {
+  id?: string;
+  language: string;
+  level: string;
+}
+
+export interface ReferenceData {
+  id?: string;
+  name: string;
+  company: string;
+  contact: string;
+}
+
 export class UserProfileService {
   private static instance: UserProfileService;
 
@@ -134,6 +163,7 @@ export class UserProfileService {
           city: true,
           github: true,
           linkedin: true,
+          medium: true,
           portfolioWebsite: true,
           aboutMe: true,
           profileCompleted: true,
@@ -170,8 +200,12 @@ export class UserProfileService {
           city: true,
           github: true,
           linkedin: true,
+          medium: true,
           portfolioWebsite: true,
           aboutMe: true,
+          communication: true,
+          leadership: true,
+          technicalSkills: true,
           profileCompleted: true,
           avatarColor: true,
           educations: {
@@ -195,6 +229,15 @@ export class UserProfileService {
           },
           skills: {
             orderBy: { name: 'asc' },
+          },
+          projects: {
+            orderBy: { createdAt: 'desc' },
+          },
+          languages: {
+            orderBy: { createdAt: 'desc' },
+          },
+          references: {
+            orderBy: { createdAt: 'desc' },
           },
         },
       });
