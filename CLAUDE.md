@@ -45,21 +45,30 @@ This is an Express.js backend for an ATS-compliant CV and cover letter generatio
 
 The CV generation is template-based with multiple service implementations:
 
-- `CVGeneratorService`: Main orchestrator that manages all template types
-- Template services: `CVTemplateBasicHRService`, `CVTemplateOfficeManagerService`, `CVTemplateSimpleClassicService`, etc.
-- Each template service generates PDFs using PDFKit with specific layouts
+- `CVGeneratorService`: Main orchestrator that manages template types: `basic_hr`, `office_manager`, `simple_classic`, `stylish_accounting`, `minimalist_turkish`
+- Template services: Each implements specific PDF layouts using PDFKit
 - Templates are located in `/templates/` directory as reference PDFs
+- User limits enforced per generation via `UserLimitService`
 
-#### AI Integration
+#### AI Integration & Analysis
 
-- `claude.service.ts`: Integrates with Anthropic's Claude API for intelligent CV generation
-- Used for content optimization and ATS compliance enhancement
+- `claude.wrapper.service.ts`: Wrapper for Anthropic's Claude API
+- `jobPostingAnalysis.service.ts`: Analyzes job postings and provides ATS optimization recommendations
+- `atsOptimization.service.ts`: Provides CV optimization based on job requirements
+- `cvJobMatch.service.ts`: Matches CV content against job descriptions
 
 #### Database Layer
 
 - Uses Prisma ORM with PostgreSQL
-- Main models: User, CoverLetterBasic, CoverLetterDetailed, CVGeneration, UserProfile, etc.
+- Main models: User, CoverLetterBasic, CoverLetterDetailed, CVGeneration, UserProfile
+- Profile models: Education, Experience, Course, Certificate, Hobby, Skill
 - `DatabaseService`: Singleton pattern for database connection management
+
+#### Salary & Tax System
+
+- `salaryCalculation.service.ts`: Gross-to-net and net-to-gross salary calculations
+- `taxCalculation.service.ts`: Turkish tax calculations with yearly limits
+- `taxConfiguration.service.ts`: Tax configuration and limits management
 
 #### Authentication & Security
 
@@ -78,12 +87,16 @@ The CV generation is template-based with multiple service implementations:
 
 ### Environment Configuration
 
-The application requires these environment variables:
+Required environment variables:
 
 - `DATABASE_URL`: PostgreSQL connection string
 - `ANTHROPIC_API_KEY`: Claude AI API key
 - `JWT_SECRET`: JSON Web Token secret
 - `RESEND_API_KEY`: Email service API key
+- `NODE_ENV`: Environment (development/production)
+
+Optional variables:
+- `PORT`: Server port (defaults to 5000)
 
 ### File Upload Handling
 
@@ -96,4 +109,7 @@ The application requires these environment variables:
 - TypeScript with strict type checking enabled
 - ESLint configured for code quality
 - Font assets included for PDF generation in `src/assets/fonts/`
-- Postman collection available for API testing
+- No tests configured (`npm test` returns error)
+- Application includes Turkish tax calculations and salary processing
+- Multi-language support for CV templates (Turkish/English)
+- Production deployment configured for Vercel with Prisma generation
