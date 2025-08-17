@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
 import { JobPostingAnalysisService } from '../services/jobPostingAnalysis.service';
 import { CVJobMatchService } from '../services/cvJobMatch.service';
 import { ATSOptimizationService } from '../services/atsOptimization.service';
@@ -15,6 +16,7 @@ import {
 } from '../types/ats.types';
 
 export class ATSController {
+  private prisma: PrismaClient;
   private jobPostingAnalysisService: JobPostingAnalysisService;
   private cvJobMatchService: CVJobMatchService;
   private atsOptimizationService: ATSOptimizationService;
@@ -22,6 +24,7 @@ export class ATSController {
   private databaseService: DatabaseService;
 
   constructor() {
+    this.prisma = new PrismaClient();
     this.jobPostingAnalysisService = JobPostingAnalysisService.getInstance();
     this.cvJobMatchService = CVJobMatchService.getInstance();
     this.atsOptimizationService = ATSOptimizationService.getInstance();
@@ -523,28 +526,33 @@ export class ATSController {
   // Private helper methods
   private async storeJobAnalysis(analysis: any): Promise<void> {
     try {
-      // Database connection would be handled here
-      // const db = await this.databaseService.getConnection();
+      await this.prisma.jobPostingAnalysis.create({
+        data: {
+          id: analysis.id,
+          userId: analysis.userId,
+          jobPostingUrl: analysis.jobPostingUrl,
+          jobPostingText: analysis.jobPostingText,
+          companyName: analysis.companyName,
+          positionTitle: analysis.positionTitle,
+          requiredSkills: analysis.requiredSkills,
+          preferredSkills: analysis.preferredSkills,
+          requiredExperience: analysis.requiredExperience,
+          educationRequirements: analysis.educationRequirements,
+          keywords: analysis.keywords,
+          location: analysis.location,
+          workMode: analysis.workMode,
+          employmentType: analysis.employmentType,
+          atsKeywords: analysis.atsKeywords,
+          industryType: analysis.industryType,
+          seniorityLevel: analysis.seniorityLevel,
+          analysisStatus: 'COMPLETED',
+        },
+      });
 
-      // In a real implementation, you would store the analysis in the database
-      // For now, we'll just log it
-      logger.info('Job analysis would be stored in database', {
+      logger.info('Job analysis stored in database successfully', {
         analysisId: analysis.id,
         userId: analysis.userId,
       });
-
-      // Example database store operation:
-      // await db.jobPostingAnalysis.create({
-      //   data: {
-      //     id: analysis.id,
-      //     userId: analysis.userId,
-      //     jobPostingText: analysis.jobPostingText,
-      //     companyName: analysis.companyName,
-      //     positionTitle: analysis.positionTitle,
-      //     requiredSkills: analysis.requiredSkills,
-      //     // ... other fields
-      //   }
-      // });
     } catch (error) {
       logger.error('Failed to store job analysis', {
         error,
@@ -556,7 +564,27 @@ export class ATSController {
 
   private async storeMatchAnalysis(matchAnalysis: any): Promise<void> {
     try {
-      logger.info('Match analysis would be stored in database', {
+      await this.prisma.cVJobMatch.create({
+        data: {
+          id: matchAnalysis.id,
+          userId: matchAnalysis.userId,
+          jobAnalysisId: matchAnalysis.jobAnalysisId,
+          overallScore: matchAnalysis.overallScore,
+          skillsMatch: matchAnalysis.skillsMatch || {},
+          experienceMatch: matchAnalysis.experienceMatch || {},
+          educationMatch: matchAnalysis.educationMatch || {},
+          keywordMatch: matchAnalysis.keywordMatch || {},
+          missingSkills: matchAnalysis.missingSkills || [],
+          missingKeywords: matchAnalysis.missingKeywords || [],
+          weakAreas: matchAnalysis.weakAreas || [],
+          strengthAreas: matchAnalysis.strengthAreas || [],
+          recommendations: matchAnalysis.recommendations || [],
+          cvDataSnapshot: matchAnalysis.cvDataSnapshot || {},
+          matchStatus: 'COMPLETED',
+        },
+      });
+
+      logger.info('Match analysis stored in database successfully', {
         matchId: matchAnalysis.id,
         userId: matchAnalysis.userId,
         score: matchAnalysis.overallScore,
@@ -572,7 +600,31 @@ export class ATSController {
 
   private async storeOptimization(optimization: any): Promise<void> {
     try {
-      logger.info('Optimization would be stored in database', {
+      await this.prisma.aTSOptimization.create({
+        data: {
+          id: optimization.id,
+          userId: optimization.userId,
+          matchAnalysisId: optimization.matchAnalysisId,
+          optimizationLevel: optimization.optimizationLevel || 'ADVANCED',
+          targetSections: optimization.targetSections || [],
+          preserveOriginal: optimization.preserveOriginal || true,
+          originalCV: optimization.originalCV,
+          optimizedCV: optimization.optimizedCV,
+          changes: optimization.changes || [],
+          addedKeywords: optimization.addedKeywords || [],
+          enhancedSections: optimization.enhancedSections || [],
+          beforeScore: optimization.beforeScore || 0,
+          afterScore: optimization.afterScore || 0,
+          improvementPercentage: optimization.improvementPercentage || 0,
+          atsCompliance: optimization.atsCompliance || {},
+          pdfPath: optimization.pdfPath,
+          fileName: optimization.fileName,
+          fileSize: optimization.fileSize,
+          optimizationStatus: 'COMPLETED',
+        },
+      });
+
+      logger.info('Optimization stored in database successfully', {
         optimizationId: optimization.id,
         userId: optimization.userId,
         improvement: optimization.improvementPercentage,
@@ -591,14 +643,20 @@ export class ATSController {
     userId: string
   ): Promise<any> {
     try {
-      // In a real implementation, fetch from database
-      logger.info('Job analysis would be fetched from database', {
-        analysisId,
-        userId,
+      const jobAnalysis = await this.prisma.jobPostingAnalysis.findFirst({
+        where: {
+          id: analysisId,
+          userId: userId,
+        },
       });
 
-      // For now, return null to indicate not found
-      return null;
+      logger.info('Job analysis fetched from database', {
+        analysisId,
+        userId,
+        found: !!jobAnalysis,
+      });
+
+      return jobAnalysis;
     } catch (error) {
       logger.error('Failed to get job analysis by ID', {
         error,
@@ -614,11 +672,23 @@ export class ATSController {
     userId: string
   ): Promise<any> {
     try {
-      logger.info('Match analysis would be fetched from database', {
+      const matchAnalysis = await this.prisma.cVJobMatch.findFirst({
+        where: {
+          id: matchId,
+          userId: userId,
+        },
+        include: {
+          jobAnalysis: true,
+        },
+      });
+
+      logger.info('Match analysis fetched from database', {
         matchId,
         userId,
+        found: !!matchAnalysis,
       });
-      return null;
+
+      return matchAnalysis;
     } catch (error) {
       logger.error('Failed to get match analysis by ID', {
         error,
@@ -634,11 +704,27 @@ export class ATSController {
     userId: string
   ): Promise<any> {
     try {
-      logger.info('Optimization would be fetched from database', {
+      const optimization = await this.prisma.aTSOptimization.findFirst({
+        where: {
+          id: optimizationId,
+          userId: userId,
+        },
+        include: {
+          matchAnalysis: {
+            include: {
+              jobAnalysis: true,
+            },
+          },
+        },
+      });
+
+      logger.info('Optimization fetched from database', {
         optimizationId,
         userId,
+        found: !!optimization,
       });
-      return null;
+
+      return optimization;
     } catch (error) {
       logger.error('Failed to get optimization by ID', {
         error,
@@ -656,21 +742,160 @@ export class ATSController {
     type?: string
   ): Promise<any> {
     try {
-      logger.info('User analyses would be fetched from database', {
+      const skip = (page - 1) * limit;
+      let jobAnalyses: any[] = [];
+      let matchAnalyses: any[] = [];
+      let optimizations: any[] = [];
+      let totalJobAnalyses = 0;
+      let totalMatchAnalyses = 0;
+      let totalOptimizations = 0;
+
+      // Fetch data based on type filter
+      if (!type || type === 'job') {
+        [jobAnalyses, totalJobAnalyses] = await Promise.all([
+          this.prisma.jobPostingAnalysis.findMany({
+            where: { userId },
+            select: {
+              id: true,
+              companyName: true,
+              positionTitle: true,
+              analysisStatus: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+            skip: type === 'job' ? skip : 0,
+            take: type === 'job' ? limit : undefined,
+          }),
+          this.prisma.jobPostingAnalysis.count({
+            where: { userId },
+          }),
+        ]);
+      }
+
+      if (!type || type === 'match') {
+        [matchAnalyses, totalMatchAnalyses] = await Promise.all([
+          this.prisma.cVJobMatch.findMany({
+            where: { userId },
+            select: {
+              id: true,
+              overallScore: true,
+              matchStatus: true,
+              createdAt: true,
+              updatedAt: true,
+              jobAnalysis: {
+                select: {
+                  companyName: true,
+                  positionTitle: true,
+                },
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+            skip: type === 'match' ? skip : 0,
+            take: type === 'match' ? limit : undefined,
+          }),
+          this.prisma.cVJobMatch.count({
+            where: { userId },
+          }),
+        ]);
+      }
+
+      if (!type || type === 'optimization') {
+        [optimizations, totalOptimizations] = await Promise.all([
+          this.prisma.aTSOptimization.findMany({
+            where: { userId },
+            select: {
+              id: true,
+              optimizationLevel: true,
+              improvementPercentage: true,
+              optimizationStatus: true,
+              createdAt: true,
+              updatedAt: true,
+              matchAnalysis: {
+                select: {
+                  jobAnalysis: {
+                    select: {
+                      companyName: true,
+                      positionTitle: true,
+                    },
+                  },
+                },
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+            skip: type === 'optimization' ? skip : 0,
+            take: type === 'optimization' ? limit : undefined,
+          }),
+          this.prisma.aTSOptimization.count({
+            where: { userId },
+          }),
+        ]);
+      }
+
+      // Combine and format analyses
+      const analyses: any[] = [];
+
+      jobAnalyses.forEach((analysis) => {
+        analyses.push({
+          ...analysis,
+          type: 'job_analysis',
+        });
+      });
+
+      matchAnalyses.forEach((analysis) => {
+        analyses.push({
+          ...analysis,
+          type: 'match_analysis',
+        });
+      });
+
+      optimizations.forEach((optimization) => {
+        analyses.push({
+          ...optimization,
+          type: 'optimization',
+        });
+      });
+
+      // Sort by creation date if no specific type filter
+      if (!type) {
+        analyses.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        analyses.splice(limit); // Limit to requested size
+      }
+
+      const total = type
+        ? type === 'job'
+          ? totalJobAnalyses
+          : type === 'match'
+            ? totalMatchAnalyses
+            : totalOptimizations
+        : totalJobAnalyses + totalMatchAnalyses + totalOptimizations;
+
+      const totalPages = Math.ceil(total / limit);
+
+      logger.info('User analyses fetched from database', {
         userId,
         page,
         limit,
         type,
+        total,
+        analysesCount: analyses.length,
       });
 
-      // Return empty result for now
       return {
-        analyses: [],
+        analyses,
         pagination: {
           page,
           limit,
-          total: 0,
-          totalPages: 0,
+          total,
+          totalPages,
+        },
+        summary: {
+          jobAnalyses: totalJobAnalyses,
+          matchAnalyses: totalMatchAnalyses,
+          optimizations: totalOptimizations,
         },
       };
     } catch (error) {
