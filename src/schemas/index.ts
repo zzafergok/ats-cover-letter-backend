@@ -421,6 +421,16 @@ export const skillSchema = z.object({
   description: z.string().optional(),
 });
 
+// Flexible skill schema - supports both single skill and multiple skills
+export const flexibleSkillSchema = z.union([
+  // Single skill format
+  skillSchema,
+  // Multiple skills format
+  z.object({
+    skills: z.array(skillSchema).min(1, 'En az bir yetenek gereklidir'),
+  }),
+]);
+
 export const projectSchema = z.object({
   name: z.string().min(1, 'Proje adı gereklidir'),
   description: z.string().min(1, 'Proje açıklaması gereklidir'),

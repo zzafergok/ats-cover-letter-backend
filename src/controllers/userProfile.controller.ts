@@ -16,6 +16,7 @@ import {
   certificateSchema,
   hobbySchema,
   skillSchema,
+  flexibleSkillSchema,
 } from '../schemas';
 
 export class UserProfileController {
@@ -571,18 +572,32 @@ export class UserProfileController {
   // Skill Methods
   public addSkill = async (req: Request, res: Response): Promise<void> => {
     try {
-      const validatedData = skillSchema.parse(req.body);
-
-      const skill = await this.userProfileService.addSkill(
-        req.user!.userId,
-        validatedData
-      );
-
-      res.status(201).json({
-        success: true,
-        message: 'Yetenek bilgisi başarıyla eklendi',
-        data: skill,
-      });
+      const validatedData = flexibleSkillSchema.parse(req.body);
+      
+      // Check if it's single skill or multiple skills
+      if ('skills' in validatedData) {
+        // Multiple skills format
+        const skills = await this.userProfileService.addBulkSkills(
+          req.user!.userId,
+          validatedData.skills
+        );
+        res.status(201).json({
+          success: true,
+          message: `${skills.length} yetenek bilgisi başarıyla eklendi`,
+          data: skills,
+        });
+      } else {
+        // Single skill format
+        const skill = await this.userProfileService.addSkill(
+          req.user!.userId,
+          validatedData
+        );
+        res.status(201).json({
+          success: true,
+          message: 'Yetenek bilgisi başarıyla eklendi',
+          data: skill,
+        });
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({
@@ -596,7 +611,7 @@ export class UserProfileController {
         return;
       }
 
-      logger.error('Failed to add skill', error);
+      logger.error('Failed to add skill(s)', error);
       res.status(500).json({
         success: false,
         message: 'Yetenek bilgisi eklenirken hata oluştu',

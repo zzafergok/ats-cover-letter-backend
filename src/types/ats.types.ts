@@ -11,6 +11,7 @@ export interface JobPostingAnalysisRequest {
 export interface JobPostingAnalysisResult {
   id: string;
   userId: string;
+  name?: string; // companyName_positionTitle format
 
   // Raw Input
   jobPostingUrl?: string;

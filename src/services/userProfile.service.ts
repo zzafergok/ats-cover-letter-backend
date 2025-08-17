@@ -586,6 +586,33 @@ export class UserProfileService {
     }
   }
 
+  async addBulkSkills(userId: string, skillsData: SkillData[]) {
+    try {
+      // Use transaction to ensure all skills are added or none
+      const skills = await prisma.$transaction(
+        skillsData.map((skillData) =>
+          prisma.skill.create({
+            data: {
+              userId,
+              ...skillData,
+            },
+          })
+        )
+      );
+
+      logger.info('Bulk skills added successfully', { 
+        userId, 
+        skillCount: skills.length,
+        skillIds: skills.map(s => s.id)
+      });
+      
+      return skills;
+    } catch (error) {
+      logger.error('Failed to add bulk skills', error);
+      throw error;
+    }
+  }
+
   async updateSkill(
     userId: string,
     skillId: string,

@@ -530,6 +530,7 @@ export class ATSController {
         data: {
           id: analysis.id,
           userId: analysis.userId,
+          name: analysis.name,
           jobPostingUrl: analysis.jobPostingUrl,
           jobPostingText: analysis.jobPostingText,
           companyName: analysis.companyName,
@@ -757,6 +758,7 @@ export class ATSController {
             where: { userId },
             select: {
               id: true,
+              name: true,
               companyName: true,
               positionTitle: true,
               analysisStatus: true,

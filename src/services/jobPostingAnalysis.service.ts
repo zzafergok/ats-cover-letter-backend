@@ -46,20 +46,25 @@ export class JobPostingAnalysisService {
       // Parse Claude's response
       const parsedAnalysis = this.parseClaudeResponse(claudeResponse);
 
+      // Extract company name and position title first
+      const companyName =
+        request.companyName ||
+        parsedAnalysis.companyName ||
+        'Unknown Company';
+      const positionTitle =
+        request.positionTitle ||
+        parsedAnalysis.positionTitle ||
+        'Unknown Position';
+
       // Create the analysis result
       const analysisResult: JobPostingAnalysisResult = {
         id: this.generateId(),
         userId,
+        name: this.generateName(companyName, positionTitle),
         jobPostingUrl: request.jobPostingUrl,
         jobPostingText,
-        companyName:
-          request.companyName ||
-          parsedAnalysis.companyName ||
-          'Unknown Company',
-        positionTitle:
-          request.positionTitle ||
-          parsedAnalysis.positionTitle ||
-          'Unknown Position',
+        companyName,
+        positionTitle,
         requiredSkills: parsedAnalysis.requiredSkills || [],
         preferredSkills: parsedAnalysis.preferredSkills || [],
         requiredExperience: parsedAnalysis.requiredExperience || [],
@@ -372,6 +377,11 @@ Return only the JSON object, no additional text or explanation.
       '_' +
       Math.random().toString(36).substr(2, 9)
     );
+  }
+
+  private generateName(companyName: string, positionTitle: string): string {
+    // Simply combine with pipe separator
+    return `${companyName} | ${positionTitle}`;
   }
 
   // Utility method to get analysis by ID (would typically involve database lookup)

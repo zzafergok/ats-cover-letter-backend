@@ -455,6 +455,7 @@ enum EducationType {
 model JobPostingAnalysis {
   id                    String                @id @default(cuid())
   userId                String                @map("user_id")
+  name                  String?               // companyName_positionTitle format
   
   // Raw Input
   jobPostingUrl         String?               @map("job_posting_url")
