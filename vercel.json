@@ -11,13 +11,7 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/api"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/dist/app.js"
+      "destination": "/dist/app.js"
     }
   ],
   "headers": [
