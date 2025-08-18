@@ -2,16 +2,16 @@
   "version": 2,
   "buildCommand": "npm run vercel-build",
   "installCommand": "npm install",
-  "functions": {
-    "dist/app.js": {
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  },
-  "rewrites": [
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/dist/app.js"
+      "src": "dist/app.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/dist/app.js"
     }
   ],
   "headers": [
